@@ -1,0 +1,15 @@
+Lshape_p2_b5.xinp -2D
+
+	Topology sets: Homogeneous (1,4,1D)
+	               Neumann (1,1,-1D) (1,2,-1D) (1,3,-1D)
+Number of elements    32
+Number of nodes       66
+Number of dofs        66
+Number of unknowns    55
+L2-norm            : 0.580973
+Max displacement   : 1.2539 node 6
+Energy norm           a(u^h,u^h)^0.5 : 1.35146
+External energy          (h,u^h)^0.5 : -1.35146
+Exact norm                a(u,u)^0.5 : 1.35544
+Exact error      a(e,e)^0.5, e=u-u^h : 0.100455
+Exact relative error (%) : 7.41121

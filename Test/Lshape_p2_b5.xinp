@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<simulation>
+  <!-- General - geometry definitions !-->
+  <geometry>
+    <patchfile>Lshape.g2</patchfile>
+    <raiseorder patch="1" u="1" v="1"/>
+    <refine patch="1" u="3" v="3"/>
+    <topologysets>
+      <set name="Homogeneous" type="edge">
+        <item patch="1">4</item>
+      </set>
+      <set name="Neumann" type="edge" closure="open">
+        <item patch="1">1 2 3</item>
+      </set>
+    </topologysets>
+  </geometry>
+
+  <!-- General - boundary conditions !-->
+  <boundaryconditions>
+    <dirichlet set="Homogeneous" comp="1"/>
+    <neumann set="Neumann" comp="1" type="anasol"/>
+  </boundaryconditions>
+
+  <!-- General - numerical integration scheme !-->
+  <discretization>
+    <nGauss>3 5</nGauss>
+  </discretization>
+
+  <!-- Problem-specific block !-->
+  <darcy>
+    <permvalues>9.81|9.81</permvalues>
+    <bodyforce>0|0</bodyforce>
+    <source>0</source>
+    <anasol type="Lshape"/>
+  </darcy>
+
+  <postprocessing>
+    <projection>
+      <CGL2/>
+    </projection>
+    <vtfformat nviz="4"/>
+  </postprocessing>
+
+<!-- General - adaptive control -->
+  <adaptive>
+    <beta value="5"/>
+    <errtol value="0.000001"/>
+    <maxstep value="10"/>
+    <maxdof value="4000"/>
+    <multiplicity value="1"/>
+    <scheme value="isotropic_function"/>
+    <use_norm value="1"/>
+    <store_eps_mesh/>
+  </adaptive>
+
+</simulation>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<simulation>
+  <!-- General - geometry definitions !-->
+  <geometry>
+    <raiseorder patch="1" u="1" v="1"/>
+    <refine type="uniform" patch="1" u="25" v="25"/>
+    <topologysets>
+      <set name="Nonhomogeneous" type="edge">
+        <item patch="1">1 2 3 4</item>
+      </set>
+    </topologysets>
+  </geometry>
+
+  <!-- General - numerical integration scheme !-->
+  <discretization>
+    <nGauss>3 5</nGauss>
+  </discretization>
+
+  <!-- General - boundary conditions !-->
+  <boundaryconditions>
+    <!--dirichlet set="Nonhomogeneous" comp="1">1.5</dirichlet-->
+    <dirichlet set="Nonhomogeneous" comp="1" type="anasol"/>
+  </boundaryconditions>
+
+  <!-- Problem-specific block !-->
+  <darcy>
+    <permvalues>98.1|9.81</permvalues>
+    <bodyforce>0|0</bodyforce>
+    <source type="Wavefront"/>
+    <anasol type="Wavefront"/>
+  </darcy>
+
+  <postprocessing>
+    <projection>
+      <CGL2/>
+    </projection>
+    <vtfformat nviz="4"/>
+  </postprocessing>
+
+<!-- General - adaptive control -->
+  <adaptive>
+    <beta type="truebeta" value="20"/>
+    <errtol value="0.00001"/>
+    <maxstep value="50"/>
+    <maxdof value="20000"/>
+    <multiplicity value="1"/>
+    <scheme value="isotropic_function"/>
+    <use_norm value="1"/>
+    <store_eps_mesh/>
+  </adaptive>
+</simulation>

@@ -1,0 +1,15 @@
+Wavefront_k10_p2_b20.xinp -2D
+
+	Topology sets: Nonhomogeneous (1,1,1D) (1,2,1D) (1,3,1D) (1,4,1D)
+Number of elements    676
+Number of nodes       784
+Number of dofs        784
+Number of constraints 108
+Number of unknowns    676
+L2-norm            : 1.39877
+Max displacement   : 1.52707 node 1
+Energy norm           a(u^h,u^h)^0.5 : 25.2035
+External energy          (h,u^h)^0.5 : 22.2488
+Exact norm                a(u,u)^0.5 : 26.0482
+Exact error      a(e,e)^0.5, e=u-u^h : 5.69085
+Exact relative error (%) : 21.8473
