@@ -123,7 +123,6 @@ int main(int argc, char ** argv)
   Profiler prof(argv[0]);
   utl::profiler->start("Initialization");
 
-  SIMoptions dummy;
   int  i;
   char ndim = 3;
   char* infile = 0;
@@ -132,7 +131,7 @@ int main(int argc, char ** argv)
   IFEM::Init(argc,argv);
 
   for (i = 1; i < argc; i++)
-    if (dummy.parseOldOptions(argc,argv,i))
+    if (SIMoptions::ignoreOldOptions(argc,argv,i))
       ; // ignore the obsolete option
     else if (!strcmp(argv[i],"-2D"))
       ndim = 2;
