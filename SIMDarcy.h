@@ -39,6 +39,7 @@ template<class Dim> class SIMDarcy : public Dim
     virtual ~SIMDarcy()
     {
       Dim::myProblem = NULL;
+      Dim::myInts.clear();
       // To prevent the SIMbase destructor try to delete already deleted functions
       if (aCode[0] > 0) Dim::myScalars.erase(aCode[0]);
       if (aCode[1] > 0) Dim::myVectors.erase(aCode[1]);
