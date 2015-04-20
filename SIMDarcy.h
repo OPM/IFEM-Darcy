@@ -25,12 +25,16 @@
 #include "DataExporter.h"
 #include "AnaSol.h"
 #include "DarcySolutions.h"
+#include "SIMSolver.h"
 
 
 template<class Dim> class SIMDarcy : public Dim
 {
   public:
-    SIMDarcy() : Dim(1), DRC(Dim::dimension)
+    //! \brief Dummy declaration, no setup properties needed
+    typedef bool SetupProps;
+
+    SIMDarcy() : Dim(1), DRC(Dim::dimension), solVec(&sol)
     {
       Dim::myProblem = &DRC;
       aCode[0] = aCode[1] = 0;
@@ -151,6 +155,60 @@ template<class Dim> class SIMDarcy : public Dim
       return "DarcyFlow";
     }
 
+    void setSol(const Vector* sol) { solVec = sol; }
+
+    const Vector& getSolution(int=0) { return *solVec; }
+
+    //! \brief Register fields for data export
+    void registerFields(DataExporter& exporter)
+    {
+      exporter.registerField("p,v", "primary", DataExporter::SIM,
+                             DataExporter::PRIMARY|DataExporter::SECONDARY);
+      exporter.setFieldValue("p,v", this, solVec);
+    }
+
+    //! \brief Opens a new VTF-file and writes the model geometry to it.
+    //! \param[in] fileName File name used to construct the VTF-file name from
+    //! \param[out] geoBlk Running geometry block counter
+    //! \param[out] nBlock Running result block counter
+    bool saveModel(char* fileName, int& geoBlk, int& nBlock)
+    {
+      if (Dim::opt.format < 0)
+        return true;
+
+      nBlock = 0;
+      return this->writeGlvG(geoBlk,fileName);
+    }
+
+    //! \brief Saves the converged results to VTF file of a given time step.
+    //! \param[in] tp Time step identifier
+    //! \param[in] nBlock Running VTF block counter
+    bool saveStep(const TimeStep& tp, int& nBlock)
+    {
+      if (Dim::opt.format < 0)
+        return true;
+
+      // Write solution fields
+      bool result = this->writeGlvS(*solVec, 1, nBlock, 0.0, 0);
+
+      return result && this->writeGlvStep(1, 0.0, 1);
+    }
+
+    //! \brief Computes the solution for the current time step.
+    bool solveStep(TimeStep& tp)
+    {
+      if (!this->assembleSystem())
+        return false;
+
+      if (!this->solveSystem(sol, Dim::msgLevel-1,"pressure    "))
+        return false;
+
+      tp.step--;
+      return true;
+    }
+
+    bool advanceStep(TimeStep& tp) { return true; }
+
   protected:
     //! \brief Performs some pre-processing tasks on the FE model.
     //! \details This method is reimplemented to resolve inhomogeneous boundary
@@ -199,7 +257,37 @@ template<class Dim> class SIMDarcy : public Dim
   private:
     Darcy DRC;
     Vectors pressure;
+    const Vector* solVec;
+    Vector sol;
     int aCode[2];   //!< Analytical BC code (used by destructor)
+};
+
+
+//! \brief Partial specialization for configurator
+template<class Dim>
+struct SolverConfigurator< SIMDarcy<Dim> > {
+  int setup(SIMDarcy<Dim>& darcy,
+            const typename SIMDarcy<Dim>::SetupProps& props,
+            char* infile)
+  {
+    utl::profiler->start("Model input");
+
+    // Read input file
+    if (!props && !darcy.read(infile))
+      return 1;
+
+    // Configure finite element library
+    if(!darcy.preprocess())
+      return 2;
+
+    // Setup integration
+    darcy.setQuadratureRule(darcy.opt.nGauss[0],true);
+    darcy.initSystem(darcy.opt.solver,1,1);
+    darcy.setAssociatedRHS(0,0);
+    darcy.setMode(SIM::DYNAMIC);
+
+    return 0;
+  }
 };
 
 #endif /* SIMDARCY_H_ */

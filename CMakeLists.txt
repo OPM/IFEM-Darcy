@@ -19,7 +19,7 @@ configure_file(${PROJECT_SOURCE_DIR}/../Common/scripts/regtest.sh.in
 set(DARCY_SRCS Darcy.C
                DarcySolutions.C)
 
-include_directories(${IFEM_INCLUDES} ${PROJECT_SOURCE_DIR})
+include_directories(${IFEM_INCLUDES} ${PROJECT_SOURCE_DIR} ../Common)
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 

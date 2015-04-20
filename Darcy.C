@@ -190,7 +190,7 @@ bool Darcy::evalSol (Vector& v, const Vector& eV,
 {
   if (eV.size() != dNdX.rows())
   {
-    std::cerr << "*** Darcy:evalSol: Invalid soltion vector."
+    std::cerr << "*** Darcy:evalSol: Invalid solution vector."
               << "\n  size(eV) = " << eV.size() << " size(dNdX) = "
               << dNdX.rows() << "," << dNdX.cols() << std::endl;
     return false;

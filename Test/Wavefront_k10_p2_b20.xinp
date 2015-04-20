@@ -46,6 +46,5 @@
     <multiplicity value="1"/>
     <scheme value="isotropic_function"/>
     <use_norm value="1"/>
-    <store_eps_mesh/>
   </adaptive>
 </simulation>

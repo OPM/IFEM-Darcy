@@ -20,101 +20,66 @@
 #include "Utilities.h"
 #include "HDF5Writer.h"
 #include "XMLWriter.h"
+#include "AppCommon.h"
+#include "TimeStep.h"
+
 
 template<class Dim>
-int runSimulator(const char* infile, bool adaptive)
+int runSimulator(char* infile, bool adaptive)
 {
   SIMDarcy<Dim> darcy;
 
-  SIMinput* model = &darcy;
-  AdaptiveSIM* aSim=NULL;
-  if (adaptive)
-    model = aSim = new AdaptiveSIM(&darcy);
-
-  // read input file
-  if (!model->read(infile))
-    return 1;
-
-  // configure finite element library
-  if (!darcy.preprocess())
-    return 2;
-
-  if (aSim)
+  AdaptiveSIM* aSim=nullptr;
+  int res;
+  if (adaptive) {
+    aSim = new AdaptiveSIM(&darcy);
+    if (!aSim->read(infile))
+      return 1;
+    res = ConfigureSIM(darcy, infile, true);
     aSim->setupProjections();
-
-  // setup integration
-  darcy.setQuadratureRule(model->opt.nGauss[0], true);
-  darcy.initSystem(model->opt.solver, 1, 1);
-  darcy.setAssociatedRHS(0, 0);
-  darcy.setMode(SIM::STATIC);
-  if (adaptive)
     aSim->initAdaptor(0,2);
+  } else
+    res = ConfigureSIM(darcy, infile, false);
+
+  if (res)
+    return res;
 
   Vector sol;
+  if (adaptive)
+    darcy.setSol(&aSim->getSolution());
 
   // HDF5 output
   DataExporter* exporter=NULL;
-  if (model->opt.dumpHDF5(infile))
-  {
-    exporter = new DataExporter(true);
-    int results = DataExporter::PRIMARY | DataExporter::SECONDARY;
-    exporter->registerField("p,v", "primary", DataExporter::SIM, results);
-    exporter->setFieldValue("p,v", &darcy, adaptive?&aSim->getSolution():&sol);
-    exporter->registerWriter(new HDF5Writer(darcy.opt.hdf5,darcy.getProcessAdm()));
-    exporter->registerWriter(new XMLWriter(darcy.opt.hdf5,darcy.getProcessAdm()));
-    if (adaptive)
+
+  if (adaptive) {
+    SIMSolver<AdaptiveSIM> solver(*aSim);
+    if (darcy.opt.dumpHDF5(infile)) {
+      exporter = SIM::handleDataOutput(darcy, solver, darcy.opt.hdf5,
+                                       false, 1, 1);
       exporter->setNormPrefixes(aSim->getNormPrefixes());
+    }
+    res = solver.solveProblem(infile, exporter);
+  } else {
+    SIMSolver<SIMDarcy<Dim>> solver(darcy);
+    if (darcy.opt.dumpHDF5(infile))
+      exporter = SIM::handleDataOutput(darcy, solver, darcy.opt.hdf5,
+                                       false, 1, 1);
+    res = solver.solveProblem(infile, exporter);
   }
 
-  // VTF output
+  if (res == 0 && !adaptive) {
+    // Evaluate solution norms
+    Matrix eNorm;
+    Vectors gNorm;
+    darcy.setQuadratureRule(darcy.opt.nGauss[1]);
+    if (!darcy.solutionNorms(Vectors(1,darcy.getSolution()),Vectors(),eNorm,gNorm))
+      return 4;
 
-  bool iterate=true;
-  for(int iStep=1;iterate;++iStep) {
-    if (adaptive) {
-      if (!aSim->solveStep(infile,iStep))
-        return 5;
-      else if (!aSim->writeGlv(infile,iStep,2))
-        return 6;
-    } else {
-      // assemble the linear system
-      if (!darcy.assembleSystem())
-        return 3;
-
-      // solve the linear system
-      if (!darcy.solveSystem(sol, 1))
-        return 4;
-
-      // Evaluate solution norms
-      Matrix eNorm;
-      Vectors gNorm;
-      darcy.setQuadratureRule(model->opt.nGauss[1]);
-      if (!darcy.solutionNorms(Vectors(1,sol),Vectors(),eNorm,gNorm))
-        return 4;
-
-      darcy.printNorms(gNorm,IFEM::cout);
-
-      // VTF output
-      if (darcy.opt.format >= 0)
-      {
-        int geoBlk = 0, nBlock=0;
-        darcy.writeGlvG(geoBlk, infile);
-        darcy.writeGlvS(sol, 1, nBlock, 0.0, 0);
-        //darcy.savePoints("")
-        darcy.writeGlvStep(1, 0.0, 1);
-        darcy.closeGlv();
-      }
-    }
-
-    if (exporter)
-      exporter->dumpTimeLevel(NULL, adaptive);
-    if (adaptive)
-      iterate = aSim->adaptMesh(iStep+1);
-    else
-      iterate = false;
+    darcy.printNorms(gNorm,IFEM::cout);
   }
 
   delete exporter;
-  return 0;
+  return res;
 }
 
 
@@ -155,6 +120,9 @@ int main(int argc, char ** argv)
               <<"       [-ignore <p1> <p2> ...] [-fixDup]" << std::endl;
     return 0;
   }
+
+  if (adaptive)
+    IFEM::getOptions().discretization = ASM::LRSpline;
 
   IFEM::cout <<"\n >>> IFEM Darcy equation solver <<<"
              <<"\n ====================================\n"

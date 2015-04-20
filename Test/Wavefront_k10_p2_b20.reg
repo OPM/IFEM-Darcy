@@ -7,7 +7,7 @@ Number of dofs        784
 Number of constraints 108
 Number of unknowns    676
 L2-norm            : 1.39877
-Max displacement   : 1.52707 node 1
+Max pressure       : 1.52707
 Energy norm           a(u^h,u^h)^0.5 : 25.2035
 External energy          (h,u^h)^0.5 : 22.2488
 Exact norm                a(u,u)^0.5 : 26.0482
