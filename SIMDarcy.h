@@ -175,9 +175,8 @@ public:
   //! \brief Register fields for data export
   void registerFields(DataExporter& exporter)
   {
-    exporter.registerField("p,v", "primary", DataExporter::SIM,
-                           DataExporter::PRIMARY|DataExporter::SECONDARY);
-    exporter.setFieldValue("p,v", this, solVec);
+    exporter.registerField("p", "primary", DataExporter::SIM,DataExporter::PRIMARY);
+    exporter.setFieldValue("p", this, solVec);
   }
 
   //! \brief Opens a new VTF-file and writes the model geometry to it.
