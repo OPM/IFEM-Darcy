@@ -75,7 +75,7 @@ int runSimulator(char* infile, bool adaptive)
     if (!darcy.solutionNorms(Vectors(1,darcy.getSolution()),Vectors(),eNorm,gNorm))
       return 4;
 
-    darcy.printNorms(gNorm,IFEM::cout);
+    darcy.printNorms(gNorm);
   }
 
   delete exporter;
@@ -83,7 +83,7 @@ int runSimulator(char* infile, bool adaptive)
 }
 
 
-int main(int argc, char ** argv)
+int main(int argc, char** argv)
 {
   Profiler prof(argv[0]);
   utl::profiler->start("Initialization");
