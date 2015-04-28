@@ -34,11 +34,17 @@ public:
   //! \brief Set permeability function.
   void setPermValues(VecFunc* permv) { permvalues = permv; }
 
+  //! \brief Returns permeability in a point
+  Vec3 getPermeability(const Vec3& X) const;
+
   //! \brief Set permeability field.
   void setPermField(RealFunc* permf) { permeability = permf; }
 
   //! \brief Set body force vector.
   void setBodyForce(VecFunc* body) { bodyforce = body; }
+
+  //! \brief Returns body forces in a point
+  Vec3 getBodyForce(const Vec3& X) const;
 
   //! \brief Defines the source function.
   void setSource(RealFunc* src) { source = src; }

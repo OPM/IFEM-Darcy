@@ -257,6 +257,28 @@ NormBase* Darcy::getNormIntegrand (AnaSol* asol) const
 }
 
 
+Vec3 Darcy::getPermeability(const Vec3& X) const
+{
+  Vec3 result;
+  if (permvalues)
+    result = (*permvalues)(X);
+  else if (permeability)
+    result = (*permeability)(X);
+
+  return result;
+}
+
+
+Vec3 Darcy::getBodyForce(const Vec3& X) const
+{
+  Vec3 result;
+  if (bodyforce)
+    result = (*bodyforce)(X);
+
+  return result;
+}
+
+
 DarcyNorm::DarcyNorm (Darcy& p, VecFunc* a) : NormBase(p), anasol(a)
 {
   nrcmp = myProblem.getNoFields(2);
