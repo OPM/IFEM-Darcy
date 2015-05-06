@@ -84,6 +84,7 @@ public:
   //! \param[in] invers If \e true, set up the inverse matrix instead
   virtual bool formKmatrix(Matrix& K, const Vec3& X, bool inverse = false) const;
 
+  using IntegrandBase::evalSol;
   //! \brief Evaluated the secondary solution at a result point
   //! param[out] s Array of solution field values at current point
   //! param[in] fe Finite element data at current point
