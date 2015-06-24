@@ -101,12 +101,6 @@ public:
   bool evalSol(Vector& s, const Vector& eV,
                const Matrix& dNdX, const Vec3& X) const;
 
-  //! \brief Evaluates the analytical secondary solution at a result point.
-  //! \param[out] s The solution field values at current point
-  //! \param[in] asol The analytical solution field (tensor field)
-  //! \param[in] X Cartesian coordinates of current point
-  virtual bool evalSol(Vector& s, const VecFunc& asol, const Vec3& X) const;
-
   //! \brief Returns the number of primary/secondary solution field components.
   //! \param[in] fld which field set to consider (1=primary, 2=secondary)
   virtual size_t getNoFields(int fld = 2) const { return fld > 1 ? nsd : 1; }
@@ -137,7 +131,6 @@ protected:
   VecFunc* vflux;         //!< Flux function.
 
 public:
-  unsigned short int nsd; //!< Number of spatial dimensions.
   const double rhow;      //!< Density of fluid.
   const double gacc;      //!< Gravity acceleration.
   VecFunc* bodyforce;     //!< Body force function.

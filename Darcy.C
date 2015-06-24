@@ -24,8 +24,9 @@
 
 
 Darcy::Darcy(unsigned short int n) :
-  flux(NULL), source(NULL), vflux(NULL), nsd(n), rhow(1.0), gacc(9.81)
+  flux(NULL), source(NULL), vflux(NULL), rhow(1.0), gacc(9.81)
 {
+  nsd = n;
   primsol.resize(1);
   source = 0;
   bodyforce = 0;
@@ -203,14 +204,6 @@ bool Darcy::evalSol (Vector& v, const Vector& eV,
   K.multiply(temp,v);
   v *= -1.0/(rhow*gacc);
 
-  return true;
-}
-
-
-bool Darcy::evalSol(Vector& s, const VecFunc& asol,
-                                 const Vec3& X) const
-{
-  s = Vector(asol(X).ptr(),nsd);
   return true;
 }
 
