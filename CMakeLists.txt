@@ -26,7 +26,7 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 add_library(CommonDarcy ${DARCY_SRCS})
 
 add_executable(Darcy main_Darcy.C)
-target_link_libraries(Darcy CommonDarcy ${IFEM_LIBRARIES})
+target_link_libraries(Darcy CommonDarcy CommonIFEM ${IFEM_LIBRARIES})
 
 # Installation
 install(TARGETS Darcy DESTINATION bin COMPONENT bin)
@@ -49,7 +49,7 @@ list(APPEND TEST_APPS Darcy)
 IFEM_add_test_app(${PROJECT_SOURCE_DIR}/Test/*.C
                   ${PROJECT_SOURCE_DIR}/Test
                   Darcy
-                  CommonDarcy ${IFEM_LIBRARIES})
+                  CommonDarcy CommonIFEM ${IFEM_LIBRARIES})
 
 if(IFEM_COMMON_APP_BUILD)
   set(TEST_APPS ${TEST_APPS} PARENT_SCOPE)

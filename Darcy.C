@@ -20,6 +20,8 @@
 #include "Vec3Oper.h"
 #include "VTF.h"
 #include "AnaSol.h"
+#include "WeakOperators.h"
+
 
 Darcy::Darcy(unsigned short int n) :
   flux(NULL), source(NULL), vflux(NULL), nsd(n), rhow(1.0), gacc(9.81)
@@ -78,14 +80,9 @@ bool Darcy::evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
   if (!elMat.A.empty())
   {
     // Evaluate the hydraulic conductivity matrix at this point
-    Matrix K, KB;
+    Matrix K;
     this->formKmatrix(K,X);
-
-    K.multiply(1.0/(rhow*gacc));
-
-    // Integrate the coefficient matrix
-    KB.multiply(K,fe.dNdX,false,true).multiply(fe.detJxW);
-    elMat.A.front().multiply(fe.dNdX,KB,false,false,true);
+    WeakOperators::LaplacianCoeff(elMat.A.front(), K, fe, 1.0/(rhow*gacc));
   }
 
   Vec3 b = bodyforce ? (*bodyforce)(X) : Vec3();
@@ -94,24 +91,19 @@ bool Darcy::evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
   // Read point-wise permeabilities from a random field
   double kf = permeability ? (*permeability)(X) : 0.0;
 
-  // Integrate rhs contribution from body force
-  for (size_t i = 1; i <= fe.N.size(); i++)
-  {
-    double fvec = 0.0;
-    for (size_t k = 1; k <= nsd; k++)
-    {
-      if (permvalues)
-        fvec += fe.dNdX(i,k)*(perm[k-1]/(gacc))*b[k-1];
-      if (permeability)
-        fvec += fe.dNdX(i,k)*(kf/(gacc))*b[k-1];
-    }
-    elMat.b[0](i) += fvec*fe.detJxW;
-  }
+  Vec3 eperm = b;
+  if (permvalues)
+    for (size_t i=0;i<nsd;++i)
+      eperm[i] *= perm[i]/gacc;
 
-  double f = source ? (*source)(X) : 0.0;
+  if (permeability)
+    eperm *= kf/gacc;
+
+  // Integrate rhs contribution from body force
+  WeakOperators::Divergence(elMat.b[0], fe, eperm);
 
   if (source)
-    elMat.b.front().add(fe.N,(f)*fe.detJxW);
+    WeakOperators::Source(elMat.b.front(), fe, (*source)(X));
 
   return true;
 }
@@ -135,7 +127,7 @@ bool Darcy::evalBou(LocalIntegral& elmInt, const FiniteElement& fe,
 
   double qw = -this->getFlux(X,normal);
 
-  elMat.b.front().add(fe.N,(qw/rhow)*fe.detJxW);
+  WeakOperators::Source(elMat.b.front(), fe, qw/rhow);
 
   return true;
 }
