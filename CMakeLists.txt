@@ -23,7 +23,7 @@ include_directories(${IFEM_INCLUDES} ${PROJECT_SOURCE_DIR} ../Common)
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
-add_library(CommonDarcy ${DARCY_SRCS})
+add_library(CommonDarcy STATIC ${DARCY_SRCS})
 
 add_executable(Darcy main_Darcy.C)
 target_link_libraries(Darcy CommonDarcy CommonIFEM ${IFEM_LIBRARIES})
