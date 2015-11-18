@@ -49,7 +49,7 @@ int runSimulator(char* infile, bool adaptive)
     darcy.setSol(&aSim->getSolution());
 
   // HDF5 output
-  DataExporter* exporter=NULL;
+  DataExporter* exporter=nullptr;
 
   if (adaptive) {
     SIMSolver<AdaptiveSIM> solver(*aSim);

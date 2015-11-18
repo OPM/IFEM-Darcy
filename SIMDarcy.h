@@ -44,7 +44,7 @@ public:
   //! \brief Destructor.
   virtual ~SIMDarcy()
   {
-    Dim::myProblem = NULL;
+    Dim::myProblem = nullptr;
     Dim::myInts.clear();
     // To prevent the SIMbase destructor try to delete already deleted functions
     if (aCode[0] > 0) Dim::myScalars.erase(aCode[0]);
@@ -153,8 +153,8 @@ public:
     if (aCode[1] > 0) Dim::myVectors.erase(aCode[1]);
     aCode[0] = aCode[1] = 0;
 
-    drc.setFlux((RealFunc*)NULL);
-    drc.setFlux((VecFunc*)NULL);
+    drc.setFlux((RealFunc*)nullptr);
+    drc.setFlux((VecFunc*)nullptr);
     this->Dim::clearProperties();
   }
 

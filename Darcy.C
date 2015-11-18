@@ -24,7 +24,7 @@
 
 
 Darcy::Darcy(unsigned short int n) :
-  flux(NULL), source(NULL), vflux(NULL), rhow(1.0), gacc(9.81)
+  flux(nullptr), source(nullptr), vflux(nullptr), rhow(1.0), gacc(9.81)
 {
   nsd = n;
   primsol.resize(1);
