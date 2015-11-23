@@ -214,28 +214,22 @@ bool Darcy::evalSol(Vector& s, const VecFunc& asol,
   return true;
 }
 
-const char* Darcy::getField1Name (size_t, const char* prefix) const
+std::string Darcy::getField1Name (size_t, const char* prefix) const
 {
   if (!prefix) return "pressure";
 
-  static std::string name;
-  name = prefix + std::string(" pressure");
-
-  return name.c_str();
+  return prefix + std::string(" pressure");
 }
 
 
-const char* Darcy::getField2Name (size_t i, const char* prefix) const
+std::string Darcy::getField2Name (size_t i, const char* prefix) const
 {
-  if (i >= nsd) return 0;
+  if (i >= nsd) return "";
 
   static const char* s[3] = {"v_x","v_y","v_z"};
   if(!prefix) return s[i];
 
-  static std::string name;
-  name = prefix + std::string(" ") + s[i];
-
-  return name.c_str();
+  return prefix + std::string(" ") + s[i];
 }
 
 
