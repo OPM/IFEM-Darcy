@@ -392,7 +392,7 @@ size_t DarcyNorm::getNoFields (int group) const
 }
 
 
-const char* DarcyNorm::getName (size_t i, size_t j, const char* prefix) const
+std::string DarcyNorm::getName (size_t i, size_t j, const char* prefix) const
 {
   if (i == 0 || j == 0 || j > 4)
     return this->NormBase::getName(i,j,prefix);
@@ -413,11 +413,7 @@ const char* DarcyNorm::getName (size_t i, size_t j, const char* prefix) const
   if (!prefix)
     return s[k];
 
-  static std::string name;
-  name = prefix + std::string(" ");
-  name += s[k];
-
-  return name.c_str();
+  return prefix + std::string(" ") + s[k];
 }
 
 
