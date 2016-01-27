@@ -10,6 +10,14 @@ if(NOT IFEM_CONFIGURED)
   find_package(IFEM REQUIRED)
 endif()
 
+if(NOT TARGET CommonIFEM)
+  add_subdirectory(../Common CommonIFEM)
+endif()
+
+if(NOT TARGET CommonIFEM)
+  add_subdirectory(../Common CommonIFEM)
+endif()
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${IFEM_CXX_FLAGS}")
 
 # Generate regtest script with correct paths
