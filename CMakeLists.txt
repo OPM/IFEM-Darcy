@@ -8,21 +8,13 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 
 if(NOT IFEM_CONFIGURED)
   find_package(IFEM REQUIRED)
+  include_directories(${IFEM_INCLUDE_DIRS})
+  add_definitions(${IFEM_DEFINITIONS})
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${IFEM_CXX_FLAGS}")
 endif()
-
-if(NOT TARGET CommonIFEM)
-  add_subdirectory(../Common CommonIFEM)
-endif()
-
-if(NOT TARGET CommonIFEM)
-  add_subdirectory(../Common CommonIFEM)
-endif()
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${IFEM_CXX_FLAGS}")
 
 # Generate regtest script with correct paths
-configure_file(${PROJECT_SOURCE_DIR}/../Common/scripts/regtest.sh.in
-               regtest.sh)
+configure_file(${IFEM_REGTEST_SCRIPT} regtest.sh)
 
 set(DARCY_SRCS Darcy.C
                DarcySolutions.C)
@@ -34,14 +26,14 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 add_library(CommonDarcy STATIC ${DARCY_SRCS})
 
 add_executable(Darcy main_Darcy.C)
-target_link_libraries(Darcy CommonDarcy CommonIFEM ${IFEM_LIBRARIES})
+target_link_libraries(Darcy CommonDarcy IFEMAppCommon ${IFEM_LIBRARIES})
 
 # Installation
 install(TARGETS Darcy DESTINATION bin COMPONENT bin)
 
-enable_testing()
-
 # Regression tests
+enable_testing()
+include(IFEMTesting)
 if(IFEM_USE_PARALLEL_PETSC)
   # Add parallel tests here
 else()
@@ -57,7 +49,7 @@ list(APPEND TEST_APPS Darcy)
 IFEM_add_test_app(${PROJECT_SOURCE_DIR}/Test/*.C
                   ${PROJECT_SOURCE_DIR}/Test
                   Darcy
-                  CommonDarcy CommonIFEM ${IFEM_LIBRARIES})
+                  CommonDarcy IFEMAppCommon ${IFEM_LIBRARIES})
 
 if(IFEM_COMMON_APP_BUILD)
   set(TEST_APPS ${TEST_APPS} PARENT_SCOPE)
