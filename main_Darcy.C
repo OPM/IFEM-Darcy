@@ -16,7 +16,7 @@
 #include "SIM2D.h"
 #include "SIM3D.h"
 #include "SIMDarcy.h"
-#include "AdaptiveSIM.h"
+#include "SIMSolverAdap.h"
 #include "Utilities.h"
 #include "HDF5Writer.h"
 #include "XMLWriter.h"
@@ -24,62 +24,34 @@
 #include "TimeStep.h"
 
 
-template<class Dim>
-int runSimulator(char* infile, bool adaptive)
+template<class Dim, template<class T> class Solver>
+int runSimulator(char* infile)
 {
   SIMDarcy<Dim> darcy;
-
-  AdaptiveSIM* aSim=nullptr;
-  int res;
-  if (adaptive) {
-    aSim = new AdaptiveSIM(&darcy);
-    if (!aSim->read(infile))
-      return 1;
-    res = ConfigureSIM(darcy, infile, true);
-    aSim->setupProjections();
-    aSim->initAdaptor(0,2);
-  } else
-    res = ConfigureSIM(darcy, infile, false);
+  Solver<SIMDarcy<Dim>> solver(darcy);
+  int res = ConfigureSIM(darcy, infile, false);
 
   if (res)
     return res;
 
-  Vector sol;
-  if (adaptive)
-    darcy.setSol(&aSim->getSolution());
-
   // HDF5 output
-  DataExporter* exporter=nullptr;
+  std::unique_ptr<DataExporter> exporter;
 
-  if (adaptive) {
-    SIMSolver<AdaptiveSIM> solver(*aSim);
-    if (darcy.opt.dumpHDF5(infile)) {
-      exporter = SIM::handleDataOutput(darcy, solver, darcy.opt.hdf5,
-                                       false, 1, 1);
-      exporter->setNormPrefixes(aSim->getNormPrefixes());
-    }
-    res = solver.solveProblem(infile, exporter);
-  } else {
-    SIMSolver<SIMDarcy<Dim>> solver(darcy);
-    if (darcy.opt.dumpHDF5(infile))
-      exporter = SIM::handleDataOutput(darcy, solver, darcy.opt.hdf5,
-                                       false, 1, 1);
-    res = solver.solveProblem(infile, exporter);
-  }
+  if (darcy.opt.dumpHDF5(infile))
+    exporter.reset(SIM::handleDataOutput(darcy, solver,
+                                         darcy.opt.hdf5, false, 1, 1));
 
-  if (res == 0 && !adaptive) {
-    // Evaluate solution norms
-    Matrix eNorm;
-    Vectors gNorm;
-    darcy.setQuadratureRule(darcy.opt.nGauss[1]);
-    if (!darcy.solutionNorms(Vectors(1,darcy.getSolution()),Vectors(),eNorm,gNorm))
-      return 4;
+  return solver.solveProblem(infile, exporter.get());
+}
 
-    darcy.printNorms(gNorm);
-  }
 
-  delete exporter;
-  return res;
+template<class Dim>
+int runSimulator1(char* infile, bool adaptive)
+{
+  if (adaptive)
+    return runSimulator<Dim, SIMSolverAdap>(infile);
+
+  return runSimulator<Dim, SIMSolver>(infile);
 }
 
 
@@ -133,11 +105,11 @@ int main(int argc, char** argv)
   IFEM::cout << std::endl;
 
   if (ndim == 3)
-    return runSimulator<SIM3D>(infile,adaptive);
+    return runSimulator1<SIM3D>(infile,adaptive);
   else if (ndim == 2)
-    return runSimulator<SIM2D>(infile,adaptive);
+    return runSimulator1<SIM2D>(infile,adaptive);
   else
-    return runSimulator<SIM1D>(infile,adaptive);
+    return runSimulator1<SIM1D>(infile,adaptive);
 
   return 1;
 }

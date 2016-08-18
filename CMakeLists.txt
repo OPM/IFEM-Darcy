@@ -1,4 +1,4 @@
-project(Poisson)
+project(Darcy)
 
 cmake_minimum_required(VERSION 2.6)
 
@@ -37,11 +37,8 @@ include(IFEMTesting)
 if(IFEM_USE_PARALLEL_PETSC)
   # Add parallel tests here
 else()
-  file(GLOB DARCY_TESTFILES RELATIVE ${PROJECT_SOURCE_DIR}/Test
-                                     ${PROJECT_SOURCE_DIR}/Test/*.reg)
-  foreach(TESTFILE ${DARCY_TESTFILES})
-    ifem_add_test(${TESTFILE} Darcy)
-  endforeach()
+  ifem_add_test(Lshape_p2_b5.reg Darcy)
+  ifem_add_test(Wavefront_k10_p2_b20.reg Darcy)
 endif()
 list(APPEND TEST_APPS Darcy)
 

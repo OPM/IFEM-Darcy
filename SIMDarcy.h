@@ -215,7 +215,7 @@ public:
     if (!this->solveSystem(sol, Dim::msgLevel-1,"pressure    "))
       return false;
 
-    tp.step--;
+    this->printSummary();
     return true;
   }
 
@@ -265,6 +265,19 @@ protected:
           p->pcode = Property::UNDEFINED;
       }
     }
+  }
+
+  //! \brief Print norm summary output.
+  void printSummary()
+  {
+    // Evaluate solution norms
+    Matrix eNorm;
+    Vectors gNorm;
+    this->setQuadratureRule(this->opt.nGauss[1]);
+    if (!this->solutionNorms(Vectors(1,this->getSolution()),Vectors(),eNorm,gNorm))
+      return;
+
+    this->printNorms(gNorm);
   }
 
 private:
