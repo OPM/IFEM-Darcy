@@ -16,6 +16,7 @@
 
 #include "IntegrandBase.h"
 #include "ElmMats.h"
+#include "EqualOrderOperators.h"
 #include "Vec3.h"
 
 class DarcyNorm;
@@ -26,6 +27,7 @@ class DarcyNorm;
 class Darcy : public IntegrandBase
 {
 public:
+  using WeakOps = EqualOrderOperators::Weak; //!< Convenience rename
   //! \brief Default constructor.
   Darcy(unsigned short int n);
   //! \brief Empty destructor.

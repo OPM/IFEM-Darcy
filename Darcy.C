@@ -20,7 +20,6 @@
 #include "Vec3Oper.h"
 #include "VTF.h"
 #include "AnaSol.h"
-#include "WeakOperators.h"
 
 
 Darcy::Darcy(unsigned short int n) :
@@ -83,7 +82,7 @@ bool Darcy::evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
     // Evaluate the hydraulic conductivity matrix at this point
     Matrix K;
     this->formKmatrix(K,X);
-    WeakOperators::LaplacianCoeff(elMat.A.front(), K, fe, 1.0/(rhow*gacc));
+    WeakOps::LaplacianCoeff(elMat.A.front(), K, fe, 1.0/(rhow*gacc));
   }
 
   Vec3 b = bodyforce ? (*bodyforce)(X) : Vec3();
@@ -101,10 +100,10 @@ bool Darcy::evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
     eperm *= kf/gacc;
 
   // Integrate rhs contribution from body force
-  WeakOperators::Divergence(elMat.b[0], fe, eperm);
+  WeakOps::Divergence(elMat.b[0], fe, eperm);
 
   if (source)
-    WeakOperators::Source(elMat.b.front(), fe, (*source)(X));
+    WeakOps::Source(elMat.b.front(), fe, (*source)(X));
 
   return true;
 }
@@ -128,7 +127,7 @@ bool Darcy::evalBou(LocalIntegral& elmInt, const FiniteElement& fe,
 
   double qw = -this->getFlux(X,normal);
 
-  WeakOperators::Source(elMat.b.front(), fe, qw/rhow);
+  WeakOps::Source(elMat.b.front(), fe, qw/rhow);
 
   return true;
 }
