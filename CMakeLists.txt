@@ -34,7 +34,7 @@ install(TARGETS Darcy DESTINATION bin COMPONENT bin)
 # Regression tests
 enable_testing()
 include(IFEMTesting)
-if(IFEM_USE_PARALLEL_PETSC)
+if(MPI_FOUND)
   # Add parallel tests here
 else()
   ifem_add_test(Lshape_p2_b5.reg Darcy)
