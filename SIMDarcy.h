@@ -11,11 +11,11 @@
 //!
 //==============================================================================
 
-#ifndef SIMDARCY_H_
-#define SIMDARCY_H_
+#ifndef _SIM_DARCY_H_
+#define _SIM_DARCY_H_
 
+#include "IFEM.h"
 #include "Darcy.h"
-#include "ASMbase.h"
 #include "Functions.h"
 #include "Utilities.h"
 #include "tinyxml.h"
@@ -57,61 +57,54 @@ public:
     if (strcasecmp(elem->Value(),"darcy"))
       return this->Dim::parse(elem);
 
+    const char* value = nullptr;
     const TiXmlElement* child = elem->FirstChildElement();
-    for (; child; child = child->NextSiblingElement()) {
-      if (!strcasecmp(child->Value(),"permvalues")) {
-        const char* value = utl::getValue(child, "permvalues");
-        if (value) {
-          std::stringstream str;
-          str << value;
-          drc.setPermValues(new VecFuncExpr(value));
-        }
-      }
-      if (!strcasecmp(child->Value(),"permeability")){
-        std::string type;
-        utl::getAttribute(child, "type", type);
-        RealFunc* permeability = utl::parseRealFunc(utl::getValue(child, "permeability"), type);
-        std::cout << "permeability = " << permeability << std::endl;
-        drc.setPermField(permeability);
-      }
-      if (!strcasecmp(child->Value(),"bodyforce")) {
-        const char* value = utl::getValue(child, "bodyforce");
-        if (value) {
-          std::stringstream str;
-          str << value;
-          drc.setBodyForce(new VecFuncExpr(value));
-        }
-      }
-      if (!strcasecmp(child->Value(),"source")) {
+    for (; child; child = child->NextSiblingElement())
+
+      if ((value = utl::getValue(child,"permvalues")))
+        drc.setPermValues(new VecFuncExpr(value));
+      else if ((value = utl::getValue(child,"permeability"))) {
         std::string type;
         utl::getAttribute(child,"type",type);
+        IFEM::cout <<"\tPermeability";
+        drc.setPermField(utl::parseRealFunc(value,type));
+        IFEM::cout << std::endl;
+      }
+      else if ((value = utl::getValue(child,"bodyforce")))
+        drc.setBodyForce(new VecFuncExpr(value));
+      else if (!strcasecmp(child->Value(),"source")) {
+        std::string type;
+        utl::getAttribute(child,"type",type);
+        IFEM::cout <<"\tSource function: ";
         if (type == "Wavefront") {
-          std::cout << "Source function: Wavefront" << std::endl;
+          IFEM::cout << "Wavefront"<< std::endl;
           drc.setSource(new WavefrontSource());
         }
         else if (type == "expression" && child->FirstChild()) {
-          std::cout << "Source function: " << child->FirstChild()->Value() << std::endl;
+          IFEM::cout << child->FirstChild()->Value() << std::endl;
           drc.setSource(new EvalFunction(child->FirstChild()->Value()));
         }
+        else
+          IFEM::cout <<"(none)"<< std::endl;
       }
       else if (!strcasecmp(child->Value(),"anasol")) {
-
         std::string type;
         utl::getAttribute(child,"type",type);
         if (type == "Lshape") {
-          this->mySol = new AnaSol(new LshapeDarcy(), new LshapeDarcyVelocity());
-          std::cout << "Anasol: Lshape" << std::endl;
+          Dim::mySol = new AnaSol(new LshapeDarcy(), new LshapeDarcyVelocity());
+          IFEM::cout <<"\tAnalytical solution: Lshape"<< std::endl;
         }
         else if (type == "Wavefront") {
-          this->mySol = new AnaSol(new Wavefront(), new WavefrontVelocity());
-          std::cout << "Anasol: Wavefront" << std::endl;
-        } else {
-          this->mySol = new AnaSol(child);
-          std::cout << "Anasol: expression" << std::endl;
+          Dim::mySol = new AnaSol(new Wavefront(), new WavefrontVelocity());
+          IFEM::cout <<"\tAnalytical solution: Wavefront"<< std::endl;
+        }
+        else {
+          Dim::mySol = new AnaSol(child);
+          std::cout <<"\tAnalytical solution: expression"<< std::endl;
         }
         // Define the analytical boundary traction field
         int code = 0;
-        if (code == 0 && utl::getAttribute(child,"code",code)) {
+        if (utl::getAttribute(child,"code",code) && code > 0) {
           if (code > 0 && Dim::mySol->getScalarSecSol())
           {
             this->setPropertyType(code,Property::NEUMANN);
@@ -122,7 +115,7 @@ public:
       }
       else
         this->Dim::parse(child);
-    }
+
     return true;
   }
 
@@ -159,10 +152,7 @@ public:
   }
 
   //! \brief Returns the name of this simulator (for use in the HDF5 export).
-  virtual std::string getName() const
-  {
-    return "DarcyFlow";
-  }
+  virtual std::string getName() const { return "DarcyFlow"; }
 
   //! \brief Set solution vector used.
   //! \details Used to supply an external solution vector for adaptive simulations.
@@ -201,9 +191,10 @@ public:
       return true;
 
     // Write solution fields
-    bool result = this->writeGlvS(*solVec, 1, nBlock, 0.0, 0);
+    if (!this->writeGlvS(*solVec,1,nBlock,0.0,0))
+      return false;
 
-    return result && this->writeGlvStep(1, 0.0, 1);
+    return this->writeGlvStep(1,0.0,1);
   }
 
   //! \brief Computes the solution for the current time step.
@@ -220,7 +211,7 @@ public:
   }
 
   //! \brief Advances the time step one step forward.
-  bool advanceStep(TimeStep& tp) { return true; }
+  bool advanceStep(TimeStep&) { return true; }
 
 protected:
   //! \brief Performs some pre-processing tasks on the FE model.
@@ -233,7 +224,6 @@ protected:
     // Define analytical boundary condition fields
     PropertyVec::iterator p;
     for (p = Dim::myProps.begin(); p != Dim::myProps.end(); ++p)
-    {
       if (p->pcode == Property::DIRICHLET_ANASOL)
       {
         if (!Dim::mySol->getScalarSol())
@@ -264,7 +254,6 @@ protected:
         else
           p->pcode = Property::UNDEFINED;
       }
-    }
   }
 
   //! \brief Print norm summary output.
@@ -273,7 +262,7 @@ protected:
     // Evaluate solution norms
     Matrix eNorm;
     Vectors gNorm;
-    this->setQuadratureRule(this->opt.nGauss[1]);
+    this->setQuadratureRule(Dim::opt.nGauss[1]);
     if (!this->solutionNorms(Vectors(1,this->getSolution()),Vectors(),eNorm,gNorm))
       return;
 
@@ -291,28 +280,25 @@ private:
 //! \brief Partial specialization for configurator
 template<class Dim>
 struct SolverConfigurator< SIMDarcy<Dim> > {
-  int setup(SIMDarcy<Dim>& darcy,
-            const typename SIMDarcy<Dim>::SetupProps& props,
-            char* infile)
+  int setup(SIMDarcy<Dim>& darcy, const bool&, char* infile)
   {
     utl::profiler->start("Model input");
 
     // Read input file
-    if (!props && !darcy.read(infile))
+    if (!darcy.read(infile))
       return 1;
 
     // Configure finite element library
-    if(!darcy.preprocess())
+    if (!darcy.preprocess())
       return 2;
 
     // Setup integration
     darcy.setQuadratureRule(darcy.opt.nGauss[0],true);
-    darcy.initSystem(darcy.opt.solver,1,1);
-    darcy.setAssociatedRHS(0,0);
+    darcy.initSystem(darcy.opt.solver,1,1,0,true);
     darcy.setMode(SIM::DYNAMIC);
 
     return 0;
   }
 };
 
-#endif /* SIMDARCY_H_ */
+#endif
