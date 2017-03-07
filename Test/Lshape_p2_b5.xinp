@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <simulation>
   <!-- General - geometry definitions !-->
-  <geometry>
+  <geometry dim="2">
     <patchfile>Lshape.g2</patchfile>
     <raiseorder patch="1" u="1" v="1"/>
     <refine patch="1" u="3" v="3"/>

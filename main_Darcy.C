@@ -22,6 +22,7 @@
 #include "XMLWriter.h"
 #include "AppCommon.h"
 #include "TimeStep.h"
+#include "DarcyArgs.h"
 
 
 template<class Dim, template<class T> class Solver>
@@ -61,24 +62,28 @@ int main(int argc, char** argv)
   utl::profiler->start("Initialization");
 
   int  i;
-  char ndim = 3;
   char* infile = 0;
-  bool adaptive = false;
+  DarcyArgs args;
 
-  IFEM::Init(argc,argv);
+  IFEM::Init(argc,argv,"Darcy solver");
 
+int ignoreArg = -1;
   for (i = 1; i < argc; i++)
-    if (SIMoptions::ignoreOldOptions(argc,argv,i))
+    if (i == ignoreArg || SIMoptions::ignoreOldOptions(argc,argv,i))
       ; // ignore the obsolete option
     else if (!strcmp(argv[i],"-2D"))
-      ndim = 2;
+      args.dim = 2;
     else if (!strcmp(argv[i],"-1D"))
-      ndim = 1;
+      args.dim = 1;
     else if (!strcmp(argv[i],"-adap"))
-      adaptive = true;
-    else if (!infile)
+      args.adap = true;
+    else if (!infile) {
       infile = argv[i];
-    else
+      ignoreArg = i;
+      if (!args.readXML(infile,false))
+        return 1;
+      i = 0;
+    } else
       std::cerr <<"  ** Unknown option ignored: "<< argv[i] << std::endl;
 
   if (!infile)
@@ -93,23 +98,19 @@ int main(int argc, char** argv)
     return 0;
   }
 
-  if (adaptive)
+  if (args.adap)
     IFEM::getOptions().discretization = ASM::LRSpline;
 
-  IFEM::cout <<"\n >>> IFEM Darcy equation solver <<<"
-             <<"\n ====================================\n"
-             <<"\n Executing command:\n";
-  for (i = 0; i < argc; i++) IFEM::cout <<" "<< argv[i];
   IFEM::cout <<"\n\nInput file: "<< infile;
   IFEM::getOptions().print(IFEM::cout);
   IFEM::cout << std::endl;
 
-  if (ndim == 3)
-    return runSimulator1<SIM3D>(infile,adaptive);
-  else if (ndim == 2)
-    return runSimulator1<SIM2D>(infile,adaptive);
+  if (args.dim == 3)
+    return runSimulator1<SIM3D>(infile,args.adap);
+  else if (args.dim == 2)
+    return runSimulator1<SIM2D>(infile,args.adap);
   else
-    return runSimulator1<SIM1D>(infile,adaptive);
+    return runSimulator1<SIM1D>(infile,args.adap);
 
   return 1;
 }
