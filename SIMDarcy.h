@@ -194,6 +194,13 @@ public:
     if (!this->writeGlvS(*solVec,1,nBlock,0.0,0))
       return false;
 
+    if (!solVec->empty()) {
+      Matrix tmp;
+      if (!this->project(tmp, *solVec))
+        return false;
+      this->writeGlvV(tmp, "velocity", tp.step, nBlock, 110, this->nsd);
+    }
+
     return this->writeGlvStep(1,0.0,1);
   }
 
