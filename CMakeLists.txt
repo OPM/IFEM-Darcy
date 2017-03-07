@@ -17,6 +17,7 @@ endif()
 configure_file(${IFEM_REGTEST_SCRIPT} regtest.sh)
 
 set(DARCY_SRCS Darcy.C
+               DarcyArgs.C
                DarcySolutions.C)
 
 include_directories(${IFEM_INCLUDES} ${PROJECT_SOURCE_DIR} ../Common)
