@@ -42,7 +42,7 @@ int runSimulator(char* infile)
     exporter.reset(SIM::handleDataOutput(darcy, solver,
                                          darcy.opt.hdf5, false, 1, 1));
 
-  return solver.solveProblem(infile, exporter.get());
+  return solver.solveProblem(infile, exporter.get(), "Solving Darcy problem", false);
 }
 
 
