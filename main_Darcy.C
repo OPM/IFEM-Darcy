@@ -17,11 +17,6 @@
 #include "SIM3D.h"
 #include "SIMDarcy.h"
 #include "SIMSolverAdap.h"
-#include "Utilities.h"
-#include "HDF5Writer.h"
-#include "XMLWriter.h"
-#include "AppCommon.h"
-#include "TimeStep.h"
 #include "DarcyArgs.h"
 
 
@@ -35,13 +30,10 @@ int runSimulator(char* infile)
   if (res)
     return res;
 
-  // HDF5 output
-  std::unique_ptr<DataExporter> exporter;
-
   if (darcy.opt.dumpHDF5(infile))
-    exporter.reset(SIM::handleDataOutput(darcy, solver, darcy.opt.hdf5));
+    solver.handleDataOutput(darcy.opt.hdf5);
 
-  return solver.solveProblem(infile, exporter.get(), "Solving Darcy problem", false);
+  return solver.solveProblem(infile,"Solving Darcy problem",false);
 }
 
 
@@ -60,14 +52,13 @@ int main(int argc, char** argv)
   Profiler prof(argv[0]);
   utl::profiler->start("Initialization");
 
-  int  i;
-  char* infile = 0;
+  char* infile = nullptr;
   DarcyArgs args;
 
   IFEM::Init(argc,argv,"Darcy solver");
 
-int ignoreArg = -1;
-  for (i = 1; i < argc; i++)
+  int ignoreArg = -1;
+  for (int i = 1; i < argc; i++)
     if (i == ignoreArg || SIMoptions::ignoreOldOptions(argc,argv,i))
       ; // ignore the obsolete option
     else if (!strcmp(argv[i],"-2D"))
@@ -93,16 +84,16 @@ int ignoreArg = -1;
               <<"\n       [-vtf <format> [-nviz <nviz>]"
               <<" [-nu <nu>] [-nv <nv>] [-nw <nw>]] [-hdf5]\n"
               <<"       [-eig <iop> [-nev <nev>] [-ncv <ncv] [-shift <shf>]]\n"
-              <<"       [-ignore <p1> <p2> ...] [-fixDup]" << std::endl;
+              <<"       [-ignore <p1> <p2> ...] [-fixDup]\n";
     return 0;
   }
 
   if (args.adap)
     IFEM::getOptions().discretization = ASM::LRSpline;
 
-  IFEM::cout <<"\n\nInput file: "<< infile;
-  IFEM::getOptions().print(IFEM::cout);
-  IFEM::cout << std::endl;
+  IFEM::cout <<"\nInput file: "<< infile;
+  IFEM::getOptions().print(IFEM::cout) << std::endl;
+  utl::profiler->stop("Initialization");
 
   if (args.dim == 3)
     return runSimulator1<SIM3D>(infile,args.adap);
