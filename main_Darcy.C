@@ -39,8 +39,7 @@ int runSimulator(char* infile)
   std::unique_ptr<DataExporter> exporter;
 
   if (darcy.opt.dumpHDF5(infile))
-    exporter.reset(SIM::handleDataOutput(darcy, solver,
-                                         darcy.opt.hdf5, false, 1, 1));
+    exporter.reset(SIM::handleDataOutput(darcy, solver, darcy.opt.hdf5));
 
   return solver.solveProblem(infile, exporter.get(), "Solving Darcy problem", false);
 }
