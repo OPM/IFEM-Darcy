@@ -18,6 +18,7 @@
 #include "SIMDarcy.h"
 #include "SIMSolverAdap.h"
 #include "DarcyArgs.h"
+#include "Profiler.h"
 
 
 template<class Dim, template<class T> class Solver>
@@ -25,15 +26,21 @@ int runSimulator(char* infile)
 {
   SIMDarcy<Dim> darcy;
   Solver<SIMDarcy<Dim>> solver(darcy);
-  int res = ConfigureSIM(darcy, infile, false);
 
-  if (res)
-    return res;
+  utl::profiler->start("Model input");
+
+  if (!darcy.read(infile) || !solver.read(infile))
+    return 1;
+
+  utl::profiler->stop("Model input");
+
+  if (!darcy.preprocess())
+    return 2;
 
   if (darcy.opt.dumpHDF5(infile))
     solver.handleDataOutput(darcy.opt.hdf5);
 
-  return solver.solveProblem(infile,"Solving Darcy problem",false);
+  return solver.solveProblem(infile,"Solving Darcy problem");
 }
 
 
@@ -43,7 +50,7 @@ int runSimulator1(char* infile, bool adaptive)
   if (adaptive)
     return runSimulator<Dim, SIMSolverAdap>(infile);
 
-  return runSimulator<Dim, SIMSolver>(infile);
+  return runSimulator<Dim, SIMSolverStat>(infile);
 }
 
 

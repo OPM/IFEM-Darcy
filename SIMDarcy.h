@@ -22,18 +22,17 @@
 #include "ExprFunctions.h"
 #include "Utilities.h"
 #include "tinyxml.h"
-#include "Profiler.h"
 #include "Property.h"
 #include "DataExporter.h"
-#include "SIMSolver.h"
 
+
+/*!
+  \brief Driver class for isogeometric FE analysis of Darcy flow problems.
+*/
 
 template<class Dim> class SIMDarcy : public Dim
 {
 public:
-  //! \brief Dummy declaration, no setup properties needed
-  typedef bool SetupProps;
-
   //! \brief Default constructor.
   SIMDarcy() : Dim(1), drc(Dim::dimension), solVec(&sol)
   {
@@ -207,6 +206,12 @@ public:
   //! \brief Computes the solution for the current time step.
   bool solveStep(TimeStep&)
   {
+    if (!this->setMode(SIM::DYNAMIC))
+      return false;
+
+    this->initSystem(Dim::opt.solver,1,1,0,true);
+    this->setQuadratureRule(Dim::opt.nGauss[0],true);
+
     if (!this->assembleSystem())
       return false;
 
@@ -216,9 +221,6 @@ public:
     this->printSummary();
     return true;
   }
-
-  //! \brief Advances the time step one step forward.
-  bool advanceStep(TimeStep&) { return true; }
 
 protected:
   //! \brief Performs some pre-processing tasks on the FE model.
@@ -279,31 +281,6 @@ private:
   const Vector* solVec; //!< Pointer to solution vector.
   Vector sol;           //!< Internal solution vector.
   int aCode[2];         //!< Analytical BC code (used by destructor)
-};
-
-
-//! \brief Partial specialization for configurator
-template<class Dim>
-struct SolverConfigurator< SIMDarcy<Dim> > {
-  int setup(SIMDarcy<Dim>& darcy, const bool&, char* infile)
-  {
-    utl::profiler->start("Model input");
-
-    // Read input file
-    if (!darcy.read(infile))
-      return 1;
-
-    // Configure finite element library
-    if (!darcy.preprocess())
-      return 2;
-
-    // Setup integration
-    darcy.setQuadratureRule(darcy.opt.nGauss[0],true);
-    darcy.initSystem(darcy.opt.solver,1,1,0,true);
-    darcy.setMode(SIM::DYNAMIC);
-
-    return 0;
-  }
 };
 
 #endif
