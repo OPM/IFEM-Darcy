@@ -61,17 +61,20 @@ public:
   //! \brief Evaluates the potential source (if any) at specified point.
   double getPotential(const Vec3& X) const;
 
+  using IntegrandBase::getLocalIntegral;
   //! \brief Returns a local integral contribution object for given element.
   //! \param[in] nen Number of nodes on element
   virtual LocalIntegral* getLocalIntegral(size_t nen, size_t,
                                           bool neumann) const;
 
+  using IntegrandBase::evalInt;
   //! \brief Returns a local integral container for the given element.
   //! \param[in] nen Number of nodes on element
   //! \param[in] neumann Whether or not we are assembling Neumann BC's
   virtual bool evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
                        const Vec3& X) const;
 
+  using IntegrandBase::evalBou;
   //! \brief Evaluates the integrand at a boundary point.
   //! \param elmInt The local integral object to receive the contributions
   //! \param[in] fe Finite element data of current integration point
@@ -153,6 +156,7 @@ public:
   //! \brief Empty destructor.
   virtual ~DarcyNorm() {}
 
+  using NormBase::evalInt;
   //! \brief Evaluates the integrand at an interior point.
   //! \param elmInt The local integral object to receive the contributions
   //! \param[in] fe Finite element data of current integration point
@@ -160,6 +164,7 @@ public:
   virtual bool evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
                        const Vec3& X) const;
 
+  using NormBase::evalBou;
   //! \brief Evaluates the integrand at a boundary point.
   //! \param elmInt The local integral object to receive the contributions
   //! \param[in] fe Finite Element quantities
@@ -168,6 +173,7 @@ public:
   virtual bool evalBou(LocalIntegral& elmInt,  const FiniteElement& fe,
                        const Vec3& X, const Vec3& normal) const;
 
+  using NormBase::finalizeElement;
   //! \brief Finalizes the element norms after the numerical integration.
   //! \details This method is used to compute effectivity indices.
   //! \param elmInt The local integral object to receive the contributions

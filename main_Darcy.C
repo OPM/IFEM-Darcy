@@ -110,6 +110,4 @@ int ignoreArg = -1;
     return runSimulator1<SIM2D>(infile,args.adap);
   else
     return runSimulator1<SIM1D>(infile,args.adap);
-
-  return 1;
 }
