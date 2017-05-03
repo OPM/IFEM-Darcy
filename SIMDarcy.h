@@ -51,6 +51,7 @@ public:
     if (aCode[1] > 0) Dim::myVectors.erase(aCode[1]);
   }
 
+  using Dim::parse;
   //! \brief Parses a data section from an XML element.
   virtual bool parse(const TiXmlElement* elem)
   {
