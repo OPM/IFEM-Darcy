@@ -17,6 +17,7 @@
 #include "IFEM.h"
 #include "Darcy.h"
 #include "Functions.h"
+#include "ExprFunctions.h"
 #include "Utilities.h"
 #include "tinyxml.h"
 #include "TimeStep.h"
