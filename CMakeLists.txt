@@ -13,9 +13,6 @@ if(NOT IFEM_CONFIGURED)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${IFEM_CXX_FLAGS}")
 endif()
 
-# Generate regtest script with correct paths
-configure_file(${IFEM_REGTEST_SCRIPT} regtest.sh)
-
 set(DARCY_SRCS Darcy.C
                DarcyArgs.C
                DarcySolutions.C)
@@ -28,6 +25,7 @@ add_library(CommonDarcy STATIC ${DARCY_SRCS})
 
 add_executable(Darcy main_Darcy.C)
 target_link_libraries(Darcy CommonDarcy IFEMAppCommon ${IFEM_LIBRARIES})
+list(APPEND CHECK_SOURCES ${DARCY_SRCS} main_Darcy.C)
 
 # Installation
 install(TARGETS Darcy DESTINATION bin COMPONENT bin)
