@@ -32,7 +32,7 @@ class Darcy : public IntegrandBase
 public:
   using WeakOps = EqualOrderOperators::Weak; //!< Convenience rename
   //! \brief Default constructor.
-  Darcy(unsigned short int n);
+  explicit Darcy(unsigned short int n);
   //! \brief Empty destructor.
   virtual ~Darcy() {}
 
