@@ -16,16 +16,15 @@
 
 #include "IFEM.h"
 #include "Darcy.h"
+#include "DarcySolutions.h"
+#include "AnaSol.h"
 #include "Functions.h"
 #include "ExprFunctions.h"
 #include "Utilities.h"
 #include "tinyxml.h"
-#include "TimeStep.h"
 #include "Profiler.h"
 #include "Property.h"
 #include "DataExporter.h"
-#include "AnaSol.h"
-#include "DarcySolutions.h"
 #include "SIMSolver.h"
 
 
@@ -185,9 +184,8 @@ public:
   }
 
   //! \brief Saves the converged results to VTF file of a given time step.
-  //! \param[in] tp Time step identifier
   //! \param[in] nBlock Running VTF block counter
-  bool saveStep(const TimeStep& tp, int& nBlock)
+  bool saveStep(const TimeStep&, int& nBlock)
   {
     if (Dim::opt.format < 0)
       return true;
@@ -200,14 +198,14 @@ public:
       Matrix tmp;
       if (!this->project(tmp, *solVec))
         return false;
-      this->writeGlvV(tmp, "velocity", tp.step, nBlock, 110, this->nsd);
+      this->writeGlvV(tmp,"velocity",1,nBlock,110,Dim::nsd);
     }
 
     return this->writeGlvStep(1,0.0,1);
   }
 
   //! \brief Computes the solution for the current time step.
-  bool solveStep(TimeStep& tp)
+  bool solveStep(TimeStep&)
   {
     if (!this->assembleSystem())
       return false;
@@ -272,10 +270,8 @@ protected:
     Matrix eNorm;
     Vectors gNorm;
     this->setQuadratureRule(Dim::opt.nGauss[1]);
-    if (!this->solutionNorms(Vectors(1,this->getSolution()),Vectors(),eNorm,gNorm))
-      return;
-
-    this->printNorms(gNorm);
+    if (this->solutionNorms(this->getSolution(),eNorm,gNorm))
+      this->printNorms(gNorm);
   }
 
 private:
