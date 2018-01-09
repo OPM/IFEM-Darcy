@@ -17,7 +17,7 @@
 #include "SIM3D.h"
 #include "SIMDarcy.h"
 #include "SIMSolverAdap.h"
-#include "DarcyArgs.h"
+#include "SIMargsBase.h"
 #include "Profiler.h"
 
 
@@ -54,44 +54,36 @@ int runSimulator1(char* infile, bool adaptive)
 }
 
 
-int main(int argc, char** argv)
+int main (int argc, char** argv)
 {
   Profiler prof(argv[0]);
   utl::profiler->start("Initialization");
 
   char* infile = nullptr;
-  DarcyArgs args;
+  SIMargsBase args("darcy");
 
   IFEM::Init(argc,argv,"Darcy solver");
-
-  int ignoreArg = -1;
   for (int i = 1; i < argc; i++)
-    if (i == ignoreArg || SIMoptions::ignoreOldOptions(argc,argv,i))
+    if (argv[i] == infile || args.parseArg(argv[i]))
+      ; // ignore the input file on the second pass
+    else if (SIMoptions::ignoreOldOptions(argc,argv,i))
       ; // ignore the obsolete option
-    else if (!strcmp(argv[i],"-2D"))
-      args.dim = 2;
-    else if (!strcmp(argv[i],"-1D"))
-      args.dim = 1;
-    else if (!strcmp(argv[i],"-adap"))
-      args.adap = true;
     else if (!infile) {
       infile = argv[i];
-      ignoreArg = i;
       if (!args.readXML(infile,false))
         return 1;
       i = 0;
-    } else
+    }
+    else
       std::cerr <<"  ** Unknown option ignored: "<< argv[i] << std::endl;
 
   if (!infile)
   {
     std::cout <<"usage: "<< argv[0]
-              <<" <inputfile> [-dense|-spr|-superlu[<nt>]|-samg|-petsc]\n      "
-              <<" [-free] [-lag|-spec|-LR] [-1D|-2D] [-nGauss <n>]"
-              <<"\n       [-vtf <format> [-nviz <nviz>]"
-              <<" [-nu <nu>] [-nv <nv>] [-nw <nw>]] [-hdf5]\n"
-              <<"       [-eig <iop> [-nev <nev>] [-ncv <ncv] [-shift <shf>]]\n"
-              <<"       [-ignore <p1> <p2> ...] [-fixDup]\n";
+              <<" <inputfile> [-dense|-spr|-superlu[<nt>]|-samg|-petsc]\n"
+              <<"       [-lag|-spec|-LR] [-1D|-2D] [-nGauss <n>] [-hdf5]\n"
+              <<"       [-vtf <format> [-nviz <nviz>] [-nu <nu>] [-nv <nv>]"
+              <<" [-nw <nw>]]\n";
     return 0;
   }
 
