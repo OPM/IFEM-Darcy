@@ -13,13 +13,14 @@
 
 #include "Darcy.h"
 #include "FiniteElement.h"
-#include "Utilities.h"
 #include "ElmMats.h"
 #include "ElmNorm.h"
 #include "Tensor.h"
 #include "Vec3Oper.h"
 #include "VTF.h"
 #include "AnaSol.h"
+#include "Function.h"
+#include "Utilities.h"
 
 
 Darcy::Darcy(unsigned short int n) :

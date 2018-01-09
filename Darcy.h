@@ -20,6 +20,9 @@
 #include "Vec3.h"
 
 class DarcyNorm;
+class RealFunc;
+class VecFunc;
+
 
 /*!
  *  \brief Class representing the integrand of the Darcy problem.

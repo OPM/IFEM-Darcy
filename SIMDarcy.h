@@ -190,14 +190,16 @@ public:
       return true;
 
     // Write solution fields
-    if (!this->writeGlvS(*solVec,1,nBlock,0.0,0))
+    if (!this->writeGlvS(*solVec,1,nBlock))
       return false;
 
     if (!solVec->empty()) {
       Matrix tmp;
-      if (!this->project(tmp, *solVec))
+      if (!this->project(tmp,*solVec))
         return false;
-      this->writeGlvV(tmp,"velocity",1,nBlock,110,Dim::nsd);
+
+      if (!this->writeGlvV(tmp,"velocity",1,nBlock,110,Dim::nsd))
+        return false;
     }
 
     return this->writeGlvStep(1,0.0,1);
