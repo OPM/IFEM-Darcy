@@ -54,9 +54,10 @@ public:
   //! \brief Defines the source function.
   void setSource(RealFunc* src) { source = src; }
 
-  //! \brief Defines the flux function.
+  //! \brief Defines a scalar flux function.
   void setFlux(RealFunc* f) { flux = f; }
 
+  //! \brief Defines a vectorial flux function.
   void setFlux(VecFunc* vf) { vflux = vf; }
 
   //! \brief Evaluates the boundary fluid flux (if any) at specified point.
@@ -67,13 +68,15 @@ public:
   using IntegrandBase::getLocalIntegral;
   //! \brief Returns a local integral contribution object for given element.
   //! \param[in] nen Number of nodes on element
+  //! \param[in] neumann Whether or not we are assembling Neumann BCs
   virtual LocalIntegral* getLocalIntegral(size_t nen, size_t,
                                           bool neumann) const;
 
   using IntegrandBase::evalInt;
-  //! \brief Returns a local integral container for the given element.
-  //! \param[in] nen Number of nodes on element
-  //! \param[in] neumann Whether or not we are assembling Neumann BC's
+  //! \brief Evaluates the integrand at an interior point.
+  //! \param elmInt The local integral object to receive the contributions
+  //! \param[in] fe Finite element data of current integration point
+  //! \param[in] X Cartesian coordinates of current integration point
   virtual bool evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
                        const Vec3& X) const;
 
@@ -89,7 +92,7 @@ public:
   //! \brief Sets up the permeability matrix
   //! \param[out] K \f$ nsd\times nsd\f$-matrix or its inverse
   //! \param[in] X Cartesian coordinates of current point
-  //! \param[in] invers If \e true, set up the inverse matrix instead
+  //! \param[in] inverse If \e true, set up the inverse matrix instead
   virtual bool formKmatrix(Matrix& K, const Vec3& X, bool inverse = false) const;
 
   using IntegrandBase::evalSol;
