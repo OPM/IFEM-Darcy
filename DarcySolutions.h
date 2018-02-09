@@ -16,6 +16,10 @@
 
 #include "Function.h"
 
+/*!
+ \brief Primary solution for Darcy problem on a L-shape domain.
+*/
+
 class LshapeDarcy : public RealFunc
 {
   public:
@@ -28,6 +32,11 @@ class LshapeDarcy : public RealFunc
     //! \brief Evaluates the analytic pressure field at the point \a X.
     virtual double evaluate(const Vec3& X) const;
 };
+
+
+/*!
+ \brief Secondary solution for Darcy problem on a L-shape domain.
+*/
 
 class LshapeDarcyVelocity : public VecFunc
 {
@@ -42,6 +51,10 @@ class LshapeDarcyVelocity : public VecFunc
     virtual Vec3 evaluate(const Vec3& X) const;
 };
 
+/*!
+ \brief Primary solution for a wavefront Darcy problem.
+*/
+
 class Wavefront : public RealFunc
 {
   public:
@@ -54,6 +67,11 @@ class Wavefront : public RealFunc
     virtual double evaluate(const Vec3& X) const;
 };
 
+
+/*!
+ \brief Secondary solution for a wavefront Darcy problem.
+*/
+
 class WavefrontVelocity : public VecFunc
 {
   public:
@@ -65,6 +83,11 @@ class WavefrontVelocity : public VecFunc
     //! \brief Evaluates the analytical pressure field at the point \a X.
     virtual Vec3 evaluate(const Vec3& X) const;
 };
+
+
+/*!
+ \brief Source function for a wavefront Darcy problem.
+*/
 
 class WavefrontSource : public RealFunc
 {
