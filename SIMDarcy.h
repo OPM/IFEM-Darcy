@@ -57,10 +57,9 @@ public:
     if (strcasecmp(elem->Value(),"darcy"))
       return this->Dim::parse(elem);
 
-    const char* value = nullptr;
     const TiXmlElement* child = elem->FirstChildElement();
-    for (; child; child = child->NextSiblingElement())
-
+    for (; child; child = child->NextSiblingElement()) {
+      const char* value = nullptr;
       if ((value = utl::getValue(child,"permvalues")))
         drc.setPermValues(new VecFuncExpr(value));
       else if ((value = utl::getValue(child,"permeability"))) {
@@ -115,6 +114,7 @@ public:
       }
       else
         this->Dim::parse(child);
+    }
 
     return true;
   }
