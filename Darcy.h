@@ -11,54 +11,49 @@
 //!
 //==============================================================================
 
-#ifndef DARCY_H_
-#define DARCY_H_
+#ifndef _DARCY_H_
+#define _DARCY_H_
 
 #include "IntegrandBase.h"
-#include "ElmMats.h"
 #include "EqualOrderOperators.h"
-#include "Vec3.h"
 
-class DarcyNorm;
 class RealFunc;
 class VecFunc;
 
 
 /*!
- *  \brief Class representing the integrand of the Darcy problem.
- */
+  \brief Class representing the integrand of the Darcy problem.
+*/
+
 class Darcy : public IntegrandBase
 {
+  using WeakOps = EqualOrderOperators::Weak; //!< Convenience renaming
+
 public:
-  using WeakOps = EqualOrderOperators::Weak; //!< Convenience rename
   //! \brief Default constructor.
   explicit Darcy(unsigned short int n);
   //! \brief Empty destructor.
   virtual ~Darcy() {}
 
-  //! \brief Set permeability function.
-  void setPermValues(VecFunc* permv) { permvalues = permv; }
-
-  //! \brief Returns permeability in a point
+  //! \brief Sets the permeability function.
+  void setPermValues(VecFunc* perm) { permvalues = perm; }
+  //! \brief Sets the permeability scalar field function.
+  void setPermField(RealFunc* perm) { permeability = perm; }
+  //! \brief Returns the permeability at a given point.
   Vec3 getPermeability(const Vec3& X) const;
 
-  //! \brief Set permeability field.
-  void setPermField(RealFunc* permf) { permeability = permf; }
-
-  //! \brief Set body force vector.
-  void setBodyForce(VecFunc* body) { bodyforce = body; }
-
-  //! \brief Returns body forces in a point
+  //! \brief Defines the body force vector.
+  void setBodyForce(VecFunc* b) { bodyforce = b; }
+  //! \brief Returns the body force vector at a given point.
   Vec3 getBodyForce(const Vec3& X) const;
 
   //! \brief Defines the source function.
-  void setSource(RealFunc* src) { source = src; }
+  void setSource(RealFunc* s) { source = s; }
 
   //! \brief Defines a scalar flux function.
   void setFlux(RealFunc* f) { flux = f; }
-
   //! \brief Defines a vectorial flux function.
-  void setFlux(VecFunc* vf) { vflux = vf; }
+  void setFlux(VecFunc* f) { vflux = f; }
 
   //! \brief Evaluates the boundary fluid flux (if any) at specified point.
   double getFlux(const Vec3& X, const Vec3& normal) const;
@@ -90,10 +85,10 @@ public:
                        const Vec3& X, const Vec3& normal) const;
 
   //! \brief Sets up the permeability matrix
-  //! \param[out] K \f$ nsd\times nsd\f$-matrix or its inverse
+  //! \param[out] K \f$ n_{sd}\times n_{sd}\f$-matrix or its inverse
   //! \param[in] X Cartesian coordinates of current point
   //! \param[in] inverse If \e true, set up the inverse matrix instead
-  virtual bool formKmatrix(Matrix& K, const Vec3& X, bool inverse = false) const;
+  bool formKmatrix(Matrix& K, const Vec3& X, bool inverse = false) const;
 
   using IntegrandBase::evalSol;
   //! \brief Evaluated the secondary solution at a result point
@@ -114,16 +109,16 @@ public:
 
   //! \brief Returns the number of primary/secondary solution field components.
   //! \param[in] fld which field set to consider (1=primary, 2=secondary)
-  virtual size_t getNoFields(int fld = 2) const { return fld > 1 ? nsd : 1; }
+  virtual size_t getNoFields(int fld) const { return fld > 1 ? nsd : 1; }
 
   //! \brief Returns the name of the primary solution field.
   //! \param[in] prefix Name prefix
-  virtual std::string getField1Name(size_t, const char* prefix = 0) const;
+  virtual std::string getField1Name(size_t, const char* prefix) const;
 
   //! \brief Returns the name of a secondary solution field component
   //! \param[in] i Field component index
   //! \param[in] prefix Name prefix for all components
-  virtual std::string getField2Name(size_t i, const char* prefix = 0) const;
+  virtual std::string getField2Name(size_t i, const char* prefix) const;
 
   //! \brief Returns a pointer to an Integrand for solution norm evaluation.
   //! \note The Integrand object is allocated dynamically and has to be deleted
@@ -133,24 +128,22 @@ public:
   virtual NormBase* getNormIntegrand(AnaSol* asol = 0) const;
 
 private:
-  VecFunc* permvalues;    //!< Permeability function.
-  RealFunc* permeability; //!< Permeability field function.
-
-protected:
-  RealFunc* flux;         //!< Flux function.
-  RealFunc* source;       //!< Source function.
-  VecFunc* vflux;         //!< Flux function.
+  VecFunc*  bodyforce;    //!< Body force function
+  VecFunc*  permvalues;   //!< Permeability function
+  RealFunc* permeability; //!< Permeability field function
+  VecFunc*  vflux;        //!< Flux function
+  RealFunc* flux;         //!< Flux function
+  RealFunc* source;       //!< Source function
 
 public:
-  const double rhow;      //!< Density of fluid.
-  const double gacc;      //!< Gravity acceleration.
-  VecFunc* bodyforce;     //!< Body force function.
+  const double rhow; //!< Density of fluid
+  const double gacc; //!< Gravity acceleration
 };
 
 
 /*!
- *   \brief Class representing the integrand of Darcy energy norms.
- */
+  \brief Class representing the integrand of Darcy energy norms.
+*/
 
 class DarcyNorm : public NormBase
 {
@@ -158,7 +151,7 @@ public:
   //! \brief The only constructor initializes its data members.
   //! \param[in] p The Poisson problem to evaluate norms for
   //! \param[in] a The analytical heat flux (optional)
-  DarcyNorm(Darcy& p, VecFunc* a = 0);
+  DarcyNorm(Darcy& p, VecFunc* a = nullptr);
   //! \brief Empty destructor.
   virtual ~DarcyNorm() {}
 
@@ -196,7 +189,7 @@ public:
   //! \brief Returns the number of norm groups or size of a specified group.
   //! \param[in] group The norm group to return the size of
   //! (if zero, return the number of groups)
-  virtual size_t getNoFields(int group = 0) const;
+  virtual size_t getNoFields(int group) const;
 
   //! \brief Returns the name of a norm quantity.
   //! \param[in] i The norm group (one-based index)
@@ -209,7 +202,6 @@ public:
 
 private:
   VecFunc* anasol; //!< Analytical heat flux
-
 };
 
-#endif /* DARCY_H_ */
+#endif
