@@ -40,6 +40,7 @@ if(MPI_FOUND)
 else()
   ifem_add_test(Lshape_p2_b5.reg Darcy)
   ifem_add_test(Wavefront_k10_p2_b20.reg Darcy)
+  ifem_add_vtf_test(Wavefront_k10_p2_b20.vreg Darcy)
 endif()
 list(APPEND TEST_APPS Darcy)
 
