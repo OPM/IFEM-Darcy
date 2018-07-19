@@ -1,0 +1,15 @@
+Wavefront_k10_p2_b20.xinp -2D
+
+Step 1
+  Element block 1
+    6241 nodes
+    6084 elements
+    Displacement: 'Solution'
+    Displacement: 'Exact Solution'
+    Scalar: 'pressure'
+    Scalar: 'Exact pressure'
+    Scalar: 'FE v_x'
+    Scalar: 'FE v_y'
+    Scalar: 'Exact v_x'
+    Scalar: 'Exact v_y'
+    Vector: 'velocity'
