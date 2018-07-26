@@ -1,0 +1,68 @@
+Lshape_p2_b5.xinp -adap
+
+Step 1
+  Element block 1
+    128 nodes
+    32 elements
+    Displacement: 'Solution'
+    Displacement: 'Exact Solution'
+    Scalar: 'fix_X'
+    Scalar: 'a(e,e)^0.5, e=u-u^h'
+    Scalar: 'Continuous global L2-projection v_x'
+    Scalar: 'Continuous global L2-projection v_y'
+    Scalar: 'a(u^h,u^h)^0.5'
+    Scalar: 'a(u,u)^0.5'
+    Scalar: 'Exact pressure'
+    Scalar: 'FE v_x'
+    Scalar: 'FE v_y'
+    Scalar: 'Exact v_x'
+    Scalar: 'Exact v_y'
+    Scalar: 'Continuous global L2-projection a(e,e)^0.5, e=u^r-u^h'
+    Scalar: 'Continuous global L2-projection a(u^r,u^r)^0.5'
+    Scalar: 'Continuous global L2-projection a(e,e)^0.5, e=u-u^r'
+    Scalar: 'Continuous global L2-projection effectivity index'
+    Scalar: 'pressure'
+Step 2
+  Element block 1
+    272 nodes
+    68 elements
+    Displacement: 'Solution'
+    Displacement: 'Exact Solution'
+    Scalar: 'fix_X'
+    Scalar: 'a(e,e)^0.5, e=u-u^h'
+    Scalar: 'Continuous global L2-projection v_x'
+    Scalar: 'Continuous global L2-projection v_y'
+    Scalar: 'a(u^h,u^h)^0.5'
+    Scalar: 'a(u,u)^0.5'
+    Scalar: 'Exact pressure'
+    Scalar: 'FE v_x'
+    Scalar: 'FE v_y'
+    Scalar: 'Exact v_x'
+    Scalar: 'Exact v_y'
+    Scalar: 'Continuous global L2-projection a(e,e)^0.5, e=u^r-u^h'
+    Scalar: 'Continuous global L2-projection a(u^r,u^r)^0.5'
+    Scalar: 'Continuous global L2-projection a(e,e)^0.5, e=u-u^r'
+    Scalar: 'Continuous global L2-projection effectivity index'
+    Scalar: 'pressure'
+Step 3
+  Element block 1
+    380 nodes
+    95 elements
+    Displacement: 'Solution'
+    Displacement: 'Exact Solution'
+    Scalar: 'fix_X'
+    Scalar: 'a(e,e)^0.5, e=u-u^h'
+    Scalar: 'Continuous global L2-projection v_x'
+    Scalar: 'Continuous global L2-projection v_y'
+    Scalar: 'a(u^h,u^h)^0.5'
+    Scalar: 'a(u,u)^0.5'
+    Scalar: 'Exact pressure'
+    Scalar: 'FE v_x'
+    Scalar: 'FE v_y'
+    Scalar: 'Exact v_x'
+    Scalar: 'Exact v_y'
+    Scalar: 'Continuous global L2-projection a(e,e)^0.5, e=u^r-u^h'
+    Scalar: 'Continuous global L2-projection a(u^r,u^r)^0.5'
+    Scalar: 'Continuous global L2-projection a(e,e)^0.5, e=u-u^r'
+    Scalar: 'Continuous global L2-projection effectivity index'
+    Scalar: 'pressure'
