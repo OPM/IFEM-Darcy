@@ -6,6 +6,8 @@ Step 1
     6084 elements
     Displacement: 'Solution'
     Displacement: 'Exact Solution'
+    Scalar: 'Continuous global L2-projection v_x'
+    Scalar: 'Continuous global L2-projection v_y'
     Scalar: 'pressure'
     Scalar: 'Exact pressure'
     Scalar: 'FE v_x'

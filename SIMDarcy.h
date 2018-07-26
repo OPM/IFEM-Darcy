@@ -162,11 +162,28 @@ public:
   //! \brief Return solution vector.
   const Vector& getSolution(int=0) { return *solVec; }
 
-  //! \brief Register fields for data export
+  //! \brief Register fields for data export.
   void registerFields(DataExporter& exporter)
   {
-    exporter.registerField("p", "primary", DataExporter::SIM,DataExporter::PRIMARY);
-    exporter.setFieldValue("p", this, solVec);
+    int results = DataExporter::PRIMARY;
+
+    if (!Dim::opt.pSolOnly)
+      results |= DataExporter::SECONDARY;
+
+    if (Dim::opt.saveNorms)
+      results |= DataExporter::NORMS;
+
+    exporter.registerField("u", "primary", DataExporter::SIM, results);
+    exporter.setFieldValue("u", this, solVec,
+                           Dim::opt.project.empty() ? nullptr : &proj,
+                           results & DataExporter::NORMS ? &eNorm : nullptr);
+
+    if (!Dim::opt.project.empty()) {
+      std::vector<std::string> pref;
+      for (const auto& it : Dim::opt.project)
+        pref.push_back(it.second);
+      exporter.setNormPrefixes(pref);
+    }
   }
 
   //! \brief Opens a new VTF-file and writes the model geometry to it.
@@ -193,14 +210,26 @@ public:
     if (!this->writeGlvS(*solVec,1,nBlock))
       return false;
 
-    if (!solVec->empty()) {
-      Matrix tmp;
-      if (!this->project(tmp,*solVec))
-        return false;
+    if (!solVec->empty())  {
+      if (!Dim::opt.pSolOnly) {
+        Matrix tmp;
+        if (!this->project(tmp,*solVec))
+          return false;
 
-      if (!this->writeGlvV(tmp,"velocity",1,nBlock,110,Dim::nsd))
-        return false;
+        if (!this->writeGlvV(tmp,"velocity",1,nBlock,110,Dim::nsd))
+          return false;
+
+        size_t i = 0;
+        for (auto& pit : Dim::opt.project)
+          if (!this->writeGlvP(proj[i++],1,nBlock,100,pit.second.c_str()))
+            return false;
+      }
     }
+
+    // Write element norms
+    if (Dim::opt.saveNorms)
+      if (!this->writeGlvN(eNorm,1,nBlock))
+        return false;
 
     return this->writeGlvStep(1,0.0,1);
   }
@@ -220,8 +249,38 @@ public:
     if (!this->solveSystem(sol, Dim::msgLevel-1,"pressure    "))
       return false;
 
-    this->printSummary();
+    if (!Dim::opt.project.empty())
+    {
+      // Project the secondary solution onto the splines basis
+      proj.resize(Dim::opt.project.size());
+      size_t j = 0;
+      for (auto& pit : Dim::opt.project)
+        if (!this->project(proj[j++],sol,pit.first))
+          return false;
+
+      IFEM::cout << std::endl;
+    }
+
+    // Evaluate solution norms
+    Vectors gNorm;
+    this->setQuadratureRule(Dim::opt.nGauss[1]);
+    if (!this->solutionNorms(sol,proj,eNorm,gNorm))
+      return false;
+
+    // Print global norm summary to console
+    this->printNorms(gNorm);
     return true;
+  }
+
+  //! \brief Prints a summary of the calculated solution to std::cout.
+  //! \param[in] solution The solution vector
+  //! \param[in] printSol Print solution only if size is less than this value
+  //! \param[in] outPrec Number of digits after the decimal point in norm print
+  void printSolutionSummary(const Vector& solution, int printSol, const char*,
+                            std::streamsize outPrec) override
+  {
+    this->SIMbase::printSolutionSummary(solution, printSol,
+                                        "pressure    ", outPrec);
   }
 
 protected:
@@ -267,22 +326,13 @@ protected:
       }
   }
 
-  //! \brief Print norm summary output.
-  void printSummary()
-  {
-    // Evaluate solution norms
-    Matrix eNorm;
-    Vectors gNorm;
-    this->setQuadratureRule(Dim::opt.nGauss[1]);
-    if (this->solutionNorms(this->getSolution(),eNorm,gNorm))
-      this->printNorms(gNorm);
-  }
-
 private:
-  Darcy drc;            //!< Darcy integrand.
-  const Vector* solVec; //!< Pointer to solution vector.
-  Vector sol;           //!< Internal solution vector.
+  Darcy drc;            //!< Darcy integrand
+  const Vector* solVec; //!< Pointer to solution vector
+  Vector sol;           //!< Internal solution vector
   int aCode[2];         //!< Analytical BC code (used by destructor)
+  Matrix eNorm;         //!< Element wise norms
+  Vectors proj;         //!< Projected solution vectors
 };
 
 #endif
