@@ -10,6 +10,7 @@
 //!
 //==============================================================================
 
+#include "SIMbase.h"
 #include "SIMDarcy.h"
 #include "SIM2D.h"
 #include "Vec3Oper.h"
