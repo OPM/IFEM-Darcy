@@ -38,14 +38,13 @@
     <projection>
       <CGL2/>
     </projection>
-    <vtfformat nviz="4"/>
   </postprocessing>
 
 <!-- General - adaptive control -->
   <adaptive>
     <beta value="5"/>
     <errtol value="0.000001"/>
-    <maxstep value="10"/>
+    <maxstep value="3"/>
     <maxdof value="4000"/>
     <multiplicity value="1"/>
     <scheme value="isotropic_function"/>

@@ -1,0 +1,70 @@
+Lshape_p2_b5.xinp -adap
+
+LR-spline basis functions are used
+Number of elements    32
+Number of nodes       66
+Number of dofs        66
+Number of unknowns    55
+ >>> Starting adaptive simulation based on
+     Continuous global L2-projection error estimates (norm group 1) <<<
+Adaptive step 1
+L2-norm            : 0.580973
+Max pressure       : 1.2539
+Projecting secondary solution ...
+	Continuous global L2-projection
+Energy norm           a(u^h,u^h)^0.5 : 1.35146
+External energy          (h,u^h)^0.5 : -1.35146
+Exact norm                a(u,u)^0.5 : 1.35544
+Exact error      a(e,e)^0.5, e=u-u^h : 0.100455
+Exact relative error (%) : 7.41121
+Error estimate a(e,e)^0.5, e=u^r-u^h : 0.109353
+Relative error (%) : 8.06506
+Effectivity index  : 1.08858
+Root mean square (RMS) of error      : 2.00038
+Min element error                    : 0.000668299
+Max element error                    : 0.0736181
+Average element error                : 0.00864377
+Refining 4 basis functions with errors in range \[0.128137,0.189558\] 5% of all basis functions
+Adaptive step 2
+Number of elements    68
+Number of nodes       99
+Number of dofs        99
+Number of unknowns    84
+L2-norm            : 0.544329
+Max pressure       : 1.25735
+Projecting secondary solution ...
+	Continuous global L2-projection
+Energy norm           a(u^h,u^h)^0.5 : 1.35351
+External energy          (h,u^h)^0.5 : -1.35351
+Exact norm                a(u,u)^0.5 : 1.35521
+Exact error      a(e,e)^0.5, e=u-u^h : 0.0661461
+Exact relative error (%) : 4.88086
+Error estimate a(e,e)^0.5, e=u^r-u^h : 0.0701709
+Relative error (%) : 5.17742
+Effectivity index  : 1.06085
+Root mean square (RMS) of error      : 2.48346
+Min element error                    : 0.000206371
+Max element error                    : 0.0467642
+Average element error                : 0.00317846
+Refining 5 basis functions with errors in range \[0.0929046,0.1209\] 5% of all basis functions
+Adaptive step 3
+Number of elements    95
+Number of nodes       123
+Number of dofs        123
+Number of unknowns    105
+L2-norm            : 0.516628
+Max pressure       : 1.25878
+Projecting secondary solution ...
+	Continuous global L2-projection
+Energy norm           a(u^h,u^h)^0.5 : 1.35437
+External energy          (h,u^h)^0.5 : -1.35437
+Exact norm                a(u,u)^0.5 : 1.35513
+Exact error      a(e,e)^0.5, e=u-u^h : 0.044246
+Exact relative error (%) : 3.26508
+Error estimate a(e,e)^0.5, e=u^r-u^h : 0.0454612
+Relative error (%) : 3.35474
+Effectivity index  : 1.02746
+Root mean square (RMS) of error      : 2.2928
+Min element error                    : 0.000140197
+Max element error                    : 0.0293144
+Average element error                : 0.00186465
