@@ -52,7 +52,7 @@ public:
 
   using Dim::parse;
   //! \brief Parses a data section from an XML element.
-  virtual bool parse(const TiXmlElement* elem)
+  bool parse(const TiXmlElement* elem) override
   {
     if (strcasecmp(elem->Value(),"darcy"))
       return this->Dim::parse(elem);
@@ -121,7 +121,7 @@ public:
 
   //! \brief Initializes for integration of Neumann terms for a given property.
   //! \param[in] propInd Physical property index
-  virtual bool initNeumann(size_t propInd)
+  bool initNeumann(size_t propInd) override
   {
     typename Dim::SclFuncMap::const_iterator sit = Dim::myScalars.find(propInd);
     typename Dim::VecFuncMap::const_iterator vit = Dim::myVectors.find(propInd);
@@ -139,7 +139,7 @@ public:
   //! \brief Initializes the property containers of the model.
   //! \details Use this method to clear the model before re-reading
   //! the input file in the refinement step of an adaptive simulation.
-  virtual void clearProperties()
+  void clearProperties() override
   {
     // To prevent SIMbase::clearProperties deleting the analytical solution
     if (aCode[0] > 0) Dim::myScalars.erase(aCode[0]);
@@ -152,7 +152,7 @@ public:
   }
 
   //! \brief Returns the name of this simulator (for use in the HDF5 export).
-  virtual std::string getName() const { return "DarcyFlow"; }
+  std::string getName() const override { return "DarcyFlow"; }
 
   //! \brief Set solution vector used.
   //! \details Used to supply an external solution vector for adaptive simulations.
@@ -287,7 +287,7 @@ protected:
   //! \brief Performs some pre-processing tasks on the FE model.
   //! \details This method is reimplemented to resolve inhomogeneous boundary
   //! condition fields in case they are derived from the analytical solution.
-  virtual void preprocessA()
+  void preprocessA() override
   {
     if (!Dim::mySol) return;
 
