@@ -73,16 +73,16 @@ public:
   //! \brief Returns a local integral contribution object for given element.
   //! \param[in] nen Number of nodes on element
   //! \param[in] neumann Whether or not we are assembling Neumann BCs
-  virtual LocalIntegral* getLocalIntegral(size_t nen, size_t,
-                                          bool neumann) const;
+  LocalIntegral* getLocalIntegral(size_t nen, size_t,
+                                  bool neumann) const override;
 
   using IntegrandBase::evalInt;
   //! \brief Evaluates the integrand at an interior point.
   //! \param elmInt The local integral object to receive the contributions
   //! \param[in] fe Finite element data of current integration point
   //! \param[in] X Cartesian coordinates of current integration point
-  virtual bool evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
-                       const Vec3& X) const;
+  bool evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
+               const Vec3& X) const override;
 
   using IntegrandBase::evalBou;
   //! \brief Evaluates the integrand at a boundary point.
@@ -90,14 +90,14 @@ public:
   //! \param[in] fe Finite element data of current integration point
   //! \param[in] X Cartesian coordinates of current integration point
   //! \param[in] normal Boundary normal vector at current integration point
-  virtual bool evalBou(LocalIntegral& elmInt, const FiniteElement& fe,
-                       const Vec3& X, const Vec3& normal) const;
+  bool evalBou(LocalIntegral& elmInt, const FiniteElement& fe,
+               const Vec3& X, const Vec3& normal) const override;
 
   //! \brief Sets up the permeability matrix
   //! \param[out] K \f$ nsd\times nsd\f$-matrix or its inverse
   //! \param[in] X Cartesian coordinates of current point
   //! \param[in] inverse If \e true, set up the inverse matrix instead
-  virtual bool formKmatrix(Matrix& K, const Vec3& X, bool inverse = false) const;
+  bool formKmatrix(Matrix& K, const Vec3& X, bool inverse = false) const;
 
   using IntegrandBase::evalSol;
   //! \brief Evaluated the secondary solution at a result point
@@ -105,8 +105,8 @@ public:
   //! param[in] fe Finite element data at current point
   //! param[in] X Cartesian coordinates of current point
   //! param(in) MNPC Nodal point correspondence for the basis function values
-  virtual bool evalSol(Vector& s, const FiniteElement& fe,
-                       const Vec3& X, const std::vector<int>& MNPC) const;
+  bool evalSol(Vector& s, const FiniteElement& fe,
+               const Vec3& X, const std::vector<int>& MNPC) const override;
 
   //! \brief Evaluates the finite element (FE) solution at an integration point
   //! \param[out] s The FE solution values at current point
@@ -118,23 +118,23 @@ public:
 
   //! \brief Returns the number of primary/secondary solution field components.
   //! \param[in] fld which field set to consider (1=primary, 2=secondary)
-  virtual size_t getNoFields(int fld = 2) const { return fld > 1 ? nsd : 1; }
+  size_t getNoFields(int fld = 2) const override { return fld > 1 ? nsd : 1; }
 
   //! \brief Returns the name of the primary solution field.
   //! \param[in] prefix Name prefix
-  virtual std::string getField1Name(size_t, const char* prefix = 0) const;
+  std::string getField1Name(size_t, const char* prefix = 0) const override;
 
   //! \brief Returns the name of a secondary solution field component
   //! \param[in] i Field component index
   //! \param[in] prefix Name prefix for all components
-  virtual std::string getField2Name(size_t i, const char* prefix = 0) const;
+  std::string getField2Name(size_t i, const char* prefix = 0) const override;
 
   //! \brief Returns a pointer to an Integrand for solution norm evaluation.
   //! \note The Integrand object is allocated dynamically and has to be deleted
   //! manually when leaving the scope of the pointer variable receiving the
   //! returned pointer value.
   //! \param[in] asol Pointer to analytical solution (optional)
-  virtual NormBase* getNormIntegrand(AnaSol* asol = 0) const;
+  NormBase* getNormIntegrand(AnaSol* asol = 0) const override;
 
 private:
   VecFunc* permvalues;    //!< Permeability function.
@@ -171,8 +171,8 @@ public:
   //! \param elmInt The local integral object to receive the contributions
   //! \param[in] fe Finite element data of current integration point
   //! \param[in] X Cartesian coordinates of current integration point
-  virtual bool evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
-                       const Vec3& X) const;
+  bool evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
+               const Vec3& X) const override;
 
   using NormBase::evalBou;
   //! \brief Evaluates the integrand at a boundary point.
@@ -180,36 +180,31 @@ public:
   //! \param[in] fe Finite Element quantities
   //! \param[in] X Cartesian coordinates of current integration point
   //! \param[in] normal Boundary normal vector at current integration point
-  virtual bool evalBou(LocalIntegral& elmInt,  const FiniteElement& fe,
-                       const Vec3& X, const Vec3& normal) const;
+  bool evalBou(LocalIntegral& elmInt,  const FiniteElement& fe,
+               const Vec3& X, const Vec3& normal) const override;
 
   using NormBase::finalizeElement;
   //! \brief Finalizes the element norms after the numerical integration.
   //! \details This method is used to compute effectivity indices.
   //! \param elmInt The local integral object to receive the contributions
-  virtual bool finalizeElement(LocalIntegral& elmInt, const TimeDomain&,size_t);
+  bool finalizeElement(LocalIntegral& elmInt, const TimeDomain&,size_t) override;
 
   //! \brief Returns whether this norm has explicit boundary contributions.
-  virtual bool hasBoundaryTerms() const { return true; }
-
-  //! \brief Adds external energy terms to relevant norms.
-  //! \param gNorm Global norm quantities
-  //! \param[in] energy Global external energy
-  virtual void addBoundaryTerms(Vectors& gNorm, double energy) const;
+  bool hasBoundaryTerms() const override { return true; }
 
   //! \brief Returns the number of norm groups or size of a specified group.
   //! \param[in] group The norm group to return the size of
   //! (if zero, return the number of groups)
-  virtual size_t getNoFields(int group = 0) const;
+  size_t getNoFields(int group = 0) const override;
 
   //! \brief Returns the name of a norm quantity.
   //! \param[in] i The norm group (one-based index)
   //! \param[in] j The norm number (one-based index)
   //! \param[in] prefix Common prefix for all norm names
-  virtual std::string getName(size_t i, size_t j, const char* prefix) const;
+  std::string getName(size_t i, size_t j, const char* prefix) const override;
 
   //! \brief Returns whether a norm quantity stores element contributions.
-  virtual bool hasElementContributions(size_t i, size_t j) const;
+  bool hasElementContributions(size_t i, size_t j) const override;
 
 private:
   VecFunc* anasol; //!< Analytical heat flux

@@ -377,12 +377,6 @@ bool DarcyNorm::finalizeElement (LocalIntegral& elmInt,
 }
 
 
-void DarcyNorm::addBoundaryTerms (Vectors& gNorm, double energy) const
-{
-  gNorm.front()[1] += energy;
-}
-
-
 size_t DarcyNorm::getNoFields (int group) const
 {
   if (group < 1)
