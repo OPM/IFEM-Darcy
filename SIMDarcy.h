@@ -24,6 +24,7 @@
 #include "tinyxml.h"
 #include "Property.h"
 #include "DataExporter.h"
+#include "TimeStep.h"
 
 
 /*!
@@ -33,8 +34,9 @@
 template<class Dim> class SIMDarcy : public Dim
 {
 public:
+  using SetupProps = bool; //!< Only a bool setup property.
   //! \brief Default constructor.
-  SIMDarcy() : Dim(1), drc(Dim::dimension), solVec(&sol)
+  SIMDarcy(bool checkRHS = false) : Dim(1,checkRHS), drc(Dim::dimension), solVec(&sol)
   {
     Dim::myProblem = &drc;
     aCode[0] = aCode[1] = 0;
@@ -160,7 +162,7 @@ public:
   void setSol(const Vector* sol) { solVec = sol; }
 
   //! \brief Return solution vector.
-  const Vector& getSolution(int=0) { return *solVec; }
+  Vector& getSolution(int=0) { return sol; }
 
   //! \brief Register fields for data export
   void registerFields(DataExporter& exporter)
@@ -178,13 +180,13 @@ public:
     if (Dim::opt.format < 0)
       return true;
 
-    nBlock = 0;
     return this->writeGlvG(geoBlk,fileName);
   }
 
   //! \brief Saves the converged results to VTF file of a given time step.
+  //! \param[in] tp Time stepping information
   //! \param[in] nBlock Running VTF block counter
-  bool saveStep(const TimeStep&, int& nBlock)
+  bool saveStep(const TimeStep& tp, int& nBlock)
   {
     if (Dim::opt.format < 0)
       return true;
@@ -202,18 +204,27 @@ public:
         return false;
     }
 
-    return this->writeGlvStep(1,0.0,1);
+    if (tp.iter == 0)
+      return this->writeGlvStep(1,0.0,1);
+    else
+      return this->writeGlvStep(tp.iter,tp.iter,1);
   }
 
-  //! \brief Computes the solution for the current time step.
-  bool solveStep(TimeStep&)
+  //! \brief Initialize simulator.
+  bool init()
   {
-    if (!this->setMode(SIM::DYNAMIC))
+    if (!this->setMode(SIM::STATIC))
       return false;
 
     this->initSystem(Dim::opt.solver,1,1,0,true);
     this->setQuadratureRule(Dim::opt.nGauss[0],true);
 
+    return true;
+  }
+
+  //! \brief Computes the solution for the current time step.
+  bool solveStep(TimeStep&)
+  {
     if (!this->assembleSystem())
       return false;
 
@@ -273,6 +284,7 @@ protected:
     // Evaluate solution norms
     Matrix eNorm;
     Vectors gNorm;
+    this->setMode(SIM::RECOVERY);
     this->setQuadratureRule(Dim::opt.nGauss[1]);
     if (this->solutionNorms(this->getSolution(),eNorm,gNorm))
       this->printNorms(gNorm);

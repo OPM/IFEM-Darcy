@@ -17,6 +17,7 @@
 #include "SIM3D.h"
 #include "SIMDarcy.h"
 #include "SIMSolverAdap.h"
+#include "SIMSolverKRef.h"
 #include "SIMargsBase.h"
 #include "Profiler.h"
 
@@ -39,7 +40,7 @@ int runSimulator(char* infile)
 
   utl::profiler->stop("Model input");
 
-  if (!darcy.preprocess())
+  if (!darcy.preprocess() || !darcy.init())
     return 2;
 
   if (darcy.opt.dumpHDF5(infile))
@@ -62,6 +63,30 @@ int runSimulator1(char* infile, bool adaptive)
 
   return runSimulator<Dim, SIMSolverStat>(infile);
 }
+
+/*!
+  \brief Launch a simulator using a specified solver template.
+  \param infile The input file to parse
+*/
+
+#ifdef HAS_PETSC
+template<class Dim>
+int runSimulatorK(char* infile)
+{
+  SIMKRefWrap<SIMDarcy<Dim>> model(false), model2(false);
+  SIMSolverKRef<SIMDarcy<Dim>> solver(model, model2);
+
+  utl::profiler->start("Model input");
+
+  if (!solver.read(infile))
+    return 1;
+
+  if (model.opt.dumpHDF5(infile))
+    solver.handleDataOutput(model.opt.hdf5);
+
+  return solver.solveProblem(infile,"Solving the Darcy problem");
+}
+#endif
 
 /*!
   \brief Main program for the isogeometric Darcy solver.
@@ -96,6 +121,7 @@ int main (int argc, char** argv)
 
   char* infile = nullptr;
   SIMargsBase args("darcy");
+  bool kref = false;
 
   IFEM::Init(argc,argv,"Darcy solver");
   for (int i = 1; i < argc; i++)
@@ -103,6 +129,8 @@ int main (int argc, char** argv)
       ; // ignore the input file on the second pass
     else if (SIMoptions::ignoreOldOptions(argc,argv,i))
       ; // ignore the obsolete option
+    else if (!strcmp(argv[i],"-kref"))
+      kref = true;
     else if (!infile) {
       infile = argv[i];
       if (!args.readXML(infile,false))
@@ -129,10 +157,26 @@ int main (int argc, char** argv)
   IFEM::getOptions().print(IFEM::cout) << std::endl;
   utl::profiler->stop("Initialization");
 
-  if (args.dim == 3)
-    return runSimulator1<SIM3D>(infile,args.adap);
-  else if (args.dim == 2)
-    return runSimulator1<SIM2D>(infile,args.adap);
-  else
-    return runSimulator1<SIM1D>(infile,args.adap);
+  if (kref) {
+#ifndef HAS_PETSC
+    std::cerr << "K-refinement requested, but built without PETSc support. Bailing.." << std::endl;
+    return 1;
+#else
+    switch (args.dim) {
+    case 1:
+      return runSimulatorK<SIM1D>(infile);
+    case 2:
+      return runSimulatorK<SIM2D>(infile);
+    case 3:
+      return runSimulatorK<SIM3D>(infile);
+    }
+#endif
+  } else {
+    if (args.dim == 3)
+      return runSimulator1<SIM3D>(infile,args.adap);
+    else if (args.dim == 2)
+      return runSimulator1<SIM2D>(infile,args.adap);
+    else
+      return runSimulator1<SIM1D>(infile,args.adap);
+  }
 }

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<simulation>
+  <!-- General - geometry definitions !-->
+  <geometry dim="2" sets="true">
+    <raiseorder patch="1" u="0" v="0"/>
+    <refine type="uniform" patch="1" u="3" v="3"/>
+  </geometry>
+
+  <!-- General - numerical integration scheme !-->
+  <discretization>
+    <nGauss default="0"/>
+  </discretization>
+
+  <!-- General - boundary conditions !-->
+  <boundaryconditions>
+    <dirichlet set="Boundary" comp="1" type="anasol"/>
+  </boundaryconditions>
+
+  <!-- Problem-specific block !-->
+  <darcy>
+    <permvalues>98.1|9.81</permvalues>
+    <bodyforce>0|0</bodyforce>
+    <source type="Wavefront"/>
+    <anasol type="Wavefront"/>
+  </darcy>
+
+  <krefinement cycles="3" rtol="1e-7"/>
+
+  <linearsolver>
+    <type>gmres</type>
+    <rtol>1e-9</rtol>
+  </linearsolver>
+
+</simulation>

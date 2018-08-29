@@ -1,0 +1,46 @@
+Wavefront_k10_p2_b20_kref.xinp -kref
+
+K-refinement cycle 1
+Number of elements    16
+Number of nodes       25
+Number of dofs        25
+Number of constraints 16
+Number of unknowns    9
+Number of elements    16
+Number of nodes       36
+Number of dofs        36
+Number of constraints 20
+Number of unknowns    16
+L2-norm            : 3.41662
+Max pressure       : 6.63686
+Energy norm           a(u^h,u^h)^0.5 : 32.9142
+External energy          (h,u^h)^0.5 : 38.6113
+Exact norm                a(u,u)^0.5 : 30.1213
+Exact error      a(e,e)^0.5, e=u-u^h : 48.0936
+Exact relative error (%) : 159.666
+K-refinement cycle 2
+Number of elements    16
+Number of nodes       49
+Number of dofs        49
+Number of constraints 24
+Number of unknowns    25
+L2-norm            : 3.01658
+Max pressure       : 13.4129
+Energy norm           a(u^h,u^h)^0.5 : 48.3129
+External energy          (h,u^h)^0.5 : 43.9144
+Exact norm                a(u,u)^0.5 : 27.5448
+Exact error      a(e,e)^0.5, e=u-u^h : 41.3086
+Exact relative error (%) : 149.969
+K-refinement cycle 3
+Number of elements    16
+Number of nodes       64
+Number of dofs        64
+Number of constraints 28
+Number of unknowns    36
+L2-norm            : 2.00667
+Max pressure       : 4.96432
+Energy norm           a(u^h,u^h)^0.5 : 22.374
+External energy          (h,u^h)^0.5 : 21.0557
+Exact norm                a(u,u)^0.5 : 24.2404
+Exact error      a(e,e)^0.5, e=u-u^h : 17.7332
+Exact relative error (%) : 73.1558
