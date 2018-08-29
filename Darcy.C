@@ -258,6 +258,17 @@ Vec3 Darcy::getBodyForce(const Vec3& X) const
 }
 
 
+void Darcy::setMode (SIM::SolutionMode mode)
+{
+  m_mode = mode;
+
+  if (mode >= SIM::RECOVERY)
+    primsol.resize(1);
+  else
+    primsol.clear();
+}
+
+
 DarcyNorm::DarcyNorm (Darcy& p, VecFunc* a) : NormBase(p), anasol(a)
 {
   nrcmp = myProblem.getNoFields(2);

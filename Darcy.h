@@ -65,6 +65,10 @@ public:
   //! \brief Evaluates the potential source (if any) at specified point.
   double getPotential(const Vec3& X) const;
 
+  //! \brief Defines the solution mode before the element assembly is started.
+  //! \param[in] mode The solution mode to use
+  void setMode(SIM::SolutionMode mode) override;
+
   using IntegrandBase::getLocalIntegral;
   //! \brief Returns a local integral contribution object for given element.
   //! \param[in] nen Number of nodes on element
