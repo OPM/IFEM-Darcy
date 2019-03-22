@@ -27,6 +27,8 @@ Darcy::Darcy (unsigned short int n) : IntegrandBase(n), rhow(1.0), gacc(9.81)
 
   permvalues = vflux = bodyforce = nullptr;
   permeability = flux = source = nullptr;
+  reacInt = nullptr;
+  extEner = false;
 }
 
 
@@ -44,6 +46,23 @@ double Darcy::getFlux (const Vec3& X, const Vec3& normal) const
     return (*vflux)(X)*normal;
   else
     return 0.0;
+}
+
+
+void Darcy::setMode (SIM::SolutionMode mode)
+{
+  m_mode = mode;
+
+  primsol.resize(mode >= SIM::RHS_ONLY ? 1 : 0);
+}
+
+
+GlobalIntegral& Darcy::getGlobalInt (GlobalIntegral* gq) const
+{
+  if (m_mode == SIM::RHS_ONLY && reacInt)
+    return *reacInt;
+
+  return this->IntegrandBase::getGlobalInt(gq);
 }
 
 
@@ -93,6 +112,16 @@ bool Darcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
 
   if (source)
     WeakOps::Source(elMat.b.front(), fe, (*source)(X));
+
+  if (m_mode == SIM::RHS_ONLY && !elmInt.vec.empty())
+  {
+    // Integrate the internal forces based on current solution
+    Vector q;
+    if (!this->evalSol(q,elmInt.vec.front(),fe.dNdX,X))
+      return false;
+    if (!fe.dNdX.multiply(q,elMat.b.front(),fe.detJxW,1.0)) // b += dNdX * q
+      return false;
+  }
 
   return true;
 }
@@ -263,14 +292,15 @@ bool DarcyNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   if (!problem.evalSol(sigmah,pnorm.vec.front(),fe.dNdX,X))
     return false;
 
-  size_t ip = 0;
   // Integrate the energy norm a(u^h,u^h)
-  pnorm[ip++] += sigmah.dot(Kinv*sigmah)*rgw;
+  pnorm[0] += sigmah.dot(Kinv*sigmah)*rgw;
   // Evaluate the pressure field
   double p = pnorm.vec.front().dot(fe.N);
   // Integrate the external energy (h,u^h)
-  pnorm[ip++] += problem.getPotential(X)*p*fe.detJxW;
+  if (problem.extEner)
+    pnorm[1] += problem.getPotential(X)*p*fe.detJxW;
 
+  size_t ip = 2;
   if (anasol)
   {
     // Evaluate the analytical velocity
@@ -313,14 +343,15 @@ bool DarcyNorm::evalBou (LocalIntegral& elmInt, const FiniteElement& fe,
                          const Vec3& X, const Vec3& normal) const
 {
   Darcy& problem = static_cast<Darcy&>(myProblem);
-  ElmNorm& pnorm = static_cast<ElmNorm&>(elmInt);
+  if (!problem.extEner) return true;
 
   // Evaluate the surface heat flux
   double h = problem.getFlux(X,normal);
   // Evaluate the temperature field
-  double u = pnorm.vec.front().dot(fe.N);
+  double u = elmInt.vec.front().dot(fe.N);
 
   // Integrate the external energy (h,u^h)
+  ElmNorm& pnorm = static_cast<ElmNorm&>(elmInt);
   pnorm[1] += h*u*fe.detJxW;
   return true;
 }

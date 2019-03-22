@@ -17,6 +17,7 @@
 #include "IFEM.h"
 #include "Darcy.h"
 #include "DarcySolutions.h"
+#include "ReactionsOnly.h"
 #include "AnaSol.h"
 #include "Functions.h"
 #include "ExprFunctions.h"
@@ -34,7 +35,7 @@ template<class Dim> class SIMDarcy : public Dim
 {
 public:
   //! \brief Default constructor.
-  SIMDarcy() : Dim(1), drc(Dim::dimension), solVec(&sol)
+  SIMDarcy() : Dim(1), drc(Dim::dimension), solVec(&mySolution)
   {
     Dim::myProblem = &drc;
     aCode[0] = aCode[1] = 0;
@@ -112,6 +113,8 @@ public:
           }
         }
       }
+      else if (!strcasecmp(child->Value(),"reactions"))
+        drc.extEner = 'R';
       else
         this->Dim::parse(child);
     }
@@ -240,22 +243,24 @@ public:
     if (!this->setMode(SIM::DYNAMIC))
       return false;
 
-    this->initSystem(Dim::opt.solver,1,1,0,true);
+    this->initSystem(Dim::opt.solver);
     this->setQuadratureRule(Dim::opt.nGauss[0],true);
 
     if (!this->assembleSystem())
       return false;
 
-    if (!this->solveSystem(sol, Dim::msgLevel-1,"pressure    "))
+    if (!this->solveSystem(mySolution,Dim::msgLevel-1,"pressure    "))
+      return false;
+
+    if (!this->setMode(SIM::RECOVERY))
       return false;
 
     if (!Dim::opt.project.empty())
     {
       // Project the secondary solution onto the splines basis
-      proj.resize(Dim::opt.project.size());
       size_t j = 0;
       for (auto& pit : Dim::opt.project)
-        if (!this->project(proj[j++],sol,pit.first))
+        if (!this->project(proj[j++],mySolution,pit.first))
           return false;
 
       IFEM::cout << std::endl;
@@ -264,7 +269,7 @@ public:
     // Evaluate solution norms
     Vectors gNorm;
     this->setQuadratureRule(Dim::opt.nGauss[1]);
-    if (!this->solutionNorms(sol,proj,eNorm,gNorm))
+    if (!this->solutionNorms(mySolution,proj,eNorm,gNorm))
       return false;
 
     // Print global norm summary to console
@@ -283,12 +288,51 @@ public:
                                         "pressure    ", outPrec);
   }
 
+  using Dim::solveSystem;
+  //! \brief Solves the assembled linear system of equations for a given load.
+  //! \param[out] solution Global primary solution vector
+  //! \param[in] printSol Print solution if its size is less than \a printSol
+  //! \param[out] rCond Reciprocal condition number
+  //! \param[in] compName Solution name to be used in norm output
+  //! \param[in] newLHS If \e false, reuse the LHS-matrix from previous call
+  //! \param[in] idxRHS Index to the right-hand-side vector to solve for
+  //!
+  //! This overloaded version also computes the reaction forces along a given
+  //! boundary. This requires an additional assembly loop calculating the
+  //! internal forces only, since we only are doing a linear solve here.
+  bool solveSystem(Vector& solution, int printSol, double* rCond,
+                   const char* compName, bool newLHS, size_t idxRHS) override
+  {
+    if (!this->Dim::solveSystem(solution,printSol,rCond,compName,newLHS,idxRHS))
+      return false;
+    else if (idxRHS > 0 || !this->haveReactions() || drc.extEner != 'R')
+      return true;
+
+    // Assemble the reaction forces. Strictly, we only need to assemble those
+    // elements that have nodes on the Dirichlet boundaries, but...
+    drc.setReactionIntegral(new ReactionsOnly(myReact,Dim::mySam));
+    AlgEqSystem* tmpEqSys = Dim::myEqSys;
+    Dim::myEqSys = nullptr;
+    bool ok = this->setMode(SIM::RHS_ONLY) && this->assembleSystem({solution});
+    Dim::myEqSys = tmpEqSys;
+    drc.setReactionIntegral(nullptr);
+
+    return ok;
+  }
+
+  //! \brief Returns current reaction force vector.
+  const Vector* getReactionForces() const override
+  {
+    return myReact.empty() ? nullptr : &myReact;
+  }
+
 protected:
   //! \brief Performs some pre-processing tasks on the FE model.
   //! \details This method is reimplemented to resolve inhomogeneous boundary
   //! condition fields in case they are derived from the analytical solution.
   void preprocessA() override
   {
+    proj.resize(Dim::opt.project.size());
     if (!Dim::mySol) return;
 
     // Define analytical boundary condition fields
@@ -326,10 +370,19 @@ protected:
       }
   }
 
+  //! \brief Performs some pre-processing tasks on the FE model.
+  bool preprocessB() override
+  {
+    if (this->getNoConstraints() == 0 && !drc.extEner)
+      drc.extEner = 'y';
+    return true;
+  }
+
 private:
   Darcy drc;            //!< Darcy integrand
   const Vector* solVec; //!< Pointer to solution vector
-  Vector sol;           //!< Internal solution vector
+  Vector mySolution;    //!< Internal solution vector
+  Vector myReact;       //!< Nodal reaction forces
   int aCode[2];         //!< Analytical BC code (used by destructor)
   Matrix eNorm;         //!< Element wise norms
   Vectors proj;         //!< Projected solution vectors

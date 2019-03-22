@@ -15,6 +15,7 @@
 #define _DARCY_H_
 
 #include "IntegrandBase.h"
+#include "GlobalIntegral.h"
 #include "EqualOrderOperators.h"
 
 class RealFunc;
@@ -30,7 +31,7 @@ class Darcy : public IntegrandBase
   using WeakOps = EqualOrderOperators::Weak; //!< Convenience renaming
 
 public:
-  //! \brief Default constructor.
+  //! \brief The constructor initializes all pointers to zero.
   explicit Darcy(unsigned short int n);
   //! \brief Empty destructor.
   virtual ~Darcy() {}
@@ -59,6 +60,15 @@ public:
   double getFlux(const Vec3& X, const Vec3& normal) const;
   //! \brief Evaluates the potential source (if any) at specified point.
   double getPotential(const Vec3& X) const;
+
+  //! \brief Defines the solution mode before the element assembly is started.
+  //! \param[in] mode The solution mode to use
+  virtual void setMode(SIM::SolutionMode mode);
+
+  //! \brief Defines the global integral for calculating reaction forces only.
+  void setReactionIntegral(GlobalIntegral* gq) { delete reacInt; reacInt = gq; }
+  //! \brief Returns the system quantity to be integrated by \a *this.
+  virtual GlobalIntegral& getGlobalInt(GlobalIntegral* gq) const;
 
   using IntegrandBase::getLocalIntegral;
   //! \brief Returns a local integral contribution object for given element.
@@ -135,9 +145,13 @@ private:
   RealFunc* flux;         //!< Flux function
   RealFunc* source;       //!< Source function
 
+  GlobalIntegral* reacInt; //!< Reaction-forces-only integral
+
 public:
   const double rhow; //!< Density of fluid
   const double gacc; //!< Gravity acceleration
+
+  char extEner; //!< If \e true, external energy is to be computed
 };
 
 
