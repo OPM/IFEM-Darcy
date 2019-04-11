@@ -51,4 +51,8 @@
     <use_norm value="1"/>
   </adaptive>
 
+  <linearsolver>
+    <rtol>1e-10</rtol>
+  </linearsolver>
+
 </simulation>
