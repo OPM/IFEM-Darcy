@@ -1,0 +1,14 @@
+../Lshape_p2_b5.xinp -petsc
+
+Equation solver: 4
+Number of elements    32
+Number of nodes       66
+Number of dofs        66
+Number of unknowns    55
+ *** SIMbase::preprocess: No partitioning information for 4 processors found. Using graph partitioning
+L2-norm            : 0.580973
+Max pressure       : 1.2539
+Energy norm           a(u^h,u^h)^0.5 : 1.35146
+Exact norm                a(u,u)^0.5 : 1.35544
+Exact error      a(e,e)^0.5, e=u-u^h : 0.100455
+Exact relative error (%) : 7.41121
