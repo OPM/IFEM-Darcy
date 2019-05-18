@@ -6,7 +6,6 @@ Number of elements    32
 Number of nodes       66
 Number of dofs        66
 Number of unknowns    55
- *** SIMbase::preprocess: No partitioning information for 4 processors found. Using graph partitioning
  >>> Starting adaptive simulation based on
      Continuous global L2-projection error estimates (norm group 1) <<<
 Adaptive step 1
