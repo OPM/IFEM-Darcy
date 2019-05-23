@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
 <simulation>
+
   <!-- General - geometry definitions !-->
   <geometry dim="2">
-    <patchfile>Lshape.g2</patchfile>
+    <patch>200 1 0 0\
+      2 0\
+      3 2 0 0 1 2 2\
+      2 2 0 0 1 1\
+     -1.0 1.0 -1.0 -1.0  1.0 -1.0\
+      0.0 1.0  0.0  0.0  1.0  0.0\
+    </patch>
     <raiseorder patch="1" u="1" v="1"/>
     <refine patch="1" u="3" v="3"/>
     <topologysets>
@@ -18,7 +26,7 @@
   <!-- General - boundary conditions !-->
   <boundaryconditions>
     <dirichlet set="Homogeneous" comp="1"/>
-    <neumann set="Neumann" comp="1" type="anasol"/>
+    <neumann set="Neumann" type="anasol"/>
   </boundaryconditions>
 
   <!-- General - numerical integration scheme !-->
