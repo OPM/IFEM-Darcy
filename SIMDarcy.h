@@ -176,7 +176,7 @@ public:
     exporter.registerField("u", "primary", DataExporter::SIM, results);
     exporter.setFieldValue("u", this, solVec,
                            Dim::opt.project.empty() ? nullptr : &proj,
-                           results & DataExporter::NORMS ? &eNorm : nullptr);
+                           (results & DataExporter::NORMS) ? &eNorm : nullptr);
 
     if (!Dim::opt.project.empty()) {
       std::vector<std::string> pref;
