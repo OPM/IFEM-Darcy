@@ -1,4 +1,4 @@
-Wavefront_k10_p2_b20.xinp -2D
+Wavefront_k10_p2_b20.xinp
 
 	Topology sets: Nonhomogeneous (1,1,1D) (1,2,1D) (1,3,1D) (1,4,1D)
 Number of elements    676
@@ -9,7 +9,7 @@ Number of unknowns    676
 L2-norm            : 1.39877
 Max pressure       : 1.52707
 Energy norm           a(u^h,u^h)^0.5 : 25.2035
-External energy          (h,u^h)^0.5 : 22.2488
+External energy          (h,u^h)^0.5 : 25.2227
 Exact norm                a(u,u)^0.5 : 26.0482
 Exact error      a(e,e)^0.5, e=u-u^h : 5.69085
 Exact relative error (%) : 21.8473

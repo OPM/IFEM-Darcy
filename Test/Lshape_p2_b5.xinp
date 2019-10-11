@@ -37,8 +37,6 @@
   <!-- Problem-specific block !-->
   <darcy>
     <permvalues>9.81|9.81</permvalues>
-    <bodyforce>0|0</bodyforce>
-    <source>0</source>
     <anasol type="Lshape"/>
   </darcy>
 
@@ -48,7 +46,7 @@
     </projection>
   </postprocessing>
 
-<!-- General - adaptive control -->
+  <!-- General - adaptive control -->
   <adaptive>
     <beta value="5"/>
     <errtol value="0.000001"/>
@@ -60,7 +58,7 @@
   </adaptive>
 
   <linearsolver>
-    <rtol>1e-10</rtol>
+    <rtol>1.0e-10</rtol>
   </linearsolver>
 
 </simulation>
