@@ -15,10 +15,9 @@
 #include "FiniteElement.h"
 #include "ElmMats.h"
 #include "ElmNorm.h"
-#include "Vec3Oper.h"
 #include "AnaSol.h"
 #include "Function.h"
-#include "Utilities.h"
+#include "Vec3Oper.h"
 
 
 Darcy::Darcy (unsigned short int n) : IntegrandBase(n), rhow(1.0), gacc(9.81)
@@ -117,7 +116,7 @@ bool Darcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   {
     // Integrate the internal forces based on current solution
     Vector q;
-    if (!this->evalSol(q,elmInt.vec.front(),fe.dNdX,X))
+    if (!this->evalSol2(q,elmInt.vec,fe,X))
       return false;
     if (!fe.dNdX.multiply(q,elMat.b.front(),fe.detJxW,1.0)) // b += dNdX * q
       return false;
@@ -132,14 +131,14 @@ bool Darcy::evalBou (LocalIntegral& elmInt, const FiniteElement& fe,
 {
   if (!flux && !vflux)
   {
-    std::cerr << " *** Darcy::evalBou: No fluxes." << std::endl;
+    std::cerr <<" *** Darcy::evalBou: No fluxes."<< std::endl;
     return false;
   }
 
   ElmMats& elMat = static_cast<ElmMats&>(elmInt);
   if (elMat.b.empty())
   {
-    std::cerr << "*** Darcy::evalBou: No load vector." << std::endl;
+    std::cerr <<" *** Darcy::evalBou: No load vector."<< std::endl;
     return false;
   }
 
@@ -169,38 +168,17 @@ bool Darcy::formKmatrix (Matrix& K, const Vec3& X, bool inverse) const
 }
 
 
-bool Darcy::evalSol (Vector& v, const FiniteElement& fe,
-                      const Vec3& X, const std::vector<int>& MNPC) const
-{
-  if (primsol.empty() || primsol.front().empty())
-  {
-    std::cerr << "*** Darcy::evalSol: No primary solution." << std::endl;
-    return false;
-  }
-
-  Vector eV;
-  int ierr = utl::gather(MNPC,1,primsol.front(),eV);
-  if (ierr > 0)
-  {
-    std::cerr << "*** Darcy::evalSol: Detected " << ierr
-              << " node numbers out of range." <<  std::endl;
-    return false;
-  }
-
-  return this->evalSol(v,eV,fe.dNdX,X);
-}
-
-
-bool Darcy::evalSol (Vector& v, const Vector& eV,
-                     const Matrix& dNdX, const Vec3& X) const
+bool Darcy::evalSol2 (Vector& s, const Vectors& eV,
+                      const FiniteElement& fe, const Vec3& X) const
 {
   // Evaluate the pressure gradient
   RealArray temp;
-  if (!dNdX.multiply(eV,temp,true))
+  if (eV.empty() || !fe.dNdX.multiply(eV.front(),temp,true))
   {
-    std::cerr << "*** Darcy::evalSol: Invalid solution vector."
-              << "\n  size(eV) = " << eV.size() << " size(dNdX) = "
-              << dNdX.rows() << "," << dNdX.cols() << std::endl;
+    std::cerr <<" *** Darcy::evalSol: Invalid solution vector.\n"
+              <<"     size(eV) = "<< (eV.empty() ? 0 : eV.front().size())
+              <<" size(dNdX) = "<< fe.dNdX.rows() <<","<< fe.dNdX.cols()
+              << std::endl;
     return false;
   }
 
@@ -214,7 +192,7 @@ bool Darcy::evalSol (Vector& v, const Vector& eV,
   Matrix K;
   this->formKmatrix(K,X);
 
-  return K.multiply(temp,v,-1.0/(rhow*gacc));
+  return K.multiply(temp,s,-1.0/(rhow*gacc));
 }
 
 
@@ -289,7 +267,7 @@ bool DarcyNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
 
   // Evaluate the finite element pressure field
   Vector sigmah, sigma, error;
-  if (!problem.evalSol(sigmah,pnorm.vec.front(),fe.dNdX,X))
+  if (!problem.evalSol2(sigmah,pnorm.vec,fe,X))
     return false;
 
   // Integrate the energy norm a(u^h,u^h)

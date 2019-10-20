@@ -94,28 +94,19 @@ public:
   virtual bool evalBou(LocalIntegral& elmInt, const FiniteElement& fe,
                        const Vec3& X, const Vec3& normal) const;
 
-  //! \brief Sets up the permeability matrix
+  //! \brief Sets up the permeability matrix.
   //! \param[out] K \f$ n_{sd}\times n_{sd}\f$-matrix or its inverse
   //! \param[in] X Cartesian coordinates of current point
   //! \param[in] inverse If \e true, set up the inverse matrix instead
   bool formKmatrix(Matrix& K, const Vec3& X, bool inverse = false) const;
 
-  using IntegrandBase::evalSol;
-  //! \brief Evaluated the secondary solution at a result point
-  //! param[out] s Array of solution field values at current point
-  //! param[in] fe Finite element data at current point
-  //! param[in] X Cartesian coordinates of current point
-  //! param(in) MNPC Nodal point correspondence for the basis function values
-  virtual bool evalSol(Vector& s, const FiniteElement& fe,
-                       const Vec3& X, const std::vector<int>& MNPC) const;
-
-  //! \brief Evaluates the finite element (FE) solution at an integration point
-  //! \param[out] s The FE solution values at current point
-  //! \param[in] eV Element solution vector
-  //! \param[in] dNdX Basis function gradients at current point
+  //! \brief Evaluates the secondary solution at a result point.
+  //! \param[out] s Array of solution field values at current point
+  //! \param[in] eV Element solution vectors
+  //! \param[in] fe Finite element data at current point
   //! \param[in] X Cartesian coordinates of current point
-  bool evalSol(Vector& s, const Vector& eV,
-               const Matrix& dNdX, const Vec3& X) const;
+  virtual bool evalSol2(Vector& s, const Vectors& eV,
+                        const FiniteElement& fe, const Vec3& X) const;
 
   //! \brief Returns the number of primary/secondary solution field components.
   //! \param[in] fld which field set to consider (1=primary, 2=secondary)
@@ -125,7 +116,7 @@ public:
   //! \param[in] prefix Name prefix
   virtual std::string getField1Name(size_t, const char* prefix) const;
 
-  //! \brief Returns the name of a secondary solution field component
+  //! \brief Returns the name of a secondary solution field component.
   //! \param[in] i Field component index
   //! \param[in] prefix Name prefix for all components
   virtual std::string getField2Name(size_t i, const char* prefix) const;
@@ -135,7 +126,7 @@ public:
   //! manually when leaving the scope of the pointer variable receiving the
   //! returned pointer value.
   //! \param[in] asol Pointer to analytical solution (optional)
-  virtual NormBase* getNormIntegrand(AnaSol* asol = 0) const;
+  virtual NormBase* getNormIntegrand(AnaSol* asol) const;
 
 private:
   VecFunc*  bodyforce;    //!< Body force function
