@@ -310,7 +310,7 @@ public:
 
     // Assemble the reaction forces. Strictly, we only need to assemble those
     // elements that have nodes on the Dirichlet boundaries, but...
-    drc.setReactionIntegral(new ReactionsOnly(myReact,Dim::mySam));
+    drc.setReactionIntegral(new ReactionsOnly(myReact,Dim::mySam,Dim::adm));
     AlgEqSystem* tmpEqSys = Dim::myEqSys;
     Dim::myEqSys = nullptr;
     bool ok = this->setMode(SIM::RHS_ONLY) && this->assembleSystem({solution});
