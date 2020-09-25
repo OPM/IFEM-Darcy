@@ -43,7 +43,7 @@ int runSimulator(char* infile)
     return 2;
 
   if (darcy.opt.dumpHDF5(infile))
-    solver.handleDataOutput(darcy.opt.hdf5);
+    solver.handleDataOutput(darcy.opt.hdf5,darcy.getProcessAdm());
 
   return solver.solveProblem(infile,"Solving Darcy problem");
 }
