@@ -180,13 +180,6 @@ public:
     exporter.setFieldValue("u", this, solVec,
                            Dim::opt.project.empty() ? nullptr : &proj,
                            (results & DataExporter::NORMS) ? &eNorm : nullptr);
-
-    if (!Dim::opt.project.empty()) {
-      std::vector<std::string> pref;
-      for (const auto& it : Dim::opt.project)
-        pref.push_back(it.second);
-      exporter.setNormPrefixes(pref);
-    }
   }
 
   //! \brief Opens a new VTF-file and writes the model geometry to it.
