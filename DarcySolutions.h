@@ -22,15 +22,15 @@
 
 class LshapeDarcy : public RealFunc
 {
-  public:
-    //! \brief Empty constructor.
-    LshapeDarcy() {}
-    //! \brief Empty destructor.
-    virtual ~LshapeDarcy() {}
+public:
+  //! \brief Empty constructor.
+  LshapeDarcy() {}
+  //! \brief Empty destructor.
+  virtual ~LshapeDarcy() {}
 
-  protected:
-    //! \brief Evaluates the analytic pressure field at the point \a X.
-    virtual double evaluate(const Vec3& X) const;
+protected:
+  //! \brief Evaluates the analytic pressure field at the point \a X.
+  Real evaluate(const Vec3& X) const override;
 };
 
 
@@ -40,15 +40,15 @@ class LshapeDarcy : public RealFunc
 
 class LshapeDarcyVelocity : public VecFunc
 {
-  public:
-    //! \brief Empty constructor.
-    LshapeDarcyVelocity() {}
-    //! \brief Empty destructor.
-    virtual ~LshapeDarcyVelocity() {}
+public:
+  //! \brief Empty constructor.
+  LshapeDarcyVelocity() {}
+  //! \brief Empty destructor.
+  virtual ~LshapeDarcyVelocity() {}
 
-  protected:
-    //! \brief Evaluates the analytic vecocity vector at the point \a X.
-    virtual Vec3 evaluate(const Vec3& X) const;
+protected:
+  //! \brief Evaluates the analytic vecocity vector at the point \a X.
+  Vec3 evaluate(const Vec3& X) const override;
 };
 
 /*!
@@ -57,14 +57,15 @@ class LshapeDarcyVelocity : public VecFunc
 
 class Wavefront : public RealFunc
 {
-  public:
-    //! \brief Empty constructor
-    Wavefront() {}
-    //! \brief Empty destructor
-    virtual ~Wavefront() {}
+public:
+  //! \brief Empty constructor
+  Wavefront() {}
+  //! \brief Empty destructor
+  virtual ~Wavefront() {}
+
   protected:
-    //! \brief Evaluates the analytical pressure field at the point \a X.
-    virtual double evaluate(const Vec3& X) const;
+  //! \brief Evaluates the analytical pressure field at the point \a X.
+  Real evaluate(const Vec3& X) const override;
 };
 
 
@@ -74,14 +75,15 @@ class Wavefront : public RealFunc
 
 class WavefrontVelocity : public VecFunc
 {
-  public:
-    //! \brief Empty constructor
-    WavefrontVelocity() {}
-    //! \brief Empty destructor
-    virtual ~WavefrontVelocity() {}
+public:
+  //! \brief Empty constructor
+  WavefrontVelocity() {}
+  //! \brief Empty destructor
+  virtual ~WavefrontVelocity() {}
+
   protected:
-    //! \brief Evaluates the analytical pressure field at the point \a X.
-    virtual Vec3 evaluate(const Vec3& X) const;
+  //! \brief Evaluates the analytical pressure field at the point \a X.
+  Vec3 evaluate(const Vec3& X) const override;
 };
 
 
@@ -91,14 +93,15 @@ class WavefrontVelocity : public VecFunc
 
 class WavefrontSource : public RealFunc
 {
-  public:
-    //! \brief Empty constructor
-    WavefrontSource() {}
-    //! \brief Empty destructor
-    virtual ~WavefrontSource() {}
-  protected:
-    //! \brief Evaluates the analytical source at the point \a X.
-    virtual double evaluate(const Vec3& X) const;
+public:
+  //! \brief Empty constructor
+  WavefrontSource() {}
+  //! \brief Empty destructor
+  virtual ~WavefrontSource() {}
+
+protected:
+  //! \brief Evaluates the analytical source at the point \a X.
+  Real evaluate(const Vec3& X) const override;
 };
 
 #endif
