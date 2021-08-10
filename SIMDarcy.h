@@ -61,9 +61,10 @@ public:
     const TiXmlElement* child = elem->FirstChildElement();
     for (; child; child = child->NextSiblingElement()) {
       const char* value = nullptr;
-      if ((value = utl::getValue(child,"permvalues")))
+      if ((value = utl::getValue(child,"permvalues"))) {
+        IFEM::cout <<"\tPermeability: " << value << std::endl;
         drc.setPermValues(new VecFuncExpr(value));
-      else if ((value = utl::getValue(child,"permeability"))) {
+      } else if ((value = utl::getValue(child,"permeability"))) {
         std::string type;
         utl::getAttribute(child,"type",type);
         IFEM::cout <<"\tPermeability";
