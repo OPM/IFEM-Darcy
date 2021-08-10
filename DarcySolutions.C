@@ -12,7 +12,13 @@
 //==============================================================================
 
 #include "DarcySolutions.h"
+
+#include "ExprFunctions.h"
+#include "IFEM.h"
+#include "StringUtils.h"
 #include "Vec3.h"
+
+#include <sstream>
 
 double LshapeDarcy::evaluate (const Vec3& X) const
 {
@@ -91,4 +97,48 @@ double WavefrontSource::evaluate (const Vec3& X) const
   double f = (f1+f2)*(c*(x-0.5)*(x-0.5)+(y-0.5)*(y-0.5)) - f3;
 
   return f;
+}
+
+
+bool DiracSum::parse (const char* input)
+{
+  std::stringstream str;
+  std::string val = input;
+  replaceAll(val, "\\", "\n");
+  str << val;
+  bool ok = false;
+  while (str.good()) {
+    char temp[1024];
+    str.getline(temp, 1024);
+    if (temp[0] == '#' || temp[0] == 0)
+      continue;
+    std::stringstream s2(temp);
+    Real x, y, z, val;
+    s2 >> x;
+    if (myDim > 1)
+      s2 >> y;
+    if (myDim > 2)
+      s2 >> z;
+    s2 >> val;
+    IFEM::cout << "\n\t\tDirac(" << x;
+    if (myDim > 1)
+      IFEM::cout << ", " << y;
+    if (myDim > 2)
+      IFEM::cout << ", " << z;
+    IFEM::cout << ") = " << val;
+    std::stringstream s3;
+    s3 << "r2=pow(x-" << x << ",2)";
+    if (myDim > 1)
+      s3 << "+pow(y-" << y << ",2)";
+    if (myDim > 2)
+      s3 << "+pow(z-" << z << ",2)";
+     s3 << "; r=sqrt(r2); if(below(r,"
+       << pointTol << ")," << val << ",0.0)";
+    EvalFunction* e = new EvalFunction(s3.str().c_str());
+    this->add(e);
+    ok = true;
+  }
+
+  IFEM::cout << std::endl;
+  return ok;
 }

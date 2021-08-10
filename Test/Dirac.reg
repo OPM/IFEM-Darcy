@@ -1,0 +1,19 @@
+Dirac.xinp
+
+Input file: Dirac.xinp
+Equation solver: 2
+Number of Gauss points: 4
+	Source function: DiracSum
+		Dirac(5, 2.5) = 1
+		Dirac(1, 4) = 1
+		Dirac(8, 2) = 1
+		Dirac(8, 4) = 1
+	Permeability: 1.2|1.2
+Number of elements    256
+Number of nodes       289
+Number of dofs        289
+Number of unknowns    272
+L2-norm            : 0.171406
+Max pressure       : 0.321828
+Energy norm           a(u^h,u^h)^0.5 : 0.18251
+External energy          (h,u^h)^0.5 : 0.18251

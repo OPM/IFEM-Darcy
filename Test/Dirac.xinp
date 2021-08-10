@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<simulation>
+
+  <!-- General - geometry definitions !-->
+  <geometry dim="2" sets="true" Lx="10" Ly="5">
+    <refine  patch="1" u="15" v="15"/>
+  </geometry>
+
+  <!-- General - boundary conditions !-->
+  <boundaryconditions>
+    <dirichlet set="Edge4" comp="1"/>
+  </boundaryconditions>
+
+  <!-- Problem-specific block !-->
+  <darcy>
+    <source type="diracsum" pointTol="1e-1">
+      # X Y Val\
+      5.0 2.5 1\
+      1.0 4.0 1\
+      8.0 2.0 1\
+      8.0 4.0 1
+    </source>
+    <permvalues>1.2|1.2</permvalues>
+  </darcy>
+
+</simulation>

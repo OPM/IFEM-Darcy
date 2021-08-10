@@ -15,6 +15,8 @@
 #define _DARCY_SOLUTIONS_H
 
 #include "Function.h"
+#include "FunctionSum.h"
+
 
 /*!
  \brief Primary solution for Darcy problem on a L-shape domain.
@@ -102,6 +104,36 @@ public:
 protected:
   //! \brief Evaluates the analytical source at the point \a X.
   Real evaluate(const Vec3& X) const override;
+};
+
+
+/*!
+ \brief A sum of dirac functions as a source.
+*/
+
+class DiracSum : public FunctionSum, public RealFunc
+{
+public:
+  //! \brief Constructor.
+  //! \param tol Interval around point associated with functions
+  //! \param dim Dimensionality of world
+  DiracSum(double tol, int dim) : pointTol(tol), myDim(dim) {}
+
+  //! \brief Parse functions from a string.
+  //! \param input The string to parse
+  bool parse(const char* input);
+
+  //! \brief Empty constructor.
+  virtual ~DiracSum() {}
+
+protected:
+  //! \brief Evaluates the function in a point.
+  //! \param X Coordinates of point to evaluate in
+  Real evaluate(const Vec3& X) const override
+  { return this->FunctionSum::getValue(X).front(); }
+
+  double pointTol; //!< Interval around point associated with functions
+  int myDim; //!< Dimensionality of world
 };
 
 #endif
