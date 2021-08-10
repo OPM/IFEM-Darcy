@@ -76,14 +76,27 @@ public:
       else if (!strcasecmp(child->Value(),"source")) {
         std::string type;
         utl::getAttribute(child,"type",type);
-        IFEM::cout <<"\tSource function: ";
+        IFEM::cout <<"\tSource function:";
         if (type == "Wavefront") {
-          IFEM::cout << "Wavefront"<< std::endl;
+          IFEM::cout << " Wavefront"<< std::endl;
           drc.setSource(new WavefrontSource());
         }
         else if (type == "expression" && child->FirstChild()) {
-          IFEM::cout << child->FirstChild()->Value() << std::endl;
+          IFEM::cout << " " << child->FirstChild()->Value() << std::endl;
           drc.setSource(new EvalFunction(child->FirstChild()->Value()));
+        }
+        else if (type == "diracsum") {
+          double tol = 1e-2;
+          const char* input = utl::getValue(child, "source");
+          utl::getAttribute(child, "pointTol", tol);
+          if (input) {
+            IFEM::cout << " DiracSum";
+            DiracSum* f = new DiracSum(tol, Dim::dimension);
+            if (f->parse(input))
+              drc.setSource(f);
+            else
+              delete f;
+          }
         }
         else
           IFEM::cout <<"(none)"<< std::endl;
