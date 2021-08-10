@@ -13,7 +13,11 @@ if(NOT IFEM_CONFIGURED)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${IFEM_CXX_FLAGS}")
 endif()
 
-set(DARCY_SRCS Darcy.C DarcySolutions.C)
+set(DARCY_SRCS Darcy.C
+               DarcySolutions.C
+               SIMDarcy.h
+               Darcy.h
+               DarcySolutions.h)
 
 include_directories(${IFEM_INCLUDES} ${PROJECT_SOURCE_DIR} ../Common)
 
