@@ -55,50 +55,6 @@ Vec3 LshapeDarcyVelocity::evaluate (const Vec3& X) const
   return velocity;
 }
 
-double Wavefront::evaluate (const Vec3& X) const
-{
-  double x = X.x;
-  double y = X.y;
-
-  double a = sqrt((x-0.5)*(x-0.5)+(y-0.5)*(y-0.5));
-
-  return atan(50.0*(a-0.25));
-}
-
-Vec3 WavefrontVelocity::evaluate (const Vec3& X) const
-{
-  double x = X.x;
-  double y = X.y;
-
-  double a = sqrt((x-0.5)*(x-0.5)+(y-0.5)*(y-0.5));
-  double b = 1.0 + 2500.0*(a-0.25)*(a-0.25);
-  double c = 10.0; // Degree of anisotropy
-
-  Vec3 velocity;
-  velocity.x = -50.0*c*(x-0.5)/(a*b);
-  velocity.y = -50.0*(y-0.5)/(a*b);
-
-  return velocity;
-}
-
-double WavefrontSource::evaluate (const Vec3& X) const
-{
-  double x = X.x;
-  double y = X.y;
-
-  double a = sqrt((x-0.5)*(x-0.5)+(y-0.5)*(y-0.5));
-  double b = 1.0 + 2500.0*(a-0.25)*(a-0.25);
-  double c = 10.0; // Degree of anisotropy
-
-  double f1 = 250000.0*(a-0.25)/(a*a*b*b);
-  double f2 = 50.0/(a*a*a*b);
-  double f3 = 50.0*(c+1)/(a*b);
-
-  double f = (f1+f2)*(c*(x-0.5)*(x-0.5)+(y-0.5)*(y-0.5)) - f3;
-
-  return f;
-}
-
 
 bool DiracSum::parse (const char* input)
 {
