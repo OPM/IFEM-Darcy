@@ -189,11 +189,6 @@ public:
   //! \brief Returns whether this norm has explicit boundary contributions.
   virtual bool hasBoundaryTerms() const { return true; }
 
-  //! \brief Adds external energy terms to relevant norms.
-  //! \param gNorm Global norm quantities
-  //! \param[in] energy Global external energy
-  virtual void addBoundaryTerms(Vectors& gNorm, double energy) const;
-
   //! \brief Returns the number of norm groups or size of a specified group.
   //! \param[in] group The norm group to return the size of
   //! (if zero, return the number of groups)
