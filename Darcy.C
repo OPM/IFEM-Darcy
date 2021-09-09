@@ -12,15 +12,17 @@
 //==============================================================================
 
 #include "Darcy.h"
-#include "FiniteElement.h"
+
+#include "AnaSol.h"
 #include "ElmMats.h"
 #include "ElmNorm.h"
-#include "AnaSol.h"
+#include "FiniteElement.h"
 #include "Function.h"
+#include "GlobalIntegral.h"
 #include "Vec3Oper.h"
 
 
-Darcy::Darcy (unsigned short int n) : IntegrandBase(n), rhow(1.0), gacc(9.81)
+Darcy::Darcy (unsigned short int n, int torder) : IntegrandBase(n), rhow(1.0), gacc(9.81)
 {
   primsol.resize(1);
 
@@ -53,6 +55,13 @@ void Darcy::setMode (SIM::SolutionMode mode)
   m_mode = mode;
 
   primsol.resize(mode >= SIM::RHS_ONLY ? 1 : 0);
+}
+
+
+void Darcy::setReactionIntegral (GlobalIntegral* gq)
+{
+  delete reacInt;
+  reacInt = gq;
 }
 
 

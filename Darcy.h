@@ -14,10 +14,11 @@
 #ifndef _DARCY_H_
 #define _DARCY_H_
 
-#include "IntegrandBase.h"
-#include "GlobalIntegral.h"
+#include "BDF.h"
 #include "EqualOrderOperators.h"
+#include "IntegrandBase.h"
 
+class GlobalIntegral;
 class RealFunc;
 class VecFunc;
 
@@ -32,7 +33,7 @@ class Darcy : public IntegrandBase
 
 public:
   //! \brief The constructor initializes all pointers to zero.
-  explicit Darcy(unsigned short int n);
+  explicit Darcy(unsigned short int n, int torder = 0);
   //! \brief Empty destructor.
   virtual ~Darcy() {}
 
@@ -66,7 +67,7 @@ public:
   virtual void setMode(SIM::SolutionMode mode);
 
   //! \brief Defines the global integral for calculating reaction forces only.
-  void setReactionIntegral(GlobalIntegral* gq) { delete reacInt; reacInt = gq; }
+  void setReactionIntegral(GlobalIntegral* gq);
   //! \brief Returns the system quantity to be integrated by \a *this.
   virtual GlobalIntegral& getGlobalInt(GlobalIntegral* gq) const;
 
@@ -137,6 +138,8 @@ private:
   RealFunc* source;       //!< Source function
 
   GlobalIntegral* reacInt; //!< Reaction-forces-only integral
+
+  TimeIntegration::BDF bdf; //!< BDF helper class
 
 public:
   const double rhow; //!< Density of fluid
