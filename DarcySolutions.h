@@ -53,59 +53,6 @@ protected:
   Vec3 evaluate(const Vec3& X) const override;
 };
 
-/*!
- \brief Primary solution for a wavefront Darcy problem.
-*/
-
-class Wavefront : public RealFunc
-{
-public:
-  //! \brief Empty constructor
-  Wavefront() {}
-  //! \brief Empty destructor
-  virtual ~Wavefront() {}
-
-  protected:
-  //! \brief Evaluates the analytical pressure field at the point \a X.
-  Real evaluate(const Vec3& X) const override;
-};
-
-
-/*!
- \brief Secondary solution for a wavefront Darcy problem.
-*/
-
-class WavefrontVelocity : public VecFunc
-{
-public:
-  //! \brief Empty constructor
-  WavefrontVelocity() {}
-  //! \brief Empty destructor
-  virtual ~WavefrontVelocity() {}
-
-  protected:
-  //! \brief Evaluates the analytical pressure field at the point \a X.
-  Vec3 evaluate(const Vec3& X) const override;
-};
-
-
-/*!
- \brief Source function for a wavefront Darcy problem.
-*/
-
-class WavefrontSource : public RealFunc
-{
-public:
-  //! \brief Empty constructor
-  WavefrontSource() {}
-  //! \brief Empty destructor
-  virtual ~WavefrontSource() {}
-
-protected:
-  //! \brief Evaluates the analytical source at the point \a X.
-  Real evaluate(const Vec3& X) const override;
-};
-
 
 /*!
  \brief A sum of dirac functions as a source.

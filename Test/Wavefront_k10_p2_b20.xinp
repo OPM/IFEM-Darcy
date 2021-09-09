@@ -26,8 +26,27 @@
   <!-- Problem-specific block !-->
   <darcy>
     <permvalues>98.1|9.81</permvalues>
-    <source type="Wavefront"/>
-    <anasol type="Wavefront"/>
+    <source type="expression">
+      X = x-0.5;
+      Y = y-0.5;
+      a = sqrt(X*X+Y*Y);
+      b = 1.0 + 2500.0*(a-0.25)*(a-0.25);
+      c = 10.0;
+      f1 = 250000.0*(a-0.25)/(a*a*b*b);
+      f2 = 50.0/(a*a*a*b);
+      f3 = 50.0*(c+1.0)/(a*b);
+      (f1+f2)*(c*X*X+Y*Y) - f3
+    </source>
+    <anasol type="expression">
+      <variables>X = x-0.5;
+        Y = y-0.5;
+        a = sqrt(X*X+Y*Y);
+        b = 1.0 + 2500.0*(a-0.25)*(a-0.25);
+        c = 10.0
+    </variables>
+    <primary> atan(50.0*(a-0.25))</primary>
+    <secondary>-50.0*c*X/(a*b) | -50.0*Y/(a*b)</secondary>
+  </anasol>
     <reactions/>
   </darcy>
 

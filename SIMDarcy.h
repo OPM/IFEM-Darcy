@@ -77,11 +77,7 @@ public:
         std::string type;
         utl::getAttribute(child,"type",type);
         IFEM::cout <<"\tSource function:";
-        if (type == "Wavefront") {
-          IFEM::cout << " Wavefront"<< std::endl;
-          drc.setSource(new WavefrontSource());
-        }
-        else if (type == "expression" && child->FirstChild()) {
+        if (type == "expression" && child->FirstChild()) {
           IFEM::cout << " " << child->FirstChild()->Value() << std::endl;
           drc.setSource(new EvalFunction(child->FirstChild()->Value()));
         }
@@ -107,10 +103,6 @@ public:
         if (type == "Lshape") {
           Dim::mySol = new AnaSol(new LshapeDarcy(), new LshapeDarcyVelocity());
           IFEM::cout <<"\tAnalytical solution: Lshape"<< std::endl;
-        }
-        else if (type == "Wavefront") {
-          Dim::mySol = new AnaSol(new Wavefront(), new WavefrontVelocity());
-          IFEM::cout <<"\tAnalytical solution: Wavefront"<< std::endl;
         }
         else {
           Dim::mySol = new AnaSol(child);
