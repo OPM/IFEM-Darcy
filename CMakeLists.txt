@@ -14,9 +14,11 @@ if(NOT IFEM_CONFIGURED)
 endif()
 
 set(DARCY_SRCS Darcy.C
+               DarcyArgs.C
                DarcySolutions.C
                SIMDarcy.h
                Darcy.h
+               DarcyArgs.h
                DarcySolutions.h)
 
 include_directories(${IFEM_INCLUDES} ${PROJECT_SOURCE_DIR} ../Common)
@@ -49,6 +51,7 @@ if(NOT MPI_FOUND OR IFEM_SERIAL_TESTS_IN_PARALLEL)
   ifem_add_test(Lshape_p2_b5.reg Darcy)
   ifem_add_test(Wavefront_k10_p2_b20.reg Darcy)
   ifem_add_test(Dirac.reg Darcy)
+  ifem_add_test(SimpleSquare.reg Darcy)
   ifem_add_vtf_test(Wavefront_k10_p2_b20.vreg Darcy)
   ifem_add_hdf5_test(Wavefront_k10_p2_b20.hreg Darcy)
   if(LRSPLINE_FOUND OR LRSpline_FOUND)

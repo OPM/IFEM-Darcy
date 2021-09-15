@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
+<simulation>
+
+  <geometry dim="2" sets="true">
+    <refine type="uniform" patch="1" u="7" v="7"/>
+  </geometry>
+
+  <darcy>
+    <boundaryconditions>
+      <dirichlet set="Boundary" comp="1" type="anasol"/>
+    </boundaryconditions>
+    <source type="expression">
+      ut=x*(x-1)*y*(y-1);
+      uxx=2*y*(y-1)*t;
+      uyy=2*x*(x-1)*t;
+      ut-uxx-uyy
+    </source>
+    <anasol type="expression">
+      <primary>x*(x-1)*y*(y-1)*t</primary>
+      <secondary>-(2*x-1)*y*(y-1)*t|-(2*y-1)*x*(x-1)*t</secondary>
+    </anasol>
+    <permvalues>1.0|1.0</permvalues>
+    <gravity>1.0</gravity>
+  </darcy>
+
+  <timestepping start="0.0" end="1.0" dt="0.1" type="be"/>
+
+</simulation>

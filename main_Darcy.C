@@ -17,7 +17,7 @@
 #include "SIM3D.h"
 #include "SIMDarcy.h"
 #include "SIMSolverAdap.h"
-#include "SIMargsBase.h"
+#include "DarcyArgs.h"
 #include "Profiler.h"
 
 
@@ -42,25 +42,67 @@ int runSimulator(char* infile)
   if (!darcy.preprocess())
     return 2;
 
+  darcy.init();
+
   if (darcy.opt.dumpHDF5(infile))
     solver.handleDataOutput(darcy.opt.hdf5,darcy.getProcessAdm());
 
-  return solver.solveProblem(infile,"Solving Darcy problem");
+  int res = solver.solveProblem(infile,"Solving Darcy problem");
+  if (!res)
+    darcy.printFinalNorms(TimeStep());
+
+  return res;
+}
+
+/*!
+  \brief Launch a simulator using a specified solver template.
+  \param infile The input file to parse
+  \param torder Time stepping order
+*/
+
+template<class Dim>
+int runSimulatorTransient(char* infile, int torder)
+{
+  SIMDarcy<Dim> darcy(torder);
+  SIMSolver<SIMDarcy<Dim>> solver(darcy);
+
+  utl::profiler->start("Model input");
+
+  if (!darcy.read(infile) || !solver.read(infile))
+    return 1;
+
+  utl::profiler->stop("Model input");
+
+  if (!darcy.preprocess())
+    return 2;
+
+  darcy.init();
+
+  if (darcy.opt.dumpHDF5(infile))
+    solver.handleDataOutput(darcy.opt.hdf5,darcy.getProcessAdm());
+
+  int res = solver.solveProblem(infile,"Solving Darcy problem");
+  if (!res)
+    darcy.printFinalNorms(solver.getTimePrm());
+
+  return res;
 }
 
 /*!
   \brief Choose a solver template and then launch a simulator.
   \param infile The input file to parse
-  \param adaptive \e true to do an adaptive simulation
+  \param args Simulator arguments
 */
 
 template<class Dim>
-int runSimulator1(char* infile, bool adaptive)
+int runSimulator1(char* infile, const DarcyArgs& args)
 {
-  if (adaptive)
+  if (args.adap)
     return runSimulator<Dim, SIMSolverAdap>(infile);
-
-  return runSimulator<Dim, SIMSolverStat>(infile);
+  if (args.timeMethod != TimeIntegration::NONE)
+    return runSimulatorTransient<Dim>(infile,TimeIntegration::Order(args.timeMethod));
+  else
+    return runSimulator<Dim, SIMSolverStat>(infile);
 }
 
 /*!
@@ -95,7 +137,7 @@ int main (int argc, char** argv)
   utl::profiler->start("Initialization");
 
   char* infile = nullptr;
-  SIMargsBase args("darcy");
+  DarcyArgs args;
 
   IFEM::Init(argc,argv,"Darcy solver");
   for (int i = 1; i < argc; i++)
@@ -130,9 +172,9 @@ int main (int argc, char** argv)
   utl::profiler->stop("Initialization");
 
   if (args.dim == 3)
-    return runSimulator1<SIM3D>(infile,args.adap);
+    return runSimulator1<SIM3D>(infile,args);
   else if (args.dim == 2)
-    return runSimulator1<SIM2D>(infile,args.adap);
+    return runSimulator1<SIM2D>(infile,args);
   else
-    return runSimulator1<SIM1D>(infile,args.adap);
+    return runSimulator1<SIM1D>(infile,args);
 }

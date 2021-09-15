@@ -1,0 +1,45 @@
+SimpleSquare.xinp
+
+Input file: SimpleSquare.xinp
+Equation solver: 2
+Number of Gauss points: 4
+Number of elements    64
+Number of nodes       81
+Number of dofs        81
+Number of constraints 32
+Number of unknowns    49
+  step = 1  time = 0.1
+L2-norm            : 0.00301396
+Max pressure       : 0.00635299
+  step = 2  time = 0.2
+L2-norm            : 0.00601919
+Max pressure       : 0.0126901
+  step = 3  time = 0.3
+L2-norm            : 0.00902152
+Max pressure       : 0.019021
+  step = 4  time = 0.4
+L2-norm            : 0.0120229
+Max pressure       : 0.0253498
+  step = 5  time = 0.5
+L2-norm            : 0.0150239
+Max pressure       : 0.0316779
+  step = 6  time = 0.6
+L2-norm            : 0.0180249
+Max pressure       : 0.0380057
+  step = 7  time = 0.7
+L2-norm            : 0.0210258
+Max pressure       : 0.0443334
+  step = 8  time = 0.8
+L2-norm            : 0.0240267
+Max pressure       : 0.0506611
+  step = 9  time = 0.9
+L2-norm            : 0.0270276
+Max pressure       : 0.0569889
+  step = 10  time = 1
+L2-norm            : 0.0300285
+Max pressure       : 0.0633166
+  Time integration completed.
+Energy norm           a(u^h,u^h)^0.5 : 0.147994
+Exact norm                a(u,u)^0.5 : 0.149071
+Exact error      a(e,e)^0.5, e=u-u^h : 0.0186774
+Exact relative error (%) : 12.5292
