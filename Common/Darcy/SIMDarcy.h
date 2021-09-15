@@ -14,19 +14,12 @@
 #ifndef _SIM_DARCY_H_
 #define _SIM_DARCY_H_
 
-#include "IFEM.h"
 #include "Darcy.h"
-#include "DarcySolutions.h"
-#include "ReactionsOnly.h"
-#include "AnaSol.h"
-#include "Functions.h"
-#include "ExprFunctions.h"
-#include "Utilities.h"
-#include "tinyxml.h"
-#include "Property.h"
 #include "SIMsolution.h"
-#include "TimeStep.h"
-#include "DataExporter.h"
+
+
+class DataExporter;
+class TimeStep;
 
 
 /*!
@@ -37,132 +30,23 @@ template<class Dim> class SIMDarcy : public Dim, public SIMsolution
 {
 public:
   //! \brief Default constructor.
-  SIMDarcy(int torder = 0) : Dim(1), drc(Dim::dimension, torder), solVec(nullptr)
-  {
-    Dim::myProblem = &drc;
-    aCode[0] = aCode[1] = 0;
-  }
+  SIMDarcy(int torder = 0);
 
   //! \brief Destructor.
-  virtual ~SIMDarcy()
-  {
-    Dim::myProblem = nullptr;
-    Dim::myInts.clear();
-    // To prevent the SIMbase destructor try to delete already deleted functions
-    if (aCode[0] > 0) Dim::myScalars.erase(aCode[0]);
-    if (aCode[1] > 0) Dim::myVectors.erase(aCode[1]);
-  }
+  virtual ~SIMDarcy();
 
   using Dim::parse;
   //! \brief Parses a data section from an XML element.
-  bool parse(const TiXmlElement* elem) override
-  {
-    if (strcasecmp(elem->Value(),"darcy"))
-      return this->Dim::parse(elem);
-
-    const TiXmlElement* child = elem->FirstChildElement();
-    for (; child; child = child->NextSiblingElement()) {
-      const char* value = nullptr;
-      if ((value = utl::getValue(child,"permvalues"))) {
-        IFEM::cout <<"\tPermeability: " << value << std::endl;
-        drc.setPermValues(new VecFuncExpr(value));
-      } else if ((value = utl::getValue(child,"permeability"))) {
-        std::string type;
-        utl::getAttribute(child,"type",type);
-        IFEM::cout <<"\tPermeability";
-        drc.setPermField(utl::parseRealFunc(value,type));
-        IFEM::cout << std::endl;
-      }
-      else if ((value = utl::getValue(child,"bodyforce")))
-        drc.setBodyForce(new VecFuncExpr(value));
-      else if ((value = utl::getValue(child,"gravity")))
-        drc.setGravity(atof(value));
-      else if (!strcasecmp(child->Value(),"source")) {
-        std::string type;
-        utl::getAttribute(child,"type",type);
-        IFEM::cout <<"\tSource function:";
-        if (type == "expression" && child->FirstChild()) {
-          IFEM::cout << " " << child->FirstChild()->Value() << std::endl;
-          drc.setSource(new EvalFunction(child->FirstChild()->Value()));
-        }
-        else if (type == "diracsum") {
-          double tol = 1e-2;
-          const char* input = utl::getValue(child, "source");
-          utl::getAttribute(child, "pointTol", tol);
-          if (input) {
-            IFEM::cout << " DiracSum";
-            DiracSum* f = new DiracSum(tol, Dim::dimension);
-            if (f->parse(input))
-              drc.setSource(f);
-            else
-              delete f;
-          }
-        }
-        else
-          IFEM::cout <<"(none)"<< std::endl;
-      }
-      else if (!strcasecmp(child->Value(),"anasol")) {
-        std::string type;
-        utl::getAttribute(child,"type",type);
-        if (type == "Lshape") {
-          Dim::mySol = new AnaSol(new LshapeDarcy(), new LshapeDarcyVelocity());
-          IFEM::cout <<"\tAnalytical solution: Lshape"<< std::endl;
-        }
-        else {
-          Dim::mySol = new AnaSol(child);
-          std::cout <<"\tAnalytical solution: expression"<< std::endl;
-        }
-        // Define the analytical boundary traction field
-        int code = 0;
-        if (utl::getAttribute(child,"code",code) && code > 0) {
-          if (code > 0 && Dim::mySol->getScalarSecSol())
-          {
-            this->setPropertyType(code,Property::NEUMANN);
-            Dim::myVectors[code] = Dim::mySol->getScalarSecSol();
-            aCode[1] = code;
-          }
-        }
-      }
-      else if (!strcasecmp(child->Value(),"reactions"))
-        drc.extEner = 'R';
-      else
-        this->Dim::parse(child);
-    }
-
-    return true;
-  }
+  bool parse(const TiXmlElement* elem) override;
 
   //! \brief Initializes for integration of Neumann terms for a given property.
   //! \param[in] propInd Physical property index
-  bool initNeumann(size_t propInd) override
-  {
-    typename Dim::SclFuncMap::const_iterator sit = Dim::myScalars.find(propInd);
-    typename Dim::VecFuncMap::const_iterator vit = Dim::myVectors.find(propInd);
-
-    if (sit != Dim::myScalars.end())
-      drc.setFlux(sit->second);
-    else if (vit != Dim::myVectors.end())
-      drc.setFlux(vit->second);
-    else
-      return false;
-
-    return true;
-  }
+  bool initNeumann(size_t propInd) override;
 
   //! \brief Initializes the property containers of the model.
   //! \details Use this method to clear the model before re-reading
   //! the input file in the refinement step of an adaptive simulation.
-  void clearProperties() override
-  {
-    // To prevent SIMbase::clearProperties deleting the analytical solution
-    if (aCode[0] > 0) Dim::myScalars.erase(aCode[0]);
-    if (aCode[1] > 0) Dim::myVectors.erase(aCode[1]);
-    aCode[0] = aCode[1] = 0;
-
-    drc.setFlux((RealFunc*)nullptr);
-    drc.setFlux((VecFunc*)nullptr);
-    this->Dim::clearProperties();
-  }
+  void clearProperties() override;
 
   //! \brief Returns the name of this simulator (for use in the HDF5 export).
   std::string getName() const override { return "DarcyFlow"; }
@@ -176,136 +60,34 @@ public:
   const Vector& getSolution(int = 0) const override { return *solVec; }
 
   //! \brief Register fields for data export.
-  void registerFields(DataExporter& exporter)
-  {
-    int results = DataExporter::PRIMARY;
-
-    if (!Dim::opt.pSolOnly)
-      results |= DataExporter::SECONDARY;
-
-    if (Dim::opt.saveNorms)
-      results |= DataExporter::NORMS;
-
-    exporter.registerField("u", "primary", DataExporter::SIM, results);
-    exporter.setFieldValue("u", this, solVec,
-                           Dim::opt.project.empty() ? nullptr : &proj,
-                           (results & DataExporter::NORMS) ? &eNorm : nullptr);
-  }
+  void registerFields(DataExporter& exporter);
 
   //! \brief Opens a new VTF-file and writes the model geometry to it.
   //! \param[in] fileName File name used to construct the VTF-file name from
   //! \param[out] geoBlk Running geometry block counter
   //! \param[out] nBlock Running result block counter
-  bool saveModel(char* fileName, int& geoBlk, int& nBlock)
-  {
-    if (Dim::opt.format < 0)
-      return true;
-
-    nBlock = 0;
-    return this->writeGlvG(geoBlk,fileName);
-  }
+  bool saveModel(char* fileName, int& geoBlk, int& nBlock);
 
   //! \brief Saves the converged results to VTF file of a given time step.
   //! \param[in] tp Time stepping parameters
   //! \param[in] nBlock Running VTF block counter
-  bool saveStep(const TimeStep& tp, int& nBlock)
-  {
-    if (Dim::opt.format < 0)
-      return true;
-
-    int iDump = tp.step/Dim::opt.saveInc + (drc.getOrder() == 0 ? 1 : 0);
-
-    // Write solution fields
-    if (!this->writeGlvS(*solVec,iDump,nBlock,tp.time.t))
-      return false;
-
-    if (!solVec->empty())  {
-      if (!Dim::opt.pSolOnly) {
-        Matrix tmp;
-        if (!this->project(tmp,*solVec))
-          return false;
-
-        if (!this->writeGlvV(tmp,"velocity",iDump,nBlock,110,Dim::nsd))
-          return false;
-
-        size_t i = 0;
-        for (auto& pit : Dim::opt.project)
-          if (!this->writeGlvP(proj[i++],iDump,nBlock,100,pit.second.c_str()))
-            return false;
-      }
-    }
-
-    // Write element norms
-    if (Dim::opt.saveNorms)
-      if (!this->writeGlvN(eNorm,iDump,nBlock))
-        return false;
-
-    double param2 = drc.getOrder() == 0 ? iDump : tp.time.t;
-    return this->writeGlvStep(iDump,param2,drc.getOrder() == 0 ? 1 : 0);
-  }
+  bool saveStep(const TimeStep& tp, int& nBlock);
 
   //! \brief Initialize simulator.
-  void init()
-  {
-    this->initSolution(this->getNoDOFs(), 1 + drc.getOrder());
-    this->solVec = &this->solution.front();
-
-    this->initSystem(Dim::opt.solver);
-    this->setQuadratureRule(Dim::opt.nGauss[0],true);
-  }
+  void init();
 
   //! \brief Computes the solution for the current time step.
-  bool solveStep(TimeStep& tp)
-  {
-
-    if (Dim::msgLevel >= 0 && tp.multiSteps())
-      IFEM::cout <<"\n  step = "<< tp.step
-                 <<"  time = "<< tp.time.t << std::endl;
-
-    if (!this->setMode(SIM::DYNAMIC))
-      return false;
-
-    if (!this->assembleSystem(tp.time, solution))
-      return false;
-
-    if (!this->solveSystem(solution.front(),Dim::msgLevel-1,"pressure    "))
-      return false;
-
-    if (!this->setMode(SIM::RECOVERY))
-      return false;
-
-    if (!Dim::opt.project.empty() && !tp.multiSteps())
-    {
-      // Project the secondary solution onto the splines basis
-      size_t j = 0;
-      for (auto& pit : Dim::opt.project)
-        if (!this->project(proj[j++],solution.front(),pit.first))
-          return false;
-
-      IFEM::cout << std::endl;
-    }
-
-    return true;
-  }
+  bool solveStep(TimeStep& tp);
 
   //! \brief Advance time stepping
-  bool advanceStep(TimeStep&)
-  {
-    if (drc.getOrder() > 0)
-      this->pushSolution();
-    return true;
-  }
+  bool advanceStep(TimeStep&);
 
   //! \brief Prints a summary of the calculated solution to std::cout.
   //! \param[in] solution The solution vector
   //! \param[in] printSol Print solution only if size is less than this value
   //! \param[in] outPrec Number of digits after the decimal point in norm print
   void printSolutionSummary(const Vector& solution, int printSol, const char*,
-                            std::streamsize outPrec) override
-  {
-    this->SIMbase::printSolutionSummary(solution, printSol,
-                                        "pressure    ", outPrec);
-  }
+                            std::streamsize outPrec) override;
 
   using Dim::solveSystem;
   //! \brief Solves the assembled linear system of equations for a given load.
@@ -320,24 +102,7 @@ public:
   //! boundary. This requires an additional assembly loop calculating the
   //! internal forces only, since we only are doing a linear solve here.
   bool solveSystem(Vector& solution, int printSol, double* rCond,
-                   const char* compName, bool newLHS, size_t idxRHS) override
-  {
-    if (!this->Dim::solveSystem(solution,printSol,rCond,compName,newLHS,idxRHS))
-      return false;
-    else if (idxRHS > 0 || !this->haveReactions() || drc.extEner != 'R')
-      return true;
-
-    // Assemble the reaction forces. Strictly, we only need to assemble those
-    // elements that have nodes on the Dirichlet boundaries, but...
-    drc.setReactionIntegral(new ReactionsOnly(myReact,Dim::mySam,Dim::adm));
-    AlgEqSystem* tmpEqSys = Dim::myEqSys;
-    Dim::myEqSys = nullptr;
-    bool ok = this->setMode(SIM::RHS_ONLY) && this->assembleSystem({solution});
-    Dim::myEqSys = tmpEqSys;
-    drc.setReactionIntegral(nullptr);
-
-    return ok;
-  }
+                   const char* compName, bool newLHS, size_t idxRHS) override;
 
   //! \brief Returns current reaction force vector.
   const Vector* getReactionForces() const override
@@ -364,74 +129,16 @@ public:
 
   //! \brief Print final solution norms to terminal.
   //\param tp Time stepping parameters
-  void printFinalNorms(const TimeStep& tp)
-  {
-    // Evaluate solution norms
-    Vectors gNorm;
-    this->setQuadratureRule(Dim::opt.nGauss[1]);
-    if (tp.multiSteps()) {
-      if (!this->solutionNorms(tp.time,solution,proj,gNorm))
-        return;
-    } else {
-      if (!this->solutionNorms(*solVec,proj,gNorm))
-      return;
-    }
-
-    // Print global norm summary to console
-    this->printNorms(gNorm);
-  }
+  void printFinalNorms(const TimeStep& tp);
 
 protected:
   //! \brief Performs some pre-processing tasks on the FE model.
   //! \details This method is reimplemented to resolve inhomogeneous boundary
   //! condition fields in case they are derived from the analytical solution.
-  void preprocessA() override
-  {
-    proj.resize(Dim::opt.project.size());
-    if (!Dim::mySol) return;
-
-    // Define analytical boundary condition fields
-    PropertyVec::iterator p;
-    for (p = Dim::myProps.begin(); p != Dim::myProps.end(); ++p)
-      if (p->pcode == Property::DIRICHLET_ANASOL)
-      {
-        if (!Dim::mySol->getScalarSol())
-          p->pcode = Property::UNDEFINED;
-        else if (aCode[0] == abs(p->pindx))
-          p->pcode = Property::DIRICHLET_INHOM;
-        else if (aCode[0] == 0)
-        {
-          aCode[0] = abs(p->pindx);
-          Dim::myScalars[aCode[0]] = Dim::mySol->getScalarSol();
-          p->pcode = Property::DIRICHLET_INHOM;
-        }
-        else
-          p->pcode = Property::UNDEFINED;
-      }
-      else if (p->pcode == Property::NEUMANN_ANASOL)
-      {
-        if (!Dim::mySol->getScalarSecSol())
-          p->pcode = Property::UNDEFINED;
-        else if (aCode[1] == p->pindx)
-          p->pcode = Property::NEUMANN;
-        else if (aCode[1] == 0)
-        {
-          aCode[1] = p->pindx;
-          Dim::myVectors[aCode[1]] = Dim::mySol->getScalarSecSol();
-          p->pcode = Property::NEUMANN;
-        }
-        else
-          p->pcode = Property::UNDEFINED;
-      }
-  }
+  void preprocessA() override;
 
   //! \brief Performs some pre-processing tasks on the FE model.
-  bool preprocessB() override
-  {
-    if (this->getNoConstraints() == 0 && !drc.extEner)
-      drc.extEner = 'y';
-    return true;
-  }
+  bool preprocessB() override;
 
 private:
   Darcy drc;            //!< Darcy integrand
