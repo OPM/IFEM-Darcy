@@ -13,23 +13,18 @@ if(NOT IFEM_CONFIGURED)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${IFEM_CXX_FLAGS}")
 endif()
 
-set(DARCY_SRCS Darcy.C
-               DarcyArgs.C
-               DarcySolutions.C
-               SIMDarcy.h
-               Darcy.h
-               DarcyArgs.h
-               DarcySolutions.h)
-
-include_directories(${IFEM_INCLUDES} ${PROJECT_SOURCE_DIR} ../Common)
+include_directories(${IFEM_INCLUDES} ${PROJECT_SOURCE_DIR} ../Common Common/Darcy)
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
-add_library(CommonDarcy STATIC ${DARCY_SRCS})
+enable_testing()
+include(IFEMTesting)
 
-add_executable(Darcy main_Darcy.C)
+add_subdirectory(Common/Darcy)
+
+add_executable(Darcy main_Darcy.C DarcyArgs.C)
 target_link_libraries(Darcy CommonDarcy IFEMAppCommon ${IFEM_LIBRARIES})
-list(APPEND CHECK_SOURCES ${DARCY_SRCS} main_Darcy.C)
+list(APPEND CHECK_SOURCES ${DARCY_SRCS} main_Darcy.C DarcyArgs.C)
 
 # Installation
 install(TARGETS Darcy DESTINATION bin COMPONENT bin)
@@ -39,8 +34,6 @@ set(EXTRA_DOXY_PATHS "${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}")
 add_doc_target(Darcy Darcy)
 
 # Regression tests
-enable_testing()
-include(IFEMTesting)
 if(MPI_FOUND)
   ifem_add_test(MPI/Lshape_p2_b5.reg Darcy 4)
   if(LRSPLINE_FOUND OR LRSpline_FOUND)
@@ -61,12 +54,6 @@ if(NOT MPI_FOUND OR IFEM_SERIAL_TESTS_IN_PARALLEL)
   endif()
 endif()
 list(APPEND TEST_APPS Darcy)
-
-# Unit tests
-IFEM_add_test_app(${PROJECT_SOURCE_DIR}/Test/*.C
-                  ${PROJECT_SOURCE_DIR}/Test
-                  Darcy
-                  CommonDarcy IFEMAppCommon ${IFEM_LIBRARIES})
 
 if(IFEM_COMMON_APP_BUILD)
   set(TEST_APPS ${TEST_APPS} PARENT_SCOPE)
