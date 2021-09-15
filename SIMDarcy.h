@@ -24,6 +24,8 @@
 #include "Utilities.h"
 #include "tinyxml.h"
 #include "Property.h"
+#include "SIMsolution.h"
+#include "TimeStep.h"
 #include "DataExporter.h"
 
 
@@ -31,11 +33,11 @@
   \brief Driver class for isogeometric FE analysis of Darcy flow problems.
 */
 
-template<class Dim> class SIMDarcy : public Dim
+template<class Dim> class SIMDarcy : public Dim, public SIMsolution
 {
 public:
   //! \brief Default constructor.
-  SIMDarcy() : Dim(1), drc(Dim::dimension), solVec(&mySolution)
+  SIMDarcy(int torder = 0) : Dim(1), drc(Dim::dimension, torder), solVec(nullptr)
   {
     Dim::myProblem = &drc;
     aCode[0] = aCode[1] = 0;
@@ -73,6 +75,8 @@ public:
       }
       else if ((value = utl::getValue(child,"bodyforce")))
         drc.setBodyForce(new VecFuncExpr(value));
+      else if ((value = utl::getValue(child,"gravity")))
+        drc.setGravity(atof(value));
       else if (!strcasecmp(child->Value(),"source")) {
         std::string type;
         utl::getAttribute(child,"type",type);
@@ -169,7 +173,7 @@ public:
   void setSol(const Vector* sol) { solVec = sol; }
 
   //! \brief Return solution vector.
-  const Vector& getSolution(int=0) { return *solVec; }
+  const Vector& getSolution(int = 0) const override { return *solVec; }
 
   //! \brief Register fields for data export.
   void registerFields(DataExporter& exporter)
@@ -202,14 +206,17 @@ public:
   }
 
   //! \brief Saves the converged results to VTF file of a given time step.
+  //! \param[in] tp Time stepping parameters
   //! \param[in] nBlock Running VTF block counter
-  bool saveStep(const TimeStep&, int& nBlock)
+  bool saveStep(const TimeStep& tp, int& nBlock)
   {
     if (Dim::opt.format < 0)
       return true;
 
+    int iDump = tp.step/Dim::opt.saveInc + (drc.getOrder() == 0 ? 1 : 0);
+
     // Write solution fields
-    if (!this->writeGlvS(*solVec,1,nBlock))
+    if (!this->writeGlvS(*solVec,iDump,nBlock,tp.time.t))
       return false;
 
     if (!solVec->empty())  {
@@ -218,61 +225,74 @@ public:
         if (!this->project(tmp,*solVec))
           return false;
 
-        if (!this->writeGlvV(tmp,"velocity",1,nBlock,110,Dim::nsd))
+        if (!this->writeGlvV(tmp,"velocity",iDump,nBlock,110,Dim::nsd))
           return false;
 
         size_t i = 0;
         for (auto& pit : Dim::opt.project)
-          if (!this->writeGlvP(proj[i++],1,nBlock,100,pit.second.c_str()))
+          if (!this->writeGlvP(proj[i++],iDump,nBlock,100,pit.second.c_str()))
             return false;
       }
     }
 
     // Write element norms
     if (Dim::opt.saveNorms)
-      if (!this->writeGlvN(eNorm,1,nBlock))
+      if (!this->writeGlvN(eNorm,iDump,nBlock))
         return false;
 
-    return this->writeGlvStep(1,0.0,1);
+    double param2 = drc.getOrder() == 0 ? iDump : tp.time.t;
+    return this->writeGlvStep(iDump,param2,drc.getOrder() == 0 ? 1 : 0);
   }
 
-  //! \brief Computes the solution for the current time step.
-  bool solveStep(TimeStep&)
+  //! \brief Initialize simulator.
+  void init()
   {
-    if (!this->setMode(SIM::DYNAMIC))
-      return false;
+    this->initSolution(this->getNoDOFs(), 1 + drc.getOrder());
+    this->solVec = &this->solution.front();
 
     this->initSystem(Dim::opt.solver);
     this->setQuadratureRule(Dim::opt.nGauss[0],true);
+  }
 
-    if (!this->assembleSystem())
+  //! \brief Computes the solution for the current time step.
+  bool solveStep(TimeStep& tp)
+  {
+
+    if (Dim::msgLevel >= 0 && tp.multiSteps())
+      IFEM::cout <<"\n  step = "<< tp.step
+                 <<"  time = "<< tp.time.t << std::endl;
+
+    if (!this->setMode(SIM::DYNAMIC))
       return false;
 
-    if (!this->solveSystem(mySolution,Dim::msgLevel-1,"pressure    "))
+    if (!this->assembleSystem(tp.time, solution))
+      return false;
+
+    if (!this->solveSystem(solution.front(),Dim::msgLevel-1,"pressure    "))
       return false;
 
     if (!this->setMode(SIM::RECOVERY))
       return false;
 
-    if (!Dim::opt.project.empty())
+    if (!Dim::opt.project.empty() && !tp.multiSteps())
     {
       // Project the secondary solution onto the splines basis
       size_t j = 0;
       for (auto& pit : Dim::opt.project)
-        if (!this->project(proj[j++],mySolution,pit.first))
+        if (!this->project(proj[j++],solution.front(),pit.first))
           return false;
 
       IFEM::cout << std::endl;
     }
 
-    // Evaluate solution norms
-    Vectors gNorm;
-    this->setQuadratureRule(Dim::opt.nGauss[1]);
-    if (!this->solutionNorms(mySolution,proj,eNorm,gNorm))
-      return false;
+    return true;
+  }
 
-    // Print global norm summary to console
-    this->printNorms(gNorm);
+  //! \brief Advance time stepping
+  bool advanceStep(TimeStep&)
+  {
+    if (drc.getOrder() > 0)
+      this->pushSolution();
     return true;
   }
 
@@ -323,6 +343,42 @@ public:
   const Vector* getReactionForces() const override
   {
     return myReact.empty() ? nullptr : &myReact;
+  }
+
+  //! \brief Serialize internal state for restarting purposes.
+  //! \param data Container for serialized data
+  bool serialize(SerializeMap& data)
+  {
+    return this->saveSolution(data,this->getName());
+  }
+
+  //! \brief Set internal state from a serialized state.
+  //! \param[in] data Container for serialized data
+  bool deSerialize(const SerializeMap& data) override
+  {
+    if (!this->restoreSolution(data,this->getName()))
+      return false;
+
+    return true;
+  }
+
+  //! \brief Print final solution norms to terminal.
+  //\param tp Time stepping parameters
+  void printFinalNorms(const TimeStep& tp)
+  {
+    // Evaluate solution norms
+    Vectors gNorm;
+    this->setQuadratureRule(Dim::opt.nGauss[1]);
+    if (tp.multiSteps()) {
+      if (!this->solutionNorms(tp.time,solution,proj,gNorm))
+        return;
+    } else {
+      if (!this->solutionNorms(*solVec,proj,gNorm))
+      return;
+    }
+
+    // Print global norm summary to console
+    this->printNorms(gNorm);
   }
 
 protected:
@@ -380,7 +436,6 @@ protected:
 private:
   Darcy drc;            //!< Darcy integrand
   const Vector* solVec; //!< Pointer to solution vector
-  Vector mySolution;    //!< Internal solution vector
   Vector myReact;       //!< Nodal reaction forces
   int aCode[2];         //!< Analytical BC code (used by destructor)
   Matrix eNorm;         //!< Element wise norms

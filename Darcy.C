@@ -19,12 +19,17 @@
 #include "FiniteElement.h"
 #include "Function.h"
 #include "GlobalIntegral.h"
+#include "TimeDomain.h"
 #include "Vec3Oper.h"
 
 
-Darcy::Darcy (unsigned short int n, int torder) : IntegrandBase(n), rhow(1.0), gacc(9.81)
+Darcy::Darcy (unsigned short int n, int torder) :
+  IntegrandBase(n),
+  bdf(torder),
+  rhow(1.0),
+  gacc(9.81)
 {
-  primsol.resize(1);
+  primsol.resize(1 + torder);
 
   permvalues = vflux = bodyforce = nullptr;
   permeability = flux = source = nullptr;
@@ -54,7 +59,7 @@ void Darcy::setMode (SIM::SolutionMode mode)
 {
   m_mode = mode;
 
-  primsol.resize(mode >= SIM::RHS_ONLY ? 1 : 0);
+  primsol.resize(1 + bdf.getActualOrder());
 }
 
 
@@ -88,7 +93,7 @@ LocalIntegral* Darcy::getLocalIntegral (size_t nen, size_t, bool neumann) const
 
 
 bool Darcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
-                     const Vec3& X) const
+                     const TimeDomain& time, const Vec3& X) const
 {
   ElmMats& elMat = static_cast<ElmMats&>(elmInt);
 
@@ -120,6 +125,16 @@ bool Darcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
 
   if (source)
     WeakOps::Source(elMat.b.front(), fe, (*source)(X));
+
+  if (bdf.getActualOrder() > 0 && elmInt.vec.size() > 1) {
+    double p = 0.0;
+    for (int t = 1; t <= bdf.getOrder(); t++) {
+      double val = fe.N.dot(elmInt.vec[t]);
+      p -= val * bdf[t] / time.dt;
+    }
+    WeakOps::Source(elMat.b.front(), fe, p);
+    WeakOps::Mass(elMat.A.front(), fe, bdf[0] / time.dt);
+  }
 
   if (m_mode == SIM::RHS_ONLY && !elmInt.vec.empty())
   {

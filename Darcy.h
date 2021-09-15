@@ -82,8 +82,10 @@ public:
   //! \brief Evaluates the integrand at an interior point.
   //! \param elmInt The local integral object to receive the contributions
   //! \param[in] fe Finite element data of current integration point
+  //! \param[in] time Time stepping parameters
   //! \param[in] X Cartesian coordinates of current integration point
   bool evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
+               const TimeDomain& time,
                const Vec3& X) const override;
 
   using IntegrandBase::evalBou;
@@ -129,6 +131,12 @@ public:
   //! \param[in] asol Pointer to analytical solution (optional)
   NormBase* getNormIntegrand(AnaSol* asol) const override;
 
+  //! \brief Returns order of time integration.
+  int getOrder() const { return bdf.getActualOrder(); }
+
+  //! \brief Set gravitational acceleration.
+  void setGravity(double ga) { gacc = ga; }
+
 private:
   VecFunc*  bodyforce;    //!< Body force function
   VecFunc*  permvalues;   //!< Permeability function
@@ -143,7 +151,7 @@ private:
 
 public:
   const double rhow; //!< Density of fluid
-  const double gacc; //!< Gravity acceleration
+  double gacc; //!< Gravity acceleration
 
   char extEner; //!< If \e true, external energy is to be computed
 };
