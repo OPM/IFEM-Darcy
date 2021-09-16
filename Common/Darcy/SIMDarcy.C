@@ -37,6 +37,7 @@ SIMDarcy<Dim>::SIMDarcy (int torder) :
   Dim(1), drc(Dim::dimension, torder), solVec(nullptr)
 {
   Dim::myProblem = &drc;
+  Dim::myHeading = "Darcy solver";
   aCode[0] = aCode[1] = 0;
 }
 
