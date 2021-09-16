@@ -33,8 +33,8 @@
 
 
 template<class Dim>
-SIMDarcy<Dim>::SIMDarcy (int torder) :
-  Dim(1), drc(Dim::dimension, torder), solVec(nullptr)
+SIMDarcy<Dim>::SIMDarcy (Darcy& itg) :
+  Dim(1), drc(itg), solVec(nullptr)
 {
   Dim::myProblem = &drc;
   Dim::myHeading = "Darcy solver";

@@ -19,7 +19,8 @@
 
 TEST(TestSIMDarcy, Parse)
 {
-  SIMDarcy<SIM2D> sim;
+  Darcy itg(2);
+  SIMDarcy<SIM2D> sim(itg);
   EXPECT_TRUE(sim.read("Wavefront_k10_p2_b20.xinp"));
 
   const Darcy& darcy = static_cast<const Darcy&>(*sim.getProblem());

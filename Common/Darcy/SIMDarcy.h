@@ -27,21 +27,22 @@ class TimeStep;
   \brief Driver class for isogeometric FE analysis of Darcy flow problems.
 */
 
-template<class Dim> class SIMDarcy : public Dim, public SIMsolution
+template<class Dim>
+class SIMDarcy : public Dim, public SIMsolution
 {
 public:
   //! \brief Setup properties.
   struct SetupProps {
-    int torder = 0; //<! Order of BDF time stepping
+    Darcy* itg = nullptr; //!< Pointer to integrand
   };
 
   //! \brief Default constructor.
   //! \param torder Order of BDF time stepping
-  SIMDarcy(int torder = 0);
+  SIMDarcy(Darcy& itg);
 
   //! \brief Construct from setup properties.
   //! \param torder Order of BDF time stepping
-  SIMDarcy(const SetupProps& props) : SIMDarcy(props.torder) {}
+  SIMDarcy(const SetupProps& props) : SIMDarcy(*props.itg) {}
 
   //! \brief Destructor.
   virtual ~SIMDarcy();
@@ -152,7 +153,7 @@ protected:
   bool preprocessB() override;
 
 private:
-  Darcy drc;            //!< Darcy integrand
+  Darcy& drc;           //!< Darcy integrand
   const Vector* solVec; //!< Pointer to solution vector
   Vector myReact;       //!< Nodal reaction forces
   int aCode[2];         //!< Analytical BC code (used by destructor)
