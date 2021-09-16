@@ -29,7 +29,8 @@
 template<class Dim, template<class T> class Solver>
 int runSimulator(char* infile)
 {
-  SIMDarcy<Dim> darcy;
+  Darcy itg(Dim::dimension);
+  SIMDarcy<Dim> darcy(itg);
   Solver<SIMDarcy<Dim>> solver(darcy);
 
   utl::profiler->start("Model input");
@@ -63,7 +64,8 @@ int runSimulator(char* infile)
 template<class Dim>
 int runSimulatorTransient(char* infile, int torder)
 {
-  SIMDarcy<Dim> darcy(torder);
+  Darcy itg(Dim::dimension, torder);
+  SIMDarcy<Dim> darcy(itg);
   SIMSolver<SIMDarcy<Dim>> solver(darcy);
 
   utl::profiler->start("Model input");
