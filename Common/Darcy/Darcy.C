@@ -136,7 +136,7 @@ bool Darcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
     WeakOps::Mass(elMat.A.front(), fe, bdf[0] / time.dt);
   }
 
-  if (m_mode == SIM::RHS_ONLY && !elmInt.vec.empty())
+  if (m_mode == SIM::RHS_ONLY && !elmInt.vec.empty() && reacInt)
   {
     // Integrate the internal forces based on current solution
     Vector q;
