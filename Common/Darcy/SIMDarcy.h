@@ -15,6 +15,7 @@
 #define _SIM_DARCY_H_
 
 #include "Darcy.h"
+#include "SIMconfigure.h"
 #include "SIMsolution.h"
 
 
@@ -29,8 +30,18 @@ class TimeStep;
 template<class Dim> class SIMDarcy : public Dim, public SIMsolution
 {
 public:
+  //! \brief Setup properties.
+  struct SetupProps {
+    int torder = 0; //<! Order of BDF time stepping
+  };
+
   //! \brief Default constructor.
+  //! \param torder Order of BDF time stepping
   SIMDarcy(int torder = 0);
+
+  //! \brief Construct from setup properties.
+  //! \param torder Order of BDF time stepping
+  SIMDarcy(const SetupProps& props) : SIMDarcy(props.torder) {}
 
   //! \brief Destructor.
   virtual ~SIMDarcy();
@@ -148,5 +159,19 @@ private:
   Matrix eNorm;         //!< Element wise norms
   Vectors proj;         //!< Projected solution vectors
 };
+
+
+//! \brief Partial specialization for configurator.
+template<class Dim>
+struct SolverConfigurator<SIMDarcy<Dim>> {
+  //! \brief Configure a SIMDarcy instance.
+  //! \param ad The SIMDarcy instance to configure
+  //! \param[in] props Configuration properties
+  //! \param[in] infile The input file to read
+  int setup(SIMDarcy<Dim>& ad,
+            const typename SIMDarcy<Dim>::SetupProps& props,
+            char* infile);
+};
+
 
 #endif
