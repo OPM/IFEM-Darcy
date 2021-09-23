@@ -233,11 +233,12 @@ bool SIMDarcy<Dim>::saveStep (const TimeStep& tp, int& nBlock)
 template<class Dim>
 void SIMDarcy<Dim>::init ()
 {
-this->initSolution(this->getNoDOFs(), 1 + drc.getOrder());
-this->solVec = &this->solution.front();
+  this->initSolution(this->getNoDOFs(), 1 + drc.getOrder());
+  if (!this->solVec)
+    this->solVec = &this->solution.front();
 
-this->initSystem(Dim::opt.solver);
-this->setQuadratureRule(Dim::opt.nGauss[0],true);
+  this->initSystem(Dim::opt.solver);
+  this->setQuadratureRule(Dim::opt.nGauss[0],true);
 }
 
 
@@ -320,16 +321,15 @@ bool SIMDarcy<Dim>::solveSystem (Vector& solution, int printSol,
 template<class Dim>
 void SIMDarcy<Dim>::printFinalNorms (const TimeStep& tp)
 {
+  // Don't print final norms with adaptive simulations
+  if (solVec != &solution.front())
+    return;
+
   // Evaluate solution norms
   Vectors gNorm;
   this->setQuadratureRule(Dim::opt.nGauss[1]);
-  if (tp.multiSteps()) {
-    if (!this->solutionNorms(tp.time,solution,proj,gNorm))
-      return;
-  } else {
-    if (!this->solutionNorms(*solVec,proj,gNorm))
-      return;
-  }
+  if (!this->solutionNorms(tp.time,solution,proj,gNorm))
+    return;
 
   // Print global norm summary to console
   this->printNorms(gNorm);
