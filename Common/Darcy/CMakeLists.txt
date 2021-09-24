@@ -16,6 +16,8 @@ set(DARCY_SOURCES Darcy.C
 add_library(CommonDarcy STATIC ${DARCY_SOURCES})
 
 # Unit tests
+include(IFEMTesting)
+
 IFEM_add_test_app(${PROJECT_SOURCE_DIR}/Test/*.C
                   ${PROJECT_SOURCE_DIR}/../../Test
                   Darcy
