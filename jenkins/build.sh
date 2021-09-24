@@ -16,6 +16,18 @@ function clone_ifem {
   fi
 }
 
+declare -a sidestreams
+sidestreams=(IFEM-AdvectionDiffusion)
+
+declare -A sidestreamRev
+sidestreamRev[IFEM-AdvectionDiffusion]=master
+
+declare -a downstreams
+downstreams=(IFEM-CoSTA)
+
+declare -A downstreamRev
+downstreamRev[IFEM-CoSTA]=master
+
 IFEM_REVISION=master
 if grep -qi "ifem=" <<< $ghprbCommentBody
 then
@@ -39,5 +51,7 @@ then
   exit 0
 fi
 
-echo "Currently no downstreams"
-exit 0
+clone_sidestreams Darcy
+build_downstreams IFEM-Darcy
+
+test $? -eq 0 || exit 1
