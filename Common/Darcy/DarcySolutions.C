@@ -69,19 +69,19 @@ bool DiracSum::parse (const char* input)
     if (temp[0] == '#' || temp[0] == 0)
       continue;
     std::stringstream s2(temp);
-    Real x, y, z, val;
+    Real x, y = 0.0, z = 0.0, value;
     s2 >> x;
     if (myDim > 1)
       s2 >> y;
     if (myDim > 2)
       s2 >> z;
-    s2 >> val;
+    s2 >> value;
     IFEM::cout << "\n\t\tDirac(" << x;
     if (myDim > 1)
       IFEM::cout << ", " << y;
     if (myDim > 2)
       IFEM::cout << ", " << z;
-    IFEM::cout << ") = " << val;
+    IFEM::cout << ") = " << value;
     std::stringstream s3;
     s3 << "r2=pow(x-" << x << ",2)";
     if (myDim > 1)
@@ -89,7 +89,7 @@ bool DiracSum::parse (const char* input)
     if (myDim > 2)
       s3 << "+pow(z-" << z << ",2)";
      s3 << "; r=sqrt(r2); if(below(r,"
-       << pointTol << ")," << val << ",0.0)";
+       << pointTol << ")," << value << ",0.0)";
     EvalFunction* e = new EvalFunction(s3.str().c_str());
     this->add(e);
     ok = true;
