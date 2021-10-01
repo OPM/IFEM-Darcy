@@ -344,7 +344,7 @@ bool DarcyNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
 bool DarcyNorm::evalBou (LocalIntegral& elmInt, const FiniteElement& fe,
                          const Vec3& X, const Vec3& normal) const
 {
-  Darcy& problem = static_cast<Darcy&>(myProblem);
+  const Darcy& problem = static_cast<const Darcy&>(myProblem);
   if (!problem.extEner) return true;
 
   // Evaluate the surface heat flux
