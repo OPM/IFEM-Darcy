@@ -38,11 +38,11 @@ public:
 
   //! \brief Default constructor.
   //! \param torder Order of BDF time stepping
-  SIMDarcy(Darcy& itg);
+  explicit SIMDarcy(Darcy& itg);
 
   //! \brief Construct from setup properties.
   //! \param torder Order of BDF time stepping
-  SIMDarcy(const SetupProps& props) : SIMDarcy(*props.itg) {}
+  explicit SIMDarcy(const SetupProps& props) : SIMDarcy(*props.itg) {}
 
   //! \brief Destructor.
   virtual ~SIMDarcy();
