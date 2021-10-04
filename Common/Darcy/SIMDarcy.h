@@ -89,7 +89,7 @@ public:
   void init();
 
   //! \brief Computes the solution for the current time step.
-  bool solveStep(TimeStep& tp);
+  bool solveStep(const TimeStep& tp);
 
   //! \brief Advance time stepping
   bool advanceStep(TimeStep&);

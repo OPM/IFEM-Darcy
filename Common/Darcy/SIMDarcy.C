@@ -243,7 +243,7 @@ void SIMDarcy<Dim>::init ()
 
 
 template<class Dim>
-bool SIMDarcy<Dim>::solveStep (TimeStep& tp)
+bool SIMDarcy<Dim>::solveStep (const TimeStep& tp)
 {
   if (Dim::msgLevel >= 0 && tp.multiSteps())
     IFEM::cout <<"\n  step = "<< tp.step
