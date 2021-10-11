@@ -15,10 +15,14 @@
 
 #include "ExprFunctions.h"
 #include "IFEM.h"
+#include "LogStream.h"
 #include "StringUtils.h"
 #include "Vec3.h"
 
+#include <cmath>
 #include <sstream>
+#include <string>
+
 
 double LshapeDarcy::evaluate (const Vec3& X) const
 {

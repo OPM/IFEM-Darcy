@@ -13,6 +13,9 @@
 
 #include "DarcyArgs.h"
 #include "Utilities.h"
+
+#include <string>
+#include <strings.h>
 #include "tinyxml.h"
 
 

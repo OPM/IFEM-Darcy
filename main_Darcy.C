@@ -11,14 +11,25 @@
 //!
 //==============================================================================
 
+#include "Darcy.h"
+#include "DarcyArgs.h"
+#include "SIMDarcy.h"
+
+#include "ASMenums.h"
 #include "IFEM.h"
+#include "LogStream.h"
+#include "Profiler.h"
 #include "SIM1D.h"
 #include "SIM2D.h"
 #include "SIM3D.h"
-#include "SIMDarcy.h"
+#include "SIMoptions.h"
+#include "SIMSolver.h"
 #include "SIMSolverAdap.h"
-#include "DarcyArgs.h"
-#include "Profiler.h"
+#include "TimeIntUtils.h"
+#include "TimeStep.h"
+
+#include <iostream>
+#include <vector>
 
 
 /*!

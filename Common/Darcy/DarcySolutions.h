@@ -17,6 +17,11 @@
 #include "Function.h"
 #include "FunctionSum.h"
 
+#include <vector>
+
+
+class Vec3;
+
 
 /*!
  \brief Primary solution for Darcy problem on a L-shape domain.

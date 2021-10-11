@@ -19,8 +19,15 @@
 #include "FiniteElement.h"
 #include "Function.h"
 #include "GlobalIntegral.h"
+#include "LocalIntegral.h"
 #include "TimeDomain.h"
 #include "Vec3Oper.h"
+
+#include <cmath>
+#include <ext/alloc_traits.h>
+#include <iostream>
+#include <memory>
+#include <vector>
 
 
 Darcy::Darcy (unsigned short int n, int torder) :

@@ -10,9 +10,12 @@
 //!
 //==============================================================================
 
-#include "SIMbase.h"
+#include "Darcy.h"
 #include "SIMDarcy.h"
+
+#include "SIMbase.h"
 #include "SIM2D.h"
+#include "Vec3.h"
 #include "Vec3Oper.h"
 
 #include "gtest/gtest.h"

@@ -15,8 +15,10 @@
 #define _DARCY_ARGS_H
 
 #include "SIMargsBase.h"
-#include "Integrand.h"
 #include "TimeIntUtils.h"
+
+
+class TiXmlElement;
 
 
 /*!
