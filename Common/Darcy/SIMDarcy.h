@@ -123,7 +123,7 @@ public:
 
   //! \brief Serialize internal state for restarting purposes.
   //! \param data Container for serialized data
-  bool serialize(SerializeMap& data)
+  bool serialize(SerializeMap& data) const override
   {
     return this->saveSolution(data,this->getName());
   }
