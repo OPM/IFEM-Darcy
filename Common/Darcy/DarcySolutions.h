@@ -16,6 +16,9 @@
 
 #include "Function.h"
 #include "FunctionSum.h"
+#include "Vec3.h"
+
+#include <vector>
 
 
 /*!

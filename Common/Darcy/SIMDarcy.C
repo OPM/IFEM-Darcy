@@ -13,23 +13,39 @@
 
 #include "SIMDarcy.h"
 
+#include "Darcy.h"
 #include "DarcySolutions.h"
 
-#include "AlgEqSystem.h"
 #include "AnaSol.h"
 #include "DataExporter.h"
 #include "ExprFunctions.h"
 #include "Functions.h"
 #include "IFEM.h"
+#include "LogStream.h"
 #include "Profiler.h"
+#include "Property.h"
 #include "ReactionsOnly.h"
 #include "SIM1D.h"
 #include "SIM2D.h"
 #include "SIM3D.h"
+#include "SIMbase.h"
+#include "SIMenums.h"
+#include "TimeDomain.h"
 #include "TimeStep.h"
 #include "Utilities.h"
 
+#include <cmath>
+#include <cstdlib>
+#include <iostream>
+#include <map>
+#include <strings.h>
 #include "tinyxml.h"
+#include <vector>
+
+
+class AlgEqSystem;
+class RealFunc;
+class VecFunc;
 
 
 template<class Dim>

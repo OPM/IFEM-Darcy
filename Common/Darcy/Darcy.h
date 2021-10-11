@@ -17,9 +17,20 @@
 #include "BDF.h"
 #include "EqualOrderOperators.h"
 #include "IntegrandBase.h"
+#include "MatVec.h"
+#include "SIMenums.h"
 
+#include <cstddef>
+#include <string>
+
+
+class AnaSol;
+class FiniteElement;
 class GlobalIntegral;
+class LocalIntegral;
 class RealFunc;
+struct TimeDomain;
+class Vec3;
 class VecFunc;
 
 

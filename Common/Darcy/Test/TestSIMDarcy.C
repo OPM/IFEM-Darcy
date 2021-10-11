@@ -10,10 +10,13 @@
 //!
 //==============================================================================
 
-#include "SIMbase.h"
+#include "Darcy.h"
 #include "SIMDarcy.h"
+
 #include "SIM2D.h"
-#include "Vec3Oper.h"
+#include "Vec3.h"
+
+#include <string>
 
 #include "gtest/gtest.h"
 

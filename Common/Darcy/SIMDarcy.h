@@ -14,13 +14,19 @@
 #ifndef _SIM_DARCY_H_
 #define _SIM_DARCY_H_
 
-#include "Darcy.h"
+#include "MatVec.h"
 #include "SIMconfigure.h"
 #include "SIMsolution.h"
 
+#include <cstddef>
+#include <iosfwd>
+#include <string>
 
+
+class Darcy;
 class DataExporter;
 class TimeStep;
+class TiXmlElement;
 
 
 /*!
