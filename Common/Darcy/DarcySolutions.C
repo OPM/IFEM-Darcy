@@ -92,8 +92,12 @@ bool DiracSum::parse (const char* input)
       s3 << "+pow(y-" << y << ",2)";
     if (myDim > 2)
       s3 << "+pow(z-" << z << ",2)";
-     s3 << "; r=sqrt(r2); if(below(r,"
-       << pointTol << ")," << value << ",0.0)";
+    s3 << "; r=sqrt(r2); "
+       << "eps=" << pointTol << "; "
+       << "eps2=eps*eps; "
+       << value << "*"
+       << "if(below(r,eps),"
+       << "eps2*exp(-eps2/(eps2-r2)), 0.0)";
     EvalFunction* e = new EvalFunction(s3.str().c_str());
     this->add(e);
     ok = true;
