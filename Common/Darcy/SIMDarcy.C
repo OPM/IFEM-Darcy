@@ -49,8 +49,15 @@ class VecFunc;
 
 
 template<class Dim>
-SIMDarcy<Dim>::SIMDarcy (Darcy& itg) :
-  Dim(1), drc(itg), solVec(nullptr)
+SIMDarcy<Dim>::SIMDarcy (Darcy& itg, unsigned char nf) :
+  SIMDarcy<Dim>(itg, std::vector<unsigned char>{nf})
+{
+}
+
+
+template<class Dim>
+SIMDarcy<Dim>::SIMDarcy (Darcy& itg, const std::vector<unsigned char>& nf) :
+  Dim(nf), drc(itg), solVec(nullptr)
 {
   Dim::myProblem = &drc;
   Dim::myHeading = "Darcy solver";
@@ -87,18 +94,31 @@ bool SIMDarcy<Dim>::parse (const TiXmlElement* elem)
       IFEM::cout <<"\tPermeability";
       drc.setPermField(utl::parseRealFunc(value,type));
       IFEM::cout << std::endl;
-    }
-    else if ((value = utl::getValue(child,"bodyforce")))
+    } else if ((value = utl::getValue(child,"porosity"))) {
+      std::string type;
+      utl::getAttribute(child,"type",type);
+      IFEM::cout <<"\tPorosity";
+      drc.setPorosity(utl::parseRealFunc(value,type));
+      IFEM::cout << std::endl;
+    } else if ((value = utl::getValue(child,"dispersivity"))) {
+      std::string type;
+      utl::getAttribute(child,"type",type);
+      IFEM::cout <<"\tDispersivity";
+      drc.setDispersivity(utl::parseRealFunc(value,"expression"));
+      IFEM::cout << std::endl;
+    } else if ((value = utl::getValue(child,"bodyforce")))
       drc.setBodyForce(new VecFuncExpr(value));
     else if ((value = utl::getValue(child,"gravity")))
       drc.setGravity(atof(value));
-    else if (!strcasecmp(child->Value(),"source")) {
+    else if (!strcasecmp(child->Value(),"source") || !strcasecmp(child->Value(),"source_c")) {
+      bool isC = strcasecmp(child->Value(),"source") != 0;
       std::string type;
       utl::getAttribute(child,"type",type);
-      IFEM::cout <<"\tSource function:";
+      IFEM::cout <<"\tSource function" << (isC ? " (concentration):" : ":");
+      RealFunc* src = nullptr;
       if (type == "expression" && child->FirstChild()) {
         IFEM::cout << " " << child->FirstChild()->Value() << std::endl;
-        drc.setSource(new EvalFunction(child->FirstChild()->Value()));
+        src = new EvalFunction(child->FirstChild()->Value());
       }
       else if (type == "diracsum") {
         double tol = 1e-2;
@@ -108,13 +128,20 @@ bool SIMDarcy<Dim>::parse (const TiXmlElement* elem)
           IFEM::cout << " DiracSum";
           DiracSum* f = new DiracSum(tol, Dim::dimension);
           if (f->parse(input))
-            drc.setSource(f);
+            src = f;
           else
             delete f;
         }
       }
       else
         IFEM::cout <<"(none)"<< std::endl;
+
+      if (src) {
+        if (isC)
+          drc.setCSource(src);
+        else
+          drc.setSource(src);
+      }
     }
     else if (!strcasecmp(child->Value(),"anasol")) {
       std::string type;
@@ -140,6 +167,14 @@ bool SIMDarcy<Dim>::parse (const TiXmlElement* elem)
     }
     else if (!strcasecmp(child->Value(),"reactions"))
       drc.extEner = 'R';
+    else if (!strcasecmp(child->Value(),"subiterations")) {
+      IFEM::cout << "\tUsing sub-iterations";
+      utl::getAttribute(child,"tol",cycleTol);
+      utl::getAttribute(child,"max",maxCycle);
+      IFEM::cout <<"\n\t\ttol = "<< cycleTol;
+      IFEM::cout <<"\n\t\tmax = "<< maxCycle;
+      IFEM::cout << std::endl;
+    }
     else
       this->Dim::parse(child);
   }
@@ -151,8 +186,8 @@ bool SIMDarcy<Dim>::parse (const TiXmlElement* elem)
 template<class Dim>
 bool SIMDarcy<Dim>::initNeumann (size_t propInd)
 {
-  typename Dim::SclFuncMap::const_iterator sit = Dim::myScalars.find(propInd);
-  typename Dim::VecFuncMap::const_iterator vit = Dim::myVectors.find(propInd);
+  const auto sit = Dim::myScalars.find(propInd);
+  const auto vit = Dim::myVectors.find(propInd);
 
   if (sit != Dim::myScalars.end())
     drc.setFlux(sit->second);
@@ -182,16 +217,16 @@ void SIMDarcy<Dim>::clearProperties ()
 template<class Dim>
 void SIMDarcy<Dim>::registerFields (DataExporter& exporter)
 {
-int results = DataExporter::PRIMARY;
+  int results = DataExporter::PRIMARY;
 
-if (!Dim::opt.pSolOnly)
-  results |= DataExporter::SECONDARY;
+  if (!Dim::opt.pSolOnly)
+    results |= DataExporter::SECONDARY;
 
-if (Dim::opt.saveNorms)
-  results |= DataExporter::NORMS;
+  if (Dim::opt.saveNorms)
+    results |= DataExporter::NORMS;
 
-exporter.registerField("u", "primary", DataExporter::SIM, results);
-exporter.setFieldValue("u", this, solVec,
+  exporter.registerField("u", "primary", DataExporter::SIM, results);
+  exporter.setFieldValue("u", this, solVec,
                        Dim::opt.project.empty() ? nullptr : &proj,
                        (results & DataExporter::NORMS) ? &eNorm : nullptr);
 }
@@ -218,6 +253,9 @@ bool SIMDarcy<Dim>::saveStep (const TimeStep& tp, int& nBlock)
 
   // Write solution fields
   if (!this->writeGlvS(*solVec,iDump,nBlock,tp.time.t))
+    return false;
+
+  if (!this->doProjection())
     return false;
 
   if (!solVec->empty())  {
@@ -247,7 +285,7 @@ bool SIMDarcy<Dim>::saveStep (const TimeStep& tp, int& nBlock)
 
 
 template<class Dim>
-void SIMDarcy<Dim>::init ()
+bool SIMDarcy<Dim>::init ()
 {
   this->initSolution(this->getNoDOFs(), 1 + drc.getOrder());
   if (!this->solVec)
@@ -255,6 +293,7 @@ void SIMDarcy<Dim>::init ()
 
   this->initSystem(Dim::opt.solver);
   this->setQuadratureRule(Dim::opt.nGauss[0],true);
+  return true;
 }
 
 
@@ -265,28 +304,46 @@ bool SIMDarcy<Dim>::solveStep (const TimeStep& tp)
     IFEM::cout <<"\n  step = "<< tp.step
                <<"  time = "<< tp.time.t << std::endl;
 
-  if (!this->setMode(SIM::DYNAMIC))
-    return false;
-
-  if (!this->assembleSystem(tp.time, solution))
-    return false;
-
-  if (!this->solveSystem(solution.front(),Dim::msgLevel-1,"pressure    "))
-    return false;
-
-  if (!this->setMode(SIM::RECOVERY))
-    return false;
-
-  if (!Dim::opt.project.empty() && !tp.multiSteps())
+  bool conv = false;
+  tp.iter = 0;
+  while (!conv)
   {
-    // Project the secondary solution onto the splines basis
-    size_t j = 0;
-    for (auto& pit : Dim::opt.project)
-      if (!this->project(proj[j++],solution.front(),pit.first))
-        return false;
+    if (!this->setMode(SIM::DYNAMIC))
+      return false;
 
-    IFEM::cout << std::endl;
+    if (!this->assembleSystem(tp.time, solution))
+      return false;
+
+    if (!this->solveSystem(solution.front(),maxCycle > -1 ? 0 : Dim::msgLevel-1,"pressure    "))
+      return false;
+
+    if (maxCycle > -1) {
+      this->setMode(SIM::RHS_ONLY);
+      this->assembleSystem(tp.time, solution);
+      Vector linRes;
+      this->extractLoadVec(linRes);
+      double rConv = linRes.norm2();
+
+      IFEM::cout <<"  cycle "<< tp.iter <<": Res = "<< rConv << std::endl;
+      if (rConv < cycleTol)
+        conv = true;
+
+      if (tp.iter >= maxCycle) {
+        std::cerr <<" *** SIMDarcy::solveStep: Did not converge in "
+                 << maxCycle <<" staggering cycles, bailing.."<< std::endl;
+        return false;
+      }
+    } else
+      conv = true;
+
+    ++tp.iter;
   }
+
+  if (maxCycle > -1)
+    this->printSolutionSummary(solution.front(), 0, nullptr, 0);
+
+  if (!tp.multiSteps() && adNorm == DCY::NO_ADAP && !this->doProjection())
+    return false;
 
   return true;
 }
@@ -295,8 +352,10 @@ bool SIMDarcy<Dim>::solveStep (const TimeStep& tp)
 template<class Dim>
 bool SIMDarcy<Dim>::advanceStep (TimeStep&)
 {
-  if (drc.getOrder() > 0)
+  if (drc.getOrder() > 0) {
+    drc.advanceStep();
     this->pushSolution();
+  }
   return true;
 }
 
@@ -306,8 +365,30 @@ void SIMDarcy<Dim>::printSolutionSummary (const Vector& solution,
                                           int printSol, const char*,
                                           std::streamsize outPrec)
 {
-  this->SIMbase::printSolutionSummary(solution, printSol,
-                                      "pressure    ", outPrec);
+  const size_t nf = this->getNoFields();
+  if (nf > 1) {
+    // Compute and print solution norms
+    size_t iMax[nf];
+    double dMax[nf];
+    double dNorm;
+    drc.getSolutionNorms(*this,solution,dNorm,dMax,iMax);
+
+    int oldPrec = this->adm.cout.precision();
+    if (outPrec > 0)
+      this->adm.cout << std::setprecision(outPrec);
+
+    this->adm.cout <<"  Primary solution summary: L2-norm         : ";
+    this->adm.cout << utl::trunc(dNorm);
+    this->adm.cout <<"\n                               Max pressure : ";
+    this->adm.cout << dMax[0] <<" node "<< iMax[0];
+    this->adm.cout <<"\n                          Max concentration : ";
+    this->adm.cout << dMax[1] <<" node "<< iMax[1] << "\n";
+
+    this->adm.cout << std::setprecision(oldPrec);
+  } else {
+    this->SIMbase::printSolutionSummary(solution, printSol,
+                                        "pressure    ", outPrec);
+  }
 }
 
 
@@ -335,20 +416,141 @@ bool SIMDarcy<Dim>::solveSystem (Vector& solution, int printSol,
 
 
 template<class Dim>
+SIM::ConvStatus SIMDarcy<Dim>::solveIteration (TimeStep& tp)
+{
+  return this->solveStep(tp) ? SIM::CONVERGED : SIM::FAILURE;
+}
+
+
+template<class Dim>
+void SIMDarcy<Dim>::printSolNorms (const Vector& gNorm,
+                                   size_t w) const
+{
+  IFEM::cout << "\n  H1 norm |p^h| = a(p^h,p^h)^0.5"
+             << utl::adjustRight(w-32,"") << gNorm[DarcyNorm::H1_Ph];
+  if (utl::trunc(gNorm[DarcyNorm::EXT_ENERGY]) != 0.0)
+    IFEM::cout << "\n  External energy |(h,p^h)|^0.5"
+                << utl::adjustRight(w-31,"") << gNorm[DarcyNorm::EXT_ENERGY];
+  if (this->getNoFields() > 1)
+    IFEM::cout << "\n  H1 norm |c^h| = a(c^h,c^h)^0.5"
+               << utl::adjustRight(w-32,"") << gNorm[DarcyNorm::H1_Ch];
+}
+
+
+template<class Dim>
 void SIMDarcy<Dim>::printFinalNorms (const TimeStep& tp)
 {
   // Don't print final norms with adaptive simulations
   if (solVec != &solution.front())
     return;
 
+  if (!this->setMode(SIM::RECOVERY))
+    return;
+
+  if (!this->doProjection()) {
+    std::cerr << "*** Error during solution projection." << std::endl;
+    return;
+  }
+
+  if (!Dim::opt.project.empty())
+  {
+    // Project the secondary solution onto the splines basis
+    size_t j = 0;
+    for (auto& pit : Dim::opt.project)
+      if (!this->project(proj[j++],solution.front(),pit.first))
+        return;
+  }
+
   // Evaluate solution norms
   Vectors gNorm;
   this->setQuadratureRule(Dim::opt.nGauss[1]);
-  if (!this->solutionNorms(tp.time,solution,proj,gNorm))
+  if (!this->solutionNorms(tp.time,Vectors(1, solution.front()),proj,gNorm))
     return;
 
   // Print global norm summary to console
-  this->printNorms(gNorm);
+  this->printNorms(gNorm, 36);
+
+}
+
+template<class Dim>
+void SIMDarcy<Dim>::printNorms (const Vectors& gNorm, size_t w) const
+{
+  if (gNorm.empty()) return;
+
+  IFEM::cout << "\n>>> Norm summary <<<";
+  this->printSolNorms(gNorm.front(),w);
+
+  if (Dim::mySol)
+    this->printExactNorms(gNorm.front(),w);
+
+  size_t j = 0;
+  for (const auto& prj : this->opt.project)
+    if (++j < gNorm.size())
+      this->printNormGroup(gNorm[j],gNorm[0],prj.second);
+
+  IFEM::cout << std::endl;
+}
+
+template<class Dim>
+void SIMDarcy<Dim>::printExactNorms (const Vector& gNorm,
+                                     size_t w) const
+{
+  if (!Dim::mySol)
+    return;
+
+  IFEM::cout << "\n  H1 norm |p| = a(p,p)^0.5"
+             << utl::adjustRight(w-26,"") << gNorm[DarcyNorm::H1_P];
+  IFEM::cout << "\n  H1 norm |e| = a(e,e)^0.5, e=p-p^h"
+             << utl::adjustRight(w-35,"") << gNorm[DarcyNorm::H1_E_Ph];
+  if (this->getNoFields() > 1) {
+    IFEM::cout << "\n  H1 norm |c| = a(c,c)^0.5"
+               << utl::adjustRight(w-26,"") << gNorm[DarcyNorm::H1_C];
+    IFEM::cout << "\n  H1 norm |e| = a(e,e)^0.5, e=c-c^h"
+               << utl::adjustRight(w-35,"") << gNorm[DarcyNorm::H1_E_Ch];
+    IFEM::cout << "\n  Exact relative error (%)"
+               << utl::adjustRight(w-26,"") << hypot(gNorm[DarcyNorm::H1_E_Ph],gNorm[DarcyNorm::H1_E_Ch])*100.0 /
+                                               hypot(gNorm[DarcyNorm::H1_P],gNorm[DarcyNorm::H1_C]);
+  } else
+    IFEM::cout << "\n  Exact relative error (%)"
+               << utl::adjustRight(w-26,"") << gNorm[DarcyNorm::H1_E_Ph]*100.0 /
+                                               gNorm[DarcyNorm::H1_P];
+}
+
+
+template<class Dim>
+void SIMDarcy<Dim>::printNormGroup (const Vector& rNorm,
+                                    const Vector& fNorm,
+                                    const std::string& name) const
+{
+  IFEM::cout << "\nError estimates based on >>> " << name << " <<<";
+  size_t w = 36;
+  if (name == "Pure residuals")
+    ; // TODO
+  else {
+    IFEM::cout << "\n  H1 norm |p^r-p^h|"
+               << utl::adjustRight(w-19,"") << rNorm[DarcyNorm::H1_Pr_Ph];
+    if (this->getNoFields() > 1)
+      IFEM::cout << "\n  H1 norm |c^r-c^h|"
+                 << utl::adjustRight(w-19,"") << rNorm[DarcyNorm::H1_Cr_Ch];
+    if (Dim::mySol) {
+      IFEM::cout << "\n  H1 norm |p^r-p|"
+                 << utl::adjustRight(w-17,"") << rNorm[DarcyNorm::H1_E_Pr];
+      if (this->getNoFields() > 1)
+        IFEM::cout << "\n  H1 norm |c^r-c|"
+                   << utl::adjustRight(w-17,"") << rNorm[DarcyNorm::H1_E_Cr];
+
+      IFEM::cout << "\n  Effectivity index eta^p"
+                 << utl::adjustRight(w-25,"")
+                 << rNorm[DarcyNorm::H1_Pr_Ph] / fNorm[DarcyNorm::H1_E_Ph];
+      if (this->getNoFields() > 1)
+        IFEM::cout << "\n  Effectivity index eta^c"
+                   << utl::adjustRight(w-25,"")
+                   << rNorm[DarcyNorm::H1_Cr_Ch] / fNorm[DarcyNorm::H1_E_Ch]
+                   << "\n  Effectivity index eta^tot"
+                   << utl::adjustRight(w-27,"")
+                   << rNorm[DarcyNorm::TOTAL_NORM_REC] / fNorm[DarcyNorm::TOTAL_NORM_E];
+    }
+  }
 }
 
 
@@ -400,6 +602,64 @@ bool SIMDarcy<Dim>::preprocessB ()
   if (this->getNoConstraints() == 0 && !drc.extEner)
     drc.extEner = 'y';
   return true;
+}
+
+
+template<class Dim>
+bool SIMDarcy<Dim>::doProjection()
+{
+  if (!Dim::opt.project.empty() && proj.front().empty())
+  {
+    // Project the secondary solution onto the splines basis
+    size_t j = 0;
+    for (auto& pit : Dim::opt.project)
+      if (!this->project(proj[j++],solution.front(),pit.first))
+        return false;
+  }
+
+  return true;
+}
+
+
+template<class Dim>
+double SIMDarcy<Dim>::getReferenceNorm (const Vectors& gNorm,
+                                        size_t adaptor) const
+{
+  if (adaptor == 0) {
+    if (adNorm == DCY::PRESSURE_H1)
+      return gNorm[0][DarcyNorm::H1_P];
+    else if (adNorm == DCY::CONCENTRATION_H1)
+      return gNorm[0][DarcyNorm::H1_C];
+    else
+      return hypot(gNorm[0][DarcyNorm::H1_P], gNorm[0][DarcyNorm::H1_C]);
+  }
+
+  if (this->haveAnaSol()) {
+    if (adNorm == DCY::RECOVERY_PRESSURE)
+      return gNorm[0][DarcyNorm::H1_P];
+    else if (adNorm == DCY::RECOVERY_CONCENTRATION)
+      return gNorm[0][DarcyNorm::H1_C];
+    else
+      return hypot(gNorm[0][DarcyNorm::H1_P], gNorm[0][DarcyNorm::H1_C]);
+  }
+
+  return hypot(hypot(gNorm[0][DarcyNorm::H1_Ph], gNorm[0][DarcyNorm::H1_Ch]),
+               hypot(gNorm[1][DarcyNorm::H1_Pr_Ph], gNorm[1][DarcyNorm::H1_Cr_Ch]));
+}
+
+
+template<class Dim>
+double SIMDarcy<Dim>::getEffectivityIndex (const Vectors& gNorm,
+                                           size_t adaptor,
+                                           size_t inorm) const
+{
+  if (adNorm == DCY::RECOVERY_PRESSURE)
+    return gNorm[adaptor](inorm) / gNorm[0][DarcyNorm::H1_E_Ph];
+
+  if (adNorm == DCY::RECOVERY_CONCENTRATION)
+    return gNorm[adaptor](inorm) / gNorm[0][DarcyNorm::H1_E_Ch];
+
+  return gNorm[adaptor](inorm) / gNorm[0][DarcyNorm::TOTAL_NORM_E];
 }
 
 

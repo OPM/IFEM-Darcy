@@ -1,0 +1,25 @@
+Twofield-mixed.xinp
+
+Input file: Twofield-mixed.xinp
+Equation solver: 2
+Using two-field formulation (Taylor-Hood).
+	Permeability: 1.0|1.0
+	Porosity: 1
+	Dispersivity: 1.0
+	Using sub-iterations
+		tol = 1e-10
+		max = 50
+Number of elements    64
+Number of nodes       424
+Number of dofs        424
+Number of D-dofs      100
+Number of P-dofs      324
+Number of unknowns    320
+  Primary solution summary: L2-norm         : 0.0409682
+                               Max pressure : 0.0625
+                          Max concentration : 0.0625
+>>> Norm summary <<<
+  H1 norm |p^h| = a(p^h,p^h)^0.5     : 0.149071
+  H1 norm |c^h| = a(c^h,c^h)^0.5     : 0.149071
+  H1 norm |p| = a(p,p)^0.5           : 0.149071
+  H1 norm |c| = a(c,c)^0.5           : 0.149071

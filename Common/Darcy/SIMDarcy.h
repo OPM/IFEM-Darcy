@@ -14,8 +14,11 @@
 #ifndef _SIM_DARCY_H_
 #define _SIM_DARCY_H_
 
+#include "DarcyEnums.h"
+
 #include "MatVec.h"
 #include "SIMconfigure.h"
+#include "SIMenums.h"
 #include "SIMsolution.h"
 
 #include <cstddef>
@@ -27,6 +30,7 @@ class Darcy;
 class DataExporter;
 class TimeStep;
 class TiXmlElement;
+class VTF;
 
 
 /*!
@@ -44,7 +48,13 @@ public:
 
   //! \brief Default constructor.
   //! \param torder Order of BDF time stepping
-  explicit SIMDarcy(Darcy& itg);
+  //! \param nf Number of primary fields
+  explicit SIMDarcy(Darcy& itg, unsigned char nf = 1);
+
+  //! \brief Default constructor.
+  //! \param torder Order of BDF time stepping
+  //! \param nf Number of primary fields
+  SIMDarcy(Darcy& itg, const std::vector<unsigned char>& nf);
 
   //! \brief Construct from setup properties.
   //! \param torder Order of BDF time stepping
@@ -92,10 +102,21 @@ public:
   bool saveStep(const TimeStep& tp, int& nBlock);
 
   //! \brief Initialize simulator.
-  void init();
+  bool init();
+
+  bool init(const TimeStep&) { return init(); }
 
   //! \brief Computes the solution for the current time step.
   bool solveStep(const TimeStep& tp);
+
+  //! \brief Post-process solution.
+  void postSolve(const TimeStep&) {}
+
+  //! \brief Solves the linearized system of current iteration.
+  //! \param[in] tp Time stepping parameters
+  //!
+  //! \details Since this solver is linear, this is just a normal solve.
+  SIM::ConvStatus solveIteration(TimeStep& tp);
 
   //! \brief Advance time stepping
   bool advanceStep(TimeStep&);
@@ -145,8 +166,56 @@ public:
   }
 
   //! \brief Print final solution norms to terminal.
-  //\param tp Time stepping parameters
+  //! \param tp Time stepping parameters
   void printFinalNorms(const TimeStep& tp);
+
+  //! \brief Print solution solution norms to terminal.
+  void printSolNorms(const Vector& gNorm, size_t w) const;
+
+  //! \brief Print norms to screen during adaptive simulations.
+  void printExactNorms (const Vector& gNorm, size_t w = 36) const;
+
+  //! \brief Print norms to screen during adaptive simulations.
+  void printNorms (const Vectors& gNorm, size_t w = 36) const override;
+
+  //! \brief Prints a norm group to the log stream.
+  void printNormGroup(const Vector& rNorm, const Vector& fNorm,
+                      const std::string& name) const override;
+
+  using Dim::savePoints;
+  //! \brief Saves point results to output file for a given time step.
+  //! \param[in] time Load/time step parameter
+  //! \param[in] iStep Load/time step counter
+  bool savePoints(double time, int iStep) const
+  {
+    return this->savePoints(*solVec, time, iStep);
+  }
+
+  //! \brief Set norm to adapt based on.
+  //! \param norm Norm to use
+  void setAdaptiveNorm(DCY::AdaptationNorm norm)
+  {
+    adNorm = norm;
+  }
+
+  //! \brief Returns norm to adapt based on.
+  DCY::AdaptationNorm getAdaptiveNorm() const
+  {
+    return adNorm;
+  }
+
+  //! \brief Returns the reference norm to base mesh adaptation upon.
+  //! \param[in] gNorm The calculated global norms
+  //! \param[in] adaptor Which norm group to base adaptation on
+  double getReferenceNorm(const Vectors& gNorm, size_t adaptor) const override;
+
+  //! \brief Returns the global effectivity index.
+  //! \param[in] gNorm Global norm values
+  //! \param[in] idx 0-based norm group index
+  //! \param[in] inorm 1-based norm index within the specified norm group
+  double getEffectivityIndex(const Vectors& gNorm,
+                             size_t adaptor,
+                             size_t inorm) const override;
 
 protected:
   //! \brief Performs some pre-processing tasks on the FE model.
@@ -157,13 +226,20 @@ protected:
   //! \brief Performs some pre-processing tasks on the FE model.
   bool preprocessB() override;
 
+  //! \brief Perform solution projection.
+  bool doProjection();
+
 private:
   Darcy& drc;           //!< Darcy integrand
+  DCY::AdaptationNorm adNorm = DCY::NO_ADAP; //!< Norm to adapt based on
   const Vector* solVec; //!< Pointer to solution vector
   Vector myReact;       //!< Nodal reaction forces
   int aCode[2];         //!< Analytical BC code (used by destructor)
   Matrix eNorm;         //!< Element wise norms
   Vectors proj;         //!< Projected solution vectors
+
+  int maxCycle = -1;      //!< Max number of sub-iterations
+  double cycleTol = 1e-6; //! < Convergence tolerance in sub-iterations
 };
 
 
@@ -178,6 +254,5 @@ struct SolverConfigurator<SIMDarcy<Dim>> {
             const typename SIMDarcy<Dim>::SetupProps& props,
             char* infile);
 };
-
 
 #endif

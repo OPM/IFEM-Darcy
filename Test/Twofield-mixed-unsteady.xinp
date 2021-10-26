@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<simulation>
+
+  <!-- General - geometry definitions !-->
+  <geometry dim="2" sets="true">
+    <raiseorder patch="1" u="1" v="1"/>
+    <refine  patch="1" u="7" v="7"/>
+  </geometry>
+
+  <!-- General - boundary conditions !-->
+  <boundaryconditions>
+    <dirichlet set="Boundary" comp="1" basis="1"/>
+    <dirichlet set="Boundary" comp="1" basis="2"/>
+  </boundaryconditions>
+
+  <!-- Problem-specific block !-->
+  <darcy twofield="true" formulation="th">
+    <source type="expression">
+      h=sin(t);
+      (-2*(x-1)*x-2*(y-1)*y)*h
+    </source>
+    <source_c type="expression">
+        h=sin(t);
+        dh=cos(t);
+        c=x*(x-1)*y*(y-1)*h;
+        ct=x*(x-1)*y*(y-1)*dh;
+        px=(2*x-1)*y*(y-1)*h;
+        py=x*(x-1)*(2*y-1)*h;
+        cx=px;
+        cy=py;
+        p2x=2*y*(y-1)*h;
+        p2y=2*x*(x-1)*h;
+        ct - (cx*px + c*p2x + cy*py + c*p2y + p2x + p2y)
+    </source_c>
+    <permvalues>1.0|1.0</permvalues>
+    <gravity>1.0</gravity>
+    <porosity type="constant">1.0</porosity>
+    <dispersivity type="constant">1.0</dispersivity>
+    <subiterations max="50" tol="1e-10"/>
+    <anasol type="expression">
+      <variables>h=sin(t)</variables>
+      <primary>x*(x-1)*y*(y-1)*h</primary>
+      <secondary>-(2*x-1)*y*(y-1)*h | -x*(x-1)*(2*y-1)*h</secondary>
+      <scalarprimary>x*(x-1)*y*(y-1)*h</scalarprimary>
+      <scalarsecondary>(2*x-1)*y*(y-1)*h | x*(x-1)*(2*y-1)*h</scalarsecondary>
+    </anasol>
+  </darcy>
+
+  <timestepping start="0" end="1" dt="0.1" type="be"/>
+
+  <discretization>
+    <nGauss>3</nGauss>
+  </discretization>
+
+</simulation>

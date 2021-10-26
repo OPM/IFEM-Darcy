@@ -11,11 +11,12 @@
 //!
 //==============================================================================
 
-#include "Darcy.h"
 #include "DarcyArgs.h"
+#include "MixedDarcy.h"
 #include "SIMDarcy.h"
 
 #include "ASMenums.h"
+#include "ASMmxBase.h"
 #include "IFEM.h"
 #include "LogStream.h"
 #include "Profiler.h"
@@ -24,7 +25,7 @@
 #include "SIM3D.h"
 #include "SIMoptions.h"
 #include "SIMSolver.h"
-#include "SIMSolverAdap.h"
+#include "SIMDarcyAdap.h"
 #include "TimeIntUtils.h"
 #include "TimeStep.h"
 
@@ -36,13 +37,28 @@
 /*!
   \brief Launch a simulator using a specified solver template.
   \param infile The input file to parse
+  \param args Darcy arguments
 */
 
 template<class Dim, template<class T> class Solver>
-int runSimulator(char* infile)
+int runSimulator(char* infile, const DarcyArgs& args)
 {
-  Darcy itg(Dim::dimension);
-  SIMDarcy<Dim> darcy(itg);
+  std::unique_ptr<Darcy> itg;
+  std::vector<unsigned char> nf;
+  if (args.twofield) {
+    if (ASMmxBase::Type == ASMmxBase::FULL_CONT_RAISE_BASIS2 ||
+        ASMmxBase::Type == ASMmxBase::REDUCED_CONT_RAISE_BASIS2)
+      nf = {1,1};
+    else
+      nf = {2};
+    itg = std::make_unique<MixedDarcy>(Dim::dimension,0);
+  } else {
+    nf = {1};
+    itg = std::make_unique<Darcy>(Dim::dimension,0);
+  }
+
+  SIMDarcy<Dim> darcy(*itg,nf);
+  darcy.setAdaptiveNorm(args.adNorm);
   Solver<SIMDarcy<Dim>> solver(darcy);
 
   utl::profiler->start("Model input");
@@ -70,14 +86,27 @@ int runSimulator(char* infile)
 /*!
   \brief Launch a simulator using a specified solver template.
   \param infile The input file to parse
-  \param torder Time stepping order
+  \param args Darcy arguments
 */
 
 template<class Dim>
-int runSimulatorTransient(char* infile, int torder)
+int runSimulatorTransient(char* infile, const DarcyArgs& args)
 {
-  Darcy itg(Dim::dimension, torder);
-  SIMDarcy<Dim> darcy(itg);
+  std::unique_ptr<Darcy> itg;
+  std::vector<unsigned char> nf;
+  if (args.twofield) {
+    if (ASMmxBase::Type == ASMmxBase::FULL_CONT_RAISE_BASIS2 ||
+        ASMmxBase::Type == ASMmxBase::REDUCED_CONT_RAISE_BASIS2)
+      nf = {1,1};
+    else
+      nf = {2};
+    itg = std::make_unique<MixedDarcy>(Dim::dimension, TimeIntegration::Order(args.timeMethod));
+  } else {
+    nf = {1};
+    itg = std::make_unique<Darcy>(Dim::dimension, TimeIntegration::Order(args.timeMethod));
+  }
+
+  SIMDarcy<Dim> darcy(*itg,nf);
   SIMSolver<SIMDarcy<Dim>> solver(darcy);
 
   utl::profiler->start("Model input");
@@ -102,6 +131,7 @@ int runSimulatorTransient(char* infile, int torder)
   return res;
 }
 
+
 /*!
   \brief Choose a solver template and then launch a simulator.
   \param infile The input file to parse
@@ -112,11 +142,11 @@ template<class Dim>
 int runSimulator1(char* infile, const DarcyArgs& args)
 {
   if (args.adap)
-    return runSimulator<Dim, SIMSolverAdap>(infile);
-  if (args.timeMethod != TimeIntegration::NONE)
-    return runSimulatorTransient<Dim>(infile,TimeIntegration::Order(args.timeMethod));
+    return runSimulator<Dim,SIMDarcyAdap>(infile,args);
+  else if (args.timeMethod != TimeIntegration::NONE)
+    return runSimulatorTransient<Dim>(infile,args);
   else
-    return runSimulator<Dim, SIMSolverStat>(infile);
+    return runSimulator<Dim, SIMSolverStat>(infile,args);
 }
 
 /*!
@@ -155,7 +185,9 @@ int main (int argc, char** argv)
 
   IFEM::Init(argc,argv,"Darcy solver");
   for (int i = 1; i < argc; i++)
-    if (argv[i] == infile || args.parseArg(argv[i]))
+    if (args.parseArgComplex(argc,argv,i))
+      ;
+    else if (argv[i] == infile || args.parseArg(argv[i]))
       ; // ignore the input file on the second pass
     else if (SIMoptions::ignoreOldOptions(argc,argv,i))
       ; // ignore the obsolete option
@@ -183,6 +215,19 @@ int main (int argc, char** argv)
 
   IFEM::cout <<"\nInput file: "<< infile;
   IFEM::getOptions().print(IFEM::cout) << std::endl;
+  if (args.twofield) {
+    if (ASMmxBase::Type == ASMmxBase::NONE)
+      IFEM::cout << "Using two-field formulation (single basis)." << std::endl;
+    else if (ASMmxBase::Type == ASMmxBase::REDUCED_CONT_RAISE_BASIS2)
+      IFEM::cout << "Using two-field formulation (Taylor-Hood)." << std::endl;
+    else if (ASMmxBase::Type == ASMmxBase::FULL_CONT_RAISE_BASIS2)
+      IFEM::cout << "Using two-field formulation (Full regularity Taylor-Hood)." << std::endl;
+  }
+  if (args.timeMethod == TimeIntegration::BE)
+    IFEM::cout << "Using Backward-Euler time stepping." << std::endl;
+  else if (args.timeMethod == TimeIntegration::BDF2)
+    IFEM::cout << "Using BDF2 time stepping." << std::endl;
+
   utl::profiler->stop("Initialization");
 
   if (args.dim == 3)

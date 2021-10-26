@@ -10,7 +10,8 @@ Number of domains     4
 Number of equations   55 (20 on process)
 L2-norm            : 0.580973
 Max pressure       : 1.2539
-Energy norm           a(u^h,u^h)^0.5 : 1.35146
-Exact norm                a(u,u)^0.5 : 1.35544
-Exact error      a(e,e)^0.5, e=u-u^h : 0.100455
-Exact relative error (%) : 7.41121
+  H1 norm |p^h| = a(p^h,p^h)^0.5     : 1.35146
+  External energy |(h,p^h)|^0.5      : -1.35146
+  H1 norm |p| = a(p,p)^0.5           : 1.35544
+  H1 norm |e| = a(e,e)^0.5, e=p-p^h  : 0.100455
+  Exact relative error (%)           : 7.41121

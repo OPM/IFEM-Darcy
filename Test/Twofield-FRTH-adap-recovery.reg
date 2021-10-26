@@ -1,0 +1,111 @@
+Twofield-mixed-adap.xinp -adap recovery -mixed_full
+
+Input file: Twofield-mixed-adap.xinp
+LR-spline basis functions are used
+Using two-field formulation (Full regularity Taylor-Hood).
+	Permeability: 1.0|1.0
+	Porosity: 1
+	Dispersivity: 1.0
+	Using sub-iterations
+		tol = 1e-10
+		max = 50
+	Refinement percentage: 2 type=6 (eps = 1e-06)
+	Refinement scheme: 2
+Number of elements    64
+Number of nodes       181
+Number of dofs        181
+Number of D-dofs      81
+Number of P-dofs      100
+Number of unknowns    113
+ >>> Starting adaptive simulation based on
+     Continuous global L2-projection error estimates (norm group 1) <<<
+Adaptive step 1
+  Primary solution summary: L2-norm         : 0.0408624
+                               Max pressure : 0.0632771
+                          Max concentration : 0.0625
+  H1 norm |p^h| = a(p^h,p^h)^0.5     : 0.147897
+  External energy |(h,p^h)|^0.5      : 0.147897
+  H1 norm |c^h| = a(c^h,c^h)^0.5     : 0.149072
+  H1 norm |p| = a(p,p)^0.5           : 0.149071
+  H1 norm |e| = a(e,e)^0.5, e=p-p^h  : 0.0186772
+  H1 norm |c| = a(c,c)^0.5           : 0.149071
+  H1 norm |e| = a(e,e)^0.5, e=c-c^h  : 5.03246e-06
+  Exact relative error (%)           : 8.85937
+Error estimates based on >>> Continuous global L2-projection <<<
+  H1 norm |p^r-p^h|                  : 0.0173276
+  H1 norm |c^r-c^h|                  : 8.14266e-07
+  H1 norm |p^r-p|                    : 0.00697082
+  H1 norm |c^r-c|                    : 4.96615e-06
+  Effectivity index eta^p            : 0.92774
+  Effectivity index eta^c            : 0.161803
+  Effectivity index eta^tot          : 0.92774
+Error estimate  |e|, (p,c)^r-(p,c)^h : 0.0173276
+Relative error (%) : 8.21919
+Effectivity index  : 0.92774
+Refining 4 basis functions with errors in range \[0.0268094,0.0268094\] 4% of all basis functions
+Adaptive step 2
+Number of elements    112
+Number of nodes       253
+Number of dofs        253
+Number of D-dofs      121
+Number of P-dofs      132
+Number of unknowns    185
+  Primary solution summary: L2-norm         : 0.0544965
+                               Max pressure : 0.0627259
+                          Max concentration : 0.0624813
+  H1 norm |p^h| = a(p^h,p^h)^0.5     : 0.148224
+  External energy |(h,p^h)|^0.5      : 0.148224
+  H1 norm |c^h| = a(c^h,c^h)^0.5     : 0.149043
+  H1 norm |p| = a(p,p)^0.5           : 0.149071
+  H1 norm |e| = a(e,e)^0.5, e=p-p^h  : 0.0158717
+  H1 norm |c| = a(c,c)^0.5           : 0.149071
+  H1 norm |e| = a(e,e)^0.5, e=c-c^h  : 0.000116527
+  Exact relative error (%)           : 7.5288
+  H1 norm |p^r-p^h|                  : 0.0141264
+  H1 norm |c^r-c^h|                  : 5.54406e-05
+  H1 norm |p^r-p|                    : 0.00723565
+  H1 norm |c^r-c|                    : 0.000102493
+  Effectivity index eta^p            : 0.890039
+  Effectivity index eta^c            : 0.475775
+  Effectivity index eta^tot          : 0.890022
+Error estimate  |e|, (p,c)^r-(p,c)^h : 0.0141265
+Relative error (%) : 6.7008
+Effectivity index  : 0.890022
+Root mean square (RMS) of error      : 0.5152
+Min element error                    : 0.000471281
+Max element error                    : 0.00260713
+Average element error                : 0.00118661
+Refining 4 basis functions with errors in range \[0.0258908,0.0258908\] 3.0303% of all basis functions
+Adaptive step 3
+Number of elements    172
+Number of nodes       361
+Number of dofs        361
+Number of D-dofs      177
+Number of P-dofs      184
+Number of unknowns    293
+  Primary solution summary: L2-norm         : 0.0542003
+                               Max pressure : 0.0627072
+                          Max concentration : 0.0624902
+  H1 norm |p^h| = a(p^h,p^h)^0.5     : 0.148524
+  External energy |(h,p^h)|^0.5      : 0.148524
+  H1 norm |c^h| = a(c^h,c^h)^0.5     : 0.149041
+  H1 norm |p| = a(p,p)^0.5           : 0.149071
+  H1 norm |e| = a(e,e)^0.5, e=p-p^h  : 0.0127603
+  H1 norm |c| = a(c,c)^0.5           : 0.149071
+  H1 norm |e| = a(e,e)^0.5, e=c-c^h  : 7.8534e-05
+  Exact relative error (%)           : 6.05284
+  H1 norm |p^r-p^h|                  : 0.00996389
+  H1 norm |c^r-c^h|                  : 3.06641e-05
+  H1 norm |p^r-p|                    : 0.00797155
+  H1 norm |c^r-c|                    : 7.23001e-05
+  Effectivity index eta^p            : 0.780852
+  Effectivity index eta^c            : 0.390456
+  Effectivity index eta^tot          : 0.780841
+Error estimate  |e|, (p,c)^r-(p,c)^h : 0.00996394
+Relative error (%) : 4.72631
+Effectivity index  : 0.780841
+Root mean square (RMS) of error      : 0.180465
+Min element error                    : 0.000472812
+Max element error                    : 0.00113283
+Average element error                : 0.000747666
+   \* Stopping the adaptive cycles as max steps 3 was reached.

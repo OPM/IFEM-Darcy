@@ -12,6 +12,7 @@
 //==============================================================================
 
 #include "DarcyArgs.h"
+#include "ASMmxBase.h"
 #include "Utilities.h"
 
 #include <string>
@@ -24,10 +25,48 @@ bool DarcyArgs::parseArg (const char* argv)
   TimeIntegration::Method tmp;
   if (argv[0] != '-')
     return false;
-  else if ((tmp = TimeIntegration::get(argv+1)) > TimeIntegration::NONE)
+  else if (strcasecmp(argv, "-twofield") == 0)
+    twofield = true;
+  else if (strcasecmp(argv,"-mixed") == 0) {
+    twofield = true;
+    ASMmxBase::Type = ASMmxBase::REDUCED_CONT_RAISE_BASIS2;
+  } else if (strcasecmp(argv,"-mixed_full") == 0) {
+    twofield = true;
+    ASMmxBase::Type = ASMmxBase::FULL_CONT_RAISE_BASIS2;
+  } else if ((tmp = TimeIntegration::get(argv+1)) > TimeIntegration::NONE)
     timeMethod = tmp;
   else
     return this->SIMargsBase::parseArg(argv);
+
+  return true;
+}
+
+
+bool DarcyArgs::parseArgComplex (int argc, char** argv, int& i)
+{
+  if (!strcmp(argv[i],"-adap")) {
+    adNorm = DCY::PRESSURE_H1;
+    adap = true;
+    if (i+1 < argc && argv[i+1][0] != '-' &&
+        strcasecmp(argv[i+1], "pressure") == 0)
+      adNorm = DCY::PRESSURE_H1, ++i;
+    else if (i+1 < argc && argv[i+1][0] != '-' &&
+             strcasecmp(argv[i+1], "recovery_press") == 0)
+      adNorm = DCY::RECOVERY_PRESSURE, ++i;
+    else if (i+1 < argc && argv[i+1][0] != '-' &&
+             strcasecmp(argv[i+1], "concentration") == 0)
+      adNorm = DCY::CONCENTRATION_H1, ++i;
+    else if (i+1 < argc && argv[i+1][0] != '-' &&
+             strcasecmp(argv[i+1], "recovery_conc") == 0)
+      adNorm = DCY::RECOVERY_CONCENTRATION, ++i;
+    else if (i+1 < argc && argv[i+1][0] != '-' &&
+             strcasecmp(argv[i+1], "total") == 0)
+      adNorm = DCY::TOTAL_H1, ++i;
+    else if (i+1 < argc && argv[i+1][0] != '-' &&
+             strcasecmp(argv[i+1], "recovery") == 0)
+      adNorm = DCY::RECOVERY, ++i;
+  } else
+    return false;
 
   return true;
 }
@@ -39,6 +78,37 @@ bool DarcyArgs::parse (const TiXmlElement* elem)
     std::string type;
     if (utl::getAttribute(elem,"type",type))
       timeMethod = TimeIntegration::get(type);
+  }
+  if (!strcasecmp(elem->Value(),"darcy")) {
+    utl::getAttribute(elem,"twofield",twofield);
+    ASMmxBase::Type = ASMmxBase::NONE;
+    const char* formulation = elem->Attribute("formulation");
+    if (formulation) {
+      if (strcasecmp(formulation, "th" ) == 0 ||
+          strcasecmp(formulation, "mixed") == 0) {
+        ASMmxBase::Type = ASMmxBase::REDUCED_CONT_RAISE_BASIS2;
+        twofield = true;
+      } else if (strcasecmp(formulation,"frth") == 0 ||
+                 strcasecmp(formulation,"mixed_full") == 0) {
+        ASMmxBase::Type = ASMmxBase::FULL_CONT_RAISE_BASIS2;
+        twofield = true;
+      }
+    }
+    const char* ad = elem->Attribute("adap");
+    if (ad) {
+      if (strcasecmp(ad,"pressure") == 0)
+        adNorm = DCY::PRESSURE_H1;
+      else if (strcasecmp(ad,"recovery_press") == 0)
+        adNorm = DCY::RECOVERY_PRESSURE;
+      else if (strcasecmp(ad,"concentration") == 0)
+        adNorm = DCY::CONCENTRATION_H1;
+      else if (strcasecmp(ad,"recovery_conc") == 0)
+        adNorm = DCY::RECOVERY_CONCENTRATION;
+      else if (strcasecmp(ad,"total") == 0)
+        adNorm = DCY::TOTAL_H1;
+      else if (strcasecmp(ad,"recovery") == 0)
+        adNorm = DCY::RECOVERY;
+    }
   }
 
   return this->SIMargsBase::parse(elem);
