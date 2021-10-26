@@ -1,4 +1,4 @@
-../Lshape_p2_b5.xinp -petsc -adap
+../Lshape_p2_b5.xinp -petsc -adap recovery_press
 
 Equation solver: 4
 LR-spline basis functions are used
@@ -13,12 +13,15 @@ L2-norm            : 0.580973
 Max pressure       : 1.2539
 Projecting secondary solution ...
 	Continuous global L2-projection
-Energy norm           a(u^h,u^h)^0.5 : 1.35146
-Exact norm                a(u,u)^0.5 : 1.35544
-Exact error      a(e,e)^0.5, e=u-u^h : 0.100455
-Exact relative error (%) : 7.41121
-Error estimate a(e,e)^0.5, e=u^r-u^h : 0.109353
-Relative error (%) : 8.06506
+  H1 norm |p^h| = a(p^h,p^h)^0.5     : 1.35146
+  External energy |(h,p^h)|^0.5      : -1.35146
+  H1 norm |p| = a(p,p)^0.5           : 1.35544
+  H1 norm |e| = a(e,e)^0.5, e=p-p^h  : 0.100455
+  Exact relative error (%)           : 7.41121
+  H1 norm |p^r-p^h|                  : 0.109353
+  H1 norm |p^r-p|                    : 0.0797185
+Error estimate a(e,e)^0.5, e=p^r-p^h : 0.109353
+Relative error (%) : 8.06767
 Effectivity index  : 1.08858
 Root mean square (RMS) of error      : 2.00038
 Min element error                    : 0.00066829
@@ -33,12 +36,15 @@ Number of dofs        99
 Number of unknowns    84
 L2-norm            : 0.544329
 Max pressure       : 1.25735
-Energy norm           a(u^h,u^h)^0.5 : 1.35351
-Exact norm                a(u,u)^0.5 : 1.35521
-Exact error      a(e,e)^0.5, e=u-u^h : 0.0661461
-Exact relative error (%) : 4.88086
-Error estimate a(e,e)^0.5, e=u^r-u^h : 0.0701709
-Relative error (%) : 5.1774
+  H1 norm |p^h| = a(p^h,p^h)^0.5     : 1.35351
+  External energy |(h,p^h)|^0.5      : -1.35351
+  H1 norm |p| = a(p,p)^0.5           : 1.35521
+  H1 norm |e| = a(e,e)^0.5, e=p-p^h  : 0.0661461
+  Exact relative error (%)           : 4.88086
+  H1 norm |p^r-p^h|                  : 0.0701709
+  H1 norm |p^r-p|                    : 0.0532284
+Error estimate a(e,e)^0.5, e=p^r-p^h : 0.0701709
+Relative error (%) : 5.17785
 Effectivity index  : 1.06085
 Root mean square (RMS) of error      : 2.48346
 Min element error                    : 0.0002063
@@ -53,12 +59,15 @@ Number of dofs        123
 Number of unknowns    105
 L2-norm            : 0.516628
 Max pressure       : 1.25878
-Energy norm           a(u^h,u^h)^0.5 : 1.35437
-Exact norm                a(u,u)^0.5 : 1.35513
-Exact error      a(e,e)^0.5, e=u-u^h : 0.044246
-Exact relative error (%) : 3.26508
-Error estimate a(e,e)^0.5, e=u^r-u^h : 0.045461
-Relative error (%) : 3.3547
+  H1 norm |p^h| = a(p^h,p^h)^0.5     : 1.35437
+  External energy |(h,p^h)|^0.5      : -1.35437
+  H1 norm |p| = a(p,p)^0.5           : 1.35513
+  H1 norm |e| = a(e,e)^0.5, e=p-p^h  : 0.044246
+  Exact relative error (%)           : 3.26508
+  H1 norm |p^r-p^h|                  : 0.0454612
+  H1 norm |p^r-p|                    : 0.0363321
+Error estimate a(e,e)^0.5, e=p^r-p^h : 0.0454612
+Relative error (%) : 3.35475
 Effectivity index  : 1.02746
 Root mean square (RMS) of error      : 2.2928
 Min element error                    : 0.00014019

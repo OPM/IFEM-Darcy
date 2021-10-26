@@ -8,10 +8,14 @@ include_directories(../../../Common)
 
 set(DARCY_SOURCES Darcy.C
                   Darcy.h
+                  DarcyEnums.h
                   DarcySolutions.C
                   DarcySolutions.h
+                  MixedDarcy.C
+                  MixedDarcy.h
                   SIMDarcy.C
-                  SIMDarcy.h)
+                  SIMDarcy.h
+                  SIMDarcyAdap.h)
 
 add_library(CommonDarcy STATIC ${DARCY_SOURCES})
 

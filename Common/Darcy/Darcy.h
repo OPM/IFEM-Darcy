@@ -21,14 +21,17 @@
 #include "SIMenums.h"
 
 #include <cstddef>
+#include <memory>
 #include <string>
 
 
 class AnaSol;
+class Fields;
 class FiniteElement;
 class GlobalIntegral;
 class LocalIntegral;
 class RealFunc;
+class SIMbase;
 struct TimeDomain;
 class Vec3;
 class VecFunc;
@@ -40,7 +43,12 @@ class VecFunc;
 
 class Darcy : public IntegrandBase
 {
+protected:
   using WeakOps = EqualOrderOperators::Weak; //!< Convenience renaming
+
+  int pp = 0; //!< Block for pressure
+  int cc = 0; //!< Block for concentration
+  int cp = 0; //!< Block coupling concentration to pressure
 
 public:
   //! \brief The constructor initializes all pointers to zero.
@@ -60,13 +68,25 @@ public:
   //! \brief Returns the body force vector at a given point.
   Vec3 getBodyForce(const Vec3& X) const;
 
+  //! \brief Returns the dispersivity at a given point.
+  double getDispersivity(const Vec3& X) const;
+
   //! \brief Defines the source function.
   void setSource(RealFunc* s) { source = s; }
+
+  //! \brief Defines the concentration source function.
+  virtual void setCSource(RealFunc*) {}
 
   //! \brief Defines a scalar flux function.
   void setFlux(RealFunc* f) { flux = f; }
   //! \brief Defines a vectorial flux function.
   void setFlux(VecFunc* f) { vflux = f; }
+
+  //! \brief Defines a scalar dispersivity function.
+  void setDispersivity(RealFunc* f) { dispersivity = f; }
+
+  //! \brief Defines a scalar porosity function.
+  void setPorosity(RealFunc* f) { porosity = f; }
 
   //! \brief Evaluates the boundary fluid flux (if any) at specified point.
   double getFlux(const Vec3& X, const Vec3& normal) const;
@@ -76,6 +96,12 @@ public:
   //! \brief Defines the solution mode before the element assembly is started.
   //! \param[in] mode The solution mode to use
   void setMode(SIM::SolutionMode mode) override;
+
+  //! \brief Update time stepping scheme (BE -> BDF2 transition).
+  void advanceStep()
+  {
+    bdf.advanceStep();
+  }
 
   //! \brief Defines the global integral for calculating reaction forces only.
   void setReactionIntegral(GlobalIntegral* gq);
@@ -148,16 +174,38 @@ public:
   //! \brief Set gravitational acceleration.
   void setGravity(double ga) { gacc = ga; }
 
-private:
+  //! \brief Obtain integrand-type dependent solution norms
+  virtual void getSolutionNorms(const SIMbase& sim, const Vector& solution,
+                                double& dNorm,
+                                double* dMax, size_t* iMax) const;
+
+  //! \brief Returns pressure in a point.
+  //! \param eV Element vectors
+  //! \param fe Finite element data at current point
+  //! \param level Time level to evaluate at
+  virtual double pressure(const Vectors& eV,
+                          const FiniteElement& fe,
+                          size_t level) const;
+
+  //! \brief Returns pressure gradient in a point.
+  //! \param eV Element vectors
+  //! \param fe Finite element data at current point
+  //! \param level Time level to evaluate at
+  virtual Vec3 pressureGradient(const Vectors& eV,
+                                const FiniteElement& fe,
+                                size_t level) const;
+
+protected:
   VecFunc*  bodyforce;    //!< Body force function
   VecFunc*  permvalues;   //!< Permeability function
   RealFunc* permeability; //!< Permeability field function
+  RealFunc* porosity;     //!< Porosity function
+  RealFunc* dispersivity; //!< Dispersivity function
   VecFunc*  vflux;        //!< Flux function
   RealFunc* flux;         //!< Flux function
   RealFunc* source;       //!< Source function
 
   GlobalIntegral* reacInt; //!< Reaction-forces-only integral
-
   TimeIntegration::BDF bdf; //!< BDF helper class
 
 public:
@@ -165,6 +213,14 @@ public:
   double gacc; //!< Gravity acceleration
 
   char extEner; //!< If \e true, external energy is to be computed
+
+  //! \brief Evaluates the secondary solution at a result point.
+  //! \param[out] s Array of solution field values at current point
+  //! \param[in] eV Element solution vectors
+  //! \param[in] fe Finite element data at current point
+  //! \param[in] X Cartesian coordinates of current point
+  bool evalDarcyVel(Vector& s, const Vectors& eV,
+                    const FiniteElement& fe, const Vec3& X) const;
 };
 
 
@@ -175,12 +231,39 @@ public:
 class DarcyNorm : public NormBase
 {
 public:
+  //! \brief Enumeration of regular norm entries
+  enum NormEntries {
+    H1_Ph = 0,
+    EXT_ENERGY,
+    H1_Ch,
+    H1_P,
+    H1_E_Ph,
+    H1_C,
+    H1_E_Ch,
+    TOTAL_NORM_E
+  };
+
+  //! \brief Enumeration of recovery norm entries
+  enum RecoveryEntries {
+    H1_Pr = 0,
+    H1_Pr_Ph,
+    H1_Cr,
+    H1_Cr_Ch,
+    TOTAL_NORM_REC,
+    H1_E_Pr,
+    H1_E_Cr,
+    TOTAL_E_REC,
+    EFF_REC_Ph,
+    EFF_REC_Ch,
+    EFF_REC_TOTAL
+  };
+
   //! \brief The only constructor initializes its data members.
   //! \param[in] p The Poisson problem to evaluate norms for
   //! \param[in] a The analytical heat flux (optional)
   explicit DarcyNorm(Darcy& p, VecFunc* a = nullptr);
   //! \brief Empty destructor.
-  virtual ~DarcyNorm() {}
+  virtual ~DarcyNorm();
 
   using NormBase::evalInt;
   //! \brief Evaluates the integrand at an interior point.
@@ -219,11 +302,17 @@ public:
   //! \param[in] prefix Common prefix for all norm names
   std::string getName(size_t i, size_t j, const char* prefix) const override;
 
-  //! \brief Returns whether a norm quantity stores element contributions.
-  bool hasElementContributions(size_t i, size_t j) const override;
+  //! \brief Projected quantities given as a field (recovery on a separate basis).
+  //! \param field The field
+  //! \param[in] idx The projection index
+  void setProjectedFields(Fields* field, size_t idx) override;
 
-private:
+  //! \brief Returns whether a norm quantity stores element contributions.
+  bool hasElementContributions(size_t, size_t) const override;
+
+protected:
   VecFunc* anasol; //!< Analytical heat flux
+  std::vector<std::unique_ptr<Fields>> projFields; //!< Projected fields for recovery
 };
 
 #endif

@@ -35,7 +35,7 @@
   </discretization>
 
   <!-- Problem-specific block !-->
-  <darcy>
+  <darcy adap="recovery_press">
     <permvalues>9.81|9.81</permvalues>
     <anasol type="Lshape"/>
   </darcy>

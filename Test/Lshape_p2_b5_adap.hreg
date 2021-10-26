@@ -1,4 +1,4 @@
-Lshape_p2_b5.xinp -adap
+Lshape_p2_b5.xinp -adap recovery_press
 
 /                        Group
 /0                       Group
@@ -17,20 +17,42 @@ Lshape_p2_b5.xinp -adap
 /0/DarcyFlow-1/fields/v_y Group
 /0/DarcyFlow-1/fields/v_y/1 Dataset {66}
 /0/DarcyFlow-1/knotspan  Group
-/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=u-u^r Group
-/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=u-u^r/1 Dataset {32}
-/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=u^r-u^h Group
-/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=u^r-u^h/1 Dataset {32}
-/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(u^r,u^r)^0.5 Group
-/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(u^r,u^r)^0.5/1 Dataset {32}
-/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ effectivity\ index Group
-/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ effectivity\ index/1 Dataset {32}
-/0/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=u-u^h Group
-/0/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=u-u^h/1 Dataset {32}
-/0/DarcyFlow-1/knotspan/a(u,u)^0.5 Group
-/0/DarcyFlow-1/knotspan/a(u,u)^0.5/1 Dataset {32}
-/0/DarcyFlow-1/knotspan/a(u^h,u^h)^0.5 Group
-/0/DarcyFlow-1/knotspan/a(u^h,u^h)^0.5/1 Dataset {32}
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(c^r,c^r)^0.5 Group
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(c^r,c^r)^0.5/1 Dataset {32}
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=c-c^r Group
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=c-c^r/1 Dataset {32}
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=c^r-c^h Group
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=c^r-c^h/1 Dataset {32}
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=p-p^r Group
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=p-p^r/1 Dataset {32}
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=p^r-p^h Group
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=p^r-p^h/1 Dataset {32}
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(p^r,p^r)^0.5 Group
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(p^r,p^r)^0.5/1 Dataset {32}
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ eta^c Group
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ eta^c/1 Dataset {32}
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ eta^p Group
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ eta^p/1 Dataset {32}
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ eta^tot Group
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ eta^tot/1 Dataset {32}
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ |e|,\ (p,c)^r-(p,c)^h Group
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ |e|,\ (p,c)^r-(p,c)^h/1 Dataset {32}
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ |e|,\ e=(p,c)^r-(p,c) Group
+/0/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ |e|,\ e=(p,c)^r-(p,c)/1 Dataset {32}
+/0/DarcyFlow-1/knotspan/a(c,c)^0.5 Group
+/0/DarcyFlow-1/knotspan/a(c,c)^0.5/1 Dataset {32}
+/0/DarcyFlow-1/knotspan/a(c^h,c^h)^0.5 Group
+/0/DarcyFlow-1/knotspan/a(c^h,c^h)^0.5/1 Dataset {32}
+/0/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=(p,c)-(p,c)^h Group
+/0/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=(p,c)-(p,c)^h/1 Dataset {32}
+/0/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=c-c^h Group
+/0/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=c-c^h/1 Dataset {32}
+/0/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=p-p^h Group
+/0/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=p-p^h/1 Dataset {32}
+/0/DarcyFlow-1/knotspan/a(p,p)^0.5 Group
+/0/DarcyFlow-1/knotspan/a(p,p)^0.5/1 Dataset {32}
+/0/DarcyFlow-1/knotspan/a(p^h,p^h)^0.5 Group
+/0/DarcyFlow-1/knotspan/a(p^h,p^h)^0.5/1 Dataset {32}
 /1                       Group
 /1/DarcyFlow-1           Group
 /1/DarcyFlow-1/basis     Group
@@ -47,20 +69,42 @@ Lshape_p2_b5.xinp -adap
 /1/DarcyFlow-1/fields/v_y Group
 /1/DarcyFlow-1/fields/v_y/1 Dataset {99}
 /1/DarcyFlow-1/knotspan  Group
-/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=u-u^r Group
-/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=u-u^r/1 Dataset {68}
-/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=u^r-u^h Group
-/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=u^r-u^h/1 Dataset {68}
-/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(u^r,u^r)^0.5 Group
-/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(u^r,u^r)^0.5/1 Dataset {68}
-/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ effectivity\ index Group
-/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ effectivity\ index/1 Dataset {68}
-/1/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=u-u^h Group
-/1/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=u-u^h/1 Dataset {68}
-/1/DarcyFlow-1/knotspan/a(u,u)^0.5 Group
-/1/DarcyFlow-1/knotspan/a(u,u)^0.5/1 Dataset {68}
-/1/DarcyFlow-1/knotspan/a(u^h,u^h)^0.5 Group
-/1/DarcyFlow-1/knotspan/a(u^h,u^h)^0.5/1 Dataset {68}
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(c^r,c^r)^0.5 Group
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(c^r,c^r)^0.5/1 Dataset {68}
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=c-c^r Group
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=c-c^r/1 Dataset {68}
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=c^r-c^h Group
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=c^r-c^h/1 Dataset {68}
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=p-p^r Group
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=p-p^r/1 Dataset {68}
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=p^r-p^h Group
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=p^r-p^h/1 Dataset {68}
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(p^r,p^r)^0.5 Group
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(p^r,p^r)^0.5/1 Dataset {68}
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ eta^c Group
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ eta^c/1 Dataset {68}
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ eta^p Group
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ eta^p/1 Dataset {68}
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ eta^tot Group
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ eta^tot/1 Dataset {68}
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ |e|,\ (p,c)^r-(p,c)^h Group
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ |e|,\ (p,c)^r-(p,c)^h/1 Dataset {68}
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ |e|,\ e=(p,c)^r-(p,c) Group
+/1/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ |e|,\ e=(p,c)^r-(p,c)/1 Dataset {68}
+/1/DarcyFlow-1/knotspan/a(c,c)^0.5 Group
+/1/DarcyFlow-1/knotspan/a(c,c)^0.5/1 Dataset {68}
+/1/DarcyFlow-1/knotspan/a(c^h,c^h)^0.5 Group
+/1/DarcyFlow-1/knotspan/a(c^h,c^h)^0.5/1 Dataset {68}
+/1/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=(p,c)-(p,c)^h Group
+/1/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=(p,c)-(p,c)^h/1 Dataset {68}
+/1/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=c-c^h Group
+/1/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=c-c^h/1 Dataset {68}
+/1/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=p-p^h Group
+/1/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=p-p^h/1 Dataset {68}
+/1/DarcyFlow-1/knotspan/a(p,p)^0.5 Group
+/1/DarcyFlow-1/knotspan/a(p,p)^0.5/1 Dataset {68}
+/1/DarcyFlow-1/knotspan/a(p^h,p^h)^0.5 Group
+/1/DarcyFlow-1/knotspan/a(p^h,p^h)^0.5/1 Dataset {68}
 /2                       Group
 /2/DarcyFlow-1           Group
 /2/DarcyFlow-1/basis     Group
@@ -77,17 +121,39 @@ Lshape_p2_b5.xinp -adap
 /2/DarcyFlow-1/fields/v_y Group
 /2/DarcyFlow-1/fields/v_y/1 Dataset {123}
 /2/DarcyFlow-1/knotspan  Group
-/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=u-u^r Group
-/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=u-u^r/1 Dataset {95}
-/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=u^r-u^h Group
-/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=u^r-u^h/1 Dataset {95}
-/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(u^r,u^r)^0.5 Group
-/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(u^r,u^r)^0.5/1 Dataset {95}
-/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ effectivity\ index Group
-/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ effectivity\ index/1 Dataset {95}
-/2/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=u-u^h Group
-/2/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=u-u^h/1 Dataset {95}
-/2/DarcyFlow-1/knotspan/a(u,u)^0.5 Group
-/2/DarcyFlow-1/knotspan/a(u,u)^0.5/1 Dataset {95}
-/2/DarcyFlow-1/knotspan/a(u^h,u^h)^0.5 Group
-/2/DarcyFlow-1/knotspan/a(u^h,u^h)^0.5/1 Dataset {95}
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(c^r,c^r)^0.5 Group
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(c^r,c^r)^0.5/1 Dataset {95}
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=c-c^r Group
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=c-c^r/1 Dataset {95}
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=c^r-c^h Group
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=c^r-c^h/1 Dataset {95}
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=p-p^r Group
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=p-p^r/1 Dataset {95}
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=p^r-p^h Group
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(e,e)^0.5,\ e=p^r-p^h/1 Dataset {95}
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(p^r,p^r)^0.5 Group
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ a(p^r,p^r)^0.5/1 Dataset {95}
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ eta^c Group
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ eta^c/1 Dataset {95}
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ eta^p Group
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ eta^p/1 Dataset {95}
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ eta^tot Group
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ eta^tot/1 Dataset {95}
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ |e|,\ (p,c)^r-(p,c)^h Group
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ |e|,\ (p,c)^r-(p,c)^h/1 Dataset {95}
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ |e|,\ e=(p,c)^r-(p,c) Group
+/2/DarcyFlow-1/knotspan/Continuous\ global\ L2-projection\ |e|,\ e=(p,c)^r-(p,c)/1 Dataset {95}
+/2/DarcyFlow-1/knotspan/a(c,c)^0.5 Group
+/2/DarcyFlow-1/knotspan/a(c,c)^0.5/1 Dataset {95}
+/2/DarcyFlow-1/knotspan/a(c^h,c^h)^0.5 Group
+/2/DarcyFlow-1/knotspan/a(c^h,c^h)^0.5/1 Dataset {95}
+/2/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=(p,c)-(p,c)^h Group
+/2/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=(p,c)-(p,c)^h/1 Dataset {95}
+/2/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=c-c^h Group
+/2/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=c-c^h/1 Dataset {95}
+/2/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=p-p^h Group
+/2/DarcyFlow-1/knotspan/a(e,e)^0.5,\ e=p-p^h/1 Dataset {95}
+/2/DarcyFlow-1/knotspan/a(p,p)^0.5 Group
+/2/DarcyFlow-1/knotspan/a(p,p)^0.5/1 Dataset {95}
+/2/DarcyFlow-1/knotspan/a(p^h,p^h)^0.5 Group
+/2/DarcyFlow-1/knotspan/a(p^h,p^h)^0.5/1 Dataset {95}

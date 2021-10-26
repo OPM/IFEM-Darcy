@@ -8,8 +8,10 @@ Number of constraints 108
 Number of unknowns    676
 L2-norm            : 1.39877
 Max pressure       : 1.52707
-Energy norm           a(u^h,u^h)^0.5 : 25.2035
-External energy          (h,u^h)^0.5 : 25.2227
-Exact norm                a(u,u)^0.5 : 26.0482
-Exact error      a(e,e)^0.5, e=u-u^h : 5.69085
-Exact relative error (%) : 21.8473
+  H1 norm |p^h| = a(p^h,p^h)^0.5     : 25.2035
+  External energy |(h,p^h)|^0.5      : 25.2227
+  H1 norm |p| = a(p,p)^0.5           : 26.0482
+  H1 norm |e| = a(e,e)^0.5, e=p-p^h  : 5.69085
+  Exact relative error (%)           : 21.8473
+  H1 norm |p^r-p^h|                  : 3.96247
+  H1 norm |p^r-p|                    : 5.54201

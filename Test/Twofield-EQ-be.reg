@@ -1,0 +1,56 @@
+Twofield-unsteady.xinp -be
+
+Input file: Twofield-unsteady.xinp
+Using two-field formulation (single basis).
+Using Backward-Euler time stepping.
+Number of elements    64
+Number of nodes       100
+Number of dofs        200
+Number of unknowns    128
+  step = 1  time = 0.1
+  Primary solution summary: L2-norm         : 0.00276727
+                               Max pressure : 0.00623959
+                          Max concentration : 0.00623229
+  step = 2  time = 0.2
+  Primary solution summary: L2-norm         : 0.00550561
+                               Max pressure : 0.0124168
+                          Max concentration : 0.0123962
+  step = 3  time = 0.3
+  Primary solution summary: L2-norm         : 0.00818852
+                               Max pressure : 0.01847
+                          Max concentration : 0.0184343
+  step = 4  time = 0.4
+  Primary solution summary: L2-norm         : 0.0107895
+                               Max pressure : 0.0243386
+                          Max concentration : 0.0242875
+  step = 5  time = 0.5
+  Primary solution summary: L2-norm         : 0.0132826
+                               Max pressure : 0.0299641
+                          Max concentration : 0.029898
+  step = 6  time = 0.6
+  Primary solution summary: L2-norm         : 0.015643
+                               Max pressure : 0.0352902
+                          Max concentration : 0.0352096
+  step = 7  time = 0.7
+  Primary solution summary: L2-norm         : 0.0178471
+                               Max pressure : 0.0402636
+                          Max concentration : 0.0401696
+  step = 8  time = 0.8
+  Primary solution summary: L2-norm         : 0.0198729
+                               Max pressure : 0.0448348
+                          Max concentration : 0.0447281
+  step = 9  time = 0.9
+  Primary solution summary: L2-norm         : 0.0217001
+                               Max pressure : 0.0489579
+                          Max concentration : 0.0488399
+  step = 10  time = 1
+  Primary solution summary: L2-norm         : 0.0233105
+                               Max pressure : 0.0525919
+                          Max concentration : 0.0524636
+  H1 norm |p^h| = a(p^h,p^h)^0.5     : 0.125439
+  External energy |(h,p^h)|^0.5      : 0.125439
+  H1 norm |c^h| = a(c^h,c^h)^0.5     : 0.125149
+  H1 norm |p| = a(p,p)^0.5           : 0.125439
+  H1 norm |c| = a(c,c)^0.5           : 0.125439
+  H1 norm |e| = a(e,e)^0.5, e=c-c^h  : 0.000291065
+  Exact relative error (%)           : 0.164075
