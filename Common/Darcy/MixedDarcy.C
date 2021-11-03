@@ -276,7 +276,7 @@ std::string MixedDarcy::getField2Name (size_t i, const char* prefix) const
 
   if (i >= 6) return "";
 
-  static const char* s[6] = {"p,x","p,y","p,z",
+  static const char* s[6] = {"v_x","v_y","v_z",
                              "c,x","c,y","c,z"};
 
   if (!prefix) return s[i];
