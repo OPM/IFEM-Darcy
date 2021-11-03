@@ -1,0 +1,24 @@
+Twofield-mixed.xinp
+
+/                        Group
+/0                       Group
+/0/DarcyFlow-1           Group
+/0/DarcyFlow-1/basis     Group
+/0/DarcyFlow-1/basis/1   Dataset {1325}
+/0/DarcyFlow-1/fields    Group
+/0/DarcyFlow-1/fields/c,x Group
+/0/DarcyFlow-1/fields/c,x/1 Dataset {100}
+/0/DarcyFlow-1/fields/c,y Group
+/0/DarcyFlow-1/fields/c,y/1 Dataset {100}
+/0/DarcyFlow-1/fields/p  Group
+/0/DarcyFlow-1/fields/p/1 Dataset {100}
+/0/DarcyFlow-1/fields/v_x Group
+/0/DarcyFlow-1/fields/v_x/1 Dataset {100}
+/0/DarcyFlow-1/fields/v_y Group
+/0/DarcyFlow-1/fields/v_y/1 Dataset {100}
+/0/DarcyFlow-2           Group
+/0/DarcyFlow-2/basis     Group
+/0/DarcyFlow-2/basis/1   Dataset {10793}
+/0/DarcyFlow-2/fields    Group
+/0/DarcyFlow-2/fields/c  Group
+/0/DarcyFlow-2/fields/c/1 Dataset {324}
