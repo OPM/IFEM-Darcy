@@ -122,7 +122,8 @@ bool SIMDarcy<Dim>::parse (const TiXmlElement* elem)
       }
       else if (type == "diracsum") {
         double tol = 1e-2;
-        const char* input = utl::getValue(child, "source");
+        const char* input = isC ? utl::getValue(child, "source_c")
+                                : utl::getValue(child, "source");
         utl::getAttribute(child, "pointTol", tol);
         if (input) {
           IFEM::cout << " DiracSum";
