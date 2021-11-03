@@ -312,6 +312,8 @@ bool SIMDarcy<Dim>::solveStep (const TimeStep& tp)
     if (!this->setMode(SIM::DYNAMIC))
       return false;
 
+    Vector dummy;
+    this->updateDirichlet(tp.time.t,&dummy);
     if (!this->assembleSystem(tp.time, solution))
       return false;
 
@@ -320,6 +322,7 @@ bool SIMDarcy<Dim>::solveStep (const TimeStep& tp)
 
     if (maxCycle > -1) {
       this->setMode(SIM::RHS_ONLY);
+      this->updateDirichlet(tp.time.t,nullptr);
       this->assembleSystem(tp.time, solution);
       Vector linRes;
       this->extractLoadVec(linRes);
