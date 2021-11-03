@@ -255,7 +255,7 @@ bool MixedDarcy::evalSol (Vector& s,
 std::string MixedDarcy::getField1Name (size_t i, const char* prefix) const
 {
   if (i == 11)
-    return pp == 0 ? "p&&c" : "p";
+    return cBasis == 1 ? "p&&c" : "p";
   if (i == 12)
     return "c";
 
