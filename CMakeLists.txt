@@ -62,6 +62,8 @@ if(NOT MPI_FOUND OR IFEM_SERIAL_TESTS_IN_PARALLEL)
     ifem_add_hdf5_test(Lshape_p2_b5_adap.hreg Darcy)
     ifem_add_vtf_test(Lshape_p2_b5_adap.vreg Darcy)
   endif()
+  ifem_add_hdf5_test(Twofield.hreg Darcy)
+  ifem_add_hdf5_test(Twofield-mixed.hreg Darcy)
 endif()
 list(APPEND TEST_APPS Darcy)
 
