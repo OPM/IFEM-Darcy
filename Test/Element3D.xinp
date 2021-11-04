@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<simulation>
+
+  <!-- General - geometry definitions !-->
+  <geometry dim="3" sets="true">
+    <refine patch="1" u="7" v="7" w="7"/>
+  </geometry>
+
+  <!-- General - boundary conditions !-->
+  <boundaryconditions>
+    <dirichlet set="Face6" comp="1"/>
+  </boundaryconditions>
+
+  <!-- Problem-specific block !-->
+  <darcy>
+    <source type="elementsum">
+      # U V Val\
+      0.25 0.25 0.25 1\
+      0.75 0.75 0.25 1
+    </source>
+    <permvalues>1.2|1.2|1.2</permvalues>
+  </darcy>
+
+</simulation>

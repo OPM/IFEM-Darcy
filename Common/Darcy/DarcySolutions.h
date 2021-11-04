@@ -21,6 +21,9 @@
 #include <vector>
 
 
+class SIMbase;
+
+
 /*!
  \brief Primary solution for Darcy problem on a L-shape domain.
 */
@@ -83,6 +86,35 @@ protected:
   { return this->FunctionSum::getValue(X).front(); }
 
   double pointTol; //!< Interval around point associated with functions
+  int myDim; //!< Dimensionality of world
+};
+
+
+/*!
+ \brief A sum of single-element sources.
+*/
+
+class ElementSum : public FunctionSum, public RealFunc
+{
+public:
+  //! \brief Constructor.
+  //! \param dim Dimensionality of world
+  ElementSum(int dim) : myDim(dim) {}
+
+  //! \brief Parse functions from a string.
+  //! \param input The string to parse
+  //! \param sim Simulator with elements information
+  bool parse(const char* input, const SIMbase& sim);
+
+  //! \brief Empty constructor.
+  virtual ~ElementSum() {}
+
+protected:
+  //! \brief Evaluates the function in a point.
+  //! \param X Coordinates of point to evaluate in
+  Real evaluate(const Vec3& X) const override
+  { return this->FunctionSum::getValue(X).front(); }
+
   int myDim; //!< Dimensionality of world
 };
 

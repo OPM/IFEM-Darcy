@@ -1,0 +1,11 @@
+Dirac3D.xinp
+
+Input file: Dirac3D.xinp
+Number of elements    512
+Number of nodes       729
+Number of dofs        729
+Number of unknowns    648
+L2-norm            : 6.42394e-05
+Max pressure       : 0.000141836
+  H1 norm |p^h| = a(p^h,p^h)^0.5     : 4.25132e-05
+  External energy |(h,p^h)|^0.5      : 4.25132e-05

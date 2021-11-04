@@ -116,14 +116,15 @@ bool SIMDarcy<Dim>::parse (const TiXmlElement* elem)
       utl::getAttribute(child,"type",type);
       IFEM::cout <<"\tSource function" << (isC ? " (concentration):" : ":");
       RealFunc* src = nullptr;
-      if (type == "expression" && child->FirstChild()) {
-        IFEM::cout << " " << child->FirstChild()->Value() << std::endl;
-        src = new EvalFunction(child->FirstChild()->Value());
+      const char* input = isC ? utl::getValue(child, "source_c")
+                              : utl::getValue(child, "source");
+      if (type == "expression") {
+        if (input)
+          IFEM::cout << " " << input << std::endl;
+        src = new EvalFunction(input);
       }
       else if (type == "diracsum") {
         double tol = 1e-2;
-        const char* input = isC ? utl::getValue(child, "source_c")
-                                : utl::getValue(child, "source");
         utl::getAttribute(child, "pointTol", tol);
         if (input) {
           IFEM::cout << " DiracSum";
@@ -134,7 +135,19 @@ bool SIMDarcy<Dim>::parse (const TiXmlElement* elem)
             delete f;
         }
       }
-      else
+      else if (type == "elementsum") {
+        if (input) {
+          if (!this->createFEMmodel())
+            continue;
+          IFEM::cout << " ElementSum";
+          ElementSum* f = new ElementSum(Dim::dimension);
+
+          if (f->parse(input, *this))
+            src = f;
+          else
+            delete f;
+        }
+      } else
         IFEM::cout <<"(none)"<< std::endl;
 
       if (src) {

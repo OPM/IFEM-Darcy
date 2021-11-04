@@ -13,12 +13,15 @@
 
 #include "DarcySolutions.h"
 
+#include "ASMbase.h"
 #include "ExprFunctions.h"
 #include "IFEM.h"
 #include "LogStream.h"
+#include "SIMbase.h"
 #include "StringUtils.h"
 #include "Vec3.h"
 
+#include <array>
 #include <cmath>
 #include <sstream>
 #include <string>
@@ -98,6 +101,76 @@ bool DiracSum::parse (const char* input)
        << "eps2=eps*eps; "
        << value
        << "*below(r,eps)*eps2*exp(-eps2/(eps2-r2))";
+    EvalFunction* e = new EvalFunction(s3.str().c_str());
+    this->add(e);
+    ok = true;
+  }
+
+  IFEM::cout << std::endl;
+  return ok;
+}
+
+
+bool ElementSum::parse (const char* input, const SIMbase& sim)
+{
+  std::stringstream str;
+  std::string val = input;
+  replaceAll(val, "\\", "\n");
+  str << val;
+  bool ok = false;
+  while (str.good()) {
+    char temp[1024];
+    str.getline(temp, 1024);
+    if (temp[0] == '#' || temp[0] == 0)
+      continue;
+    std::stringstream s2(temp);
+    std::array<double,3> p{0.0,0.0,0.0};
+    s2 >> p[0];
+    if (myDim > 1)
+      s2 >> p[1];
+    if (myDim > 2)
+      s2 >> p[2];
+    std::string value;
+    s2 >> value;
+    int patch = 1;
+    s2 >> patch;
+
+    IFEM::cout << "\n\t\tElement(" << p[0];
+    if (myDim > 1)
+      IFEM::cout << ", " << p[1];
+    if (myDim > 2)
+      IFEM::cout << ", " << p[2];
+    IFEM::cout << ", " << patch << ") = " << value;
+
+    ASMbase* pch = sim.getPatch(patch);
+    if (!patch) {
+      std::cerr << "** ElementSum: No patch " << patch << ".\n";
+      continue;
+    }
+
+    int iel = pch->findElementContaining(p.data());
+    if (iel <= 0) {
+      std::cerr << "** ElementSum: Failed to locate element\n";
+      continue;
+    }
+
+    Matrix X;
+    if (!pch->getElementCoordinates(X, iel)) {
+      std::cerr << "** ElementSum: Failed to obtain element coordinates\n";
+      continue;
+    }
+
+    std::stringstream s3;
+    s3 << "above(x+0.001," << X(1,1) << ")*"
+       << "below(x-0.001," << X(1,2) << ")";
+    if (myDim > 1)
+       s3 << "*above(y+0.001," << X(2,1) << ")*"
+          << "below(y-0.001," << X(2,3) << ")";
+    if (myDim > 2)
+       s3 << "*above(z+0.001," << X(3,1) << ")*"
+          << "below(z-0.001," << X(3,8) << ")";
+    s3 << "*" << value;
+    IFEM::cout << " -> " << s3.str();
     EvalFunction* e = new EvalFunction(s3.str().c_str());
     this->add(e);
     ok = true;

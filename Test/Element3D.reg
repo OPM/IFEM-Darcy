@@ -1,0 +1,11 @@
+Element3D.xinp
+
+Input file: Element3D.xinp
+Number of elements    512
+Number of nodes       729
+Number of dofs        729
+Number of unknowns    648
+L2-norm            : 0.0161832
+Max pressure       : 0.0342856
+  H1 norm |p^h| = a(p^h,p^h)^0.5     : 0.0107845
+  External energy |(h,p^h)|^0.5      : 0.0107845
