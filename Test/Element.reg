@@ -1,0 +1,11 @@
+Element.xinp
+
+Input file: Element.xinp
+Number of elements    256
+Number of nodes       289
+Number of dofs        289
+Number of unknowns    272
+L2-norm            : 0.580023
+Max pressure       : 1.23526
+  H1 norm |p^h| = a(p^h,p^h)^0.5     : 0.600627
+  External energy |(h,p^h)|^0.5      : 0.600627
