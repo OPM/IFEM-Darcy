@@ -213,7 +213,7 @@ bool MixedDarcy::finalizeElement (LocalIntegral& A)
 bool MixedDarcy::evalSolInt (Vector& s, const Vectors& eV,
                              const FiniteElement& fe, const Vec3& X) const
 {
-  if (!this->Darcy::evalSol2(s,eV,fe,X))
+  if (!this->Darcy::evalDarcyVel(s,eV,fe,X))
     return false;
 
   // Evaluate the concentration gradient
@@ -221,6 +221,9 @@ bool MixedDarcy::evalSolInt (Vector& s, const Vectors& eV,
 
   for (int i = 0; i < nsd; ++i)
     s.push_back(dCh[i]);
+
+  s.push_back(source ? (*source)(X) : 0.0);
+  s.push_back(sourceC ? (*sourceC)(X) : 0.0);
 
   return true;
 }
@@ -271,13 +274,16 @@ std::string MixedDarcy::getField1Name (size_t i, const char* prefix) const
 
 std::string MixedDarcy::getField2Name (size_t i, const char* prefix) const
 {
-  if (nsd == 2 && i > 1)
-    ++i;
+  if (i >= (nsd == 2 ? 6 : 8)) return "";
 
-  if (i >= 6) return "";
+  static const char* s2[6] = {"v_x", "v_y", "c,x", "c,y",
+                              "source", "source_c"};
 
-  static const char* s[6] = {"v_x","v_y","v_z",
-                             "c,x","c,y","c,z"};
+  static const char* s3[8] = {"v_x","v_y","v_z",
+                             "c,x","c,y","c,z",
+                             "source","source_c"};
+
+  const char** s = (nsd == 2 ? s2 : s3);
 
   if (!prefix) return s[i];
 
