@@ -12,6 +12,10 @@ Twofield-mixed.xinp
 /0/DarcyFlow-1/fields/c,y/1 Dataset {100}
 /0/DarcyFlow-1/fields/p  Group
 /0/DarcyFlow-1/fields/p/1 Dataset {100}
+/0/DarcyFlow-1/fields/source Group
+/0/DarcyFlow-1/fields/source/1 Dataset {100}
+/0/DarcyFlow-1/fields/source_c Group
+/0/DarcyFlow-1/fields/source_c/1 Dataset {100}
 /0/DarcyFlow-1/fields/v_x Group
 /0/DarcyFlow-1/fields/v_x/1 Dataset {100}
 /0/DarcyFlow-1/fields/v_y Group

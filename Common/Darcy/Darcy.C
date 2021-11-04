@@ -158,7 +158,7 @@ bool Darcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   {
     // Integrate the internal forces based on current solution
     Vector q;
-    if (!this->evalSol2(q,elmInt.vec,fe,X))
+    if (!this->evalDarcyVel(q,elmInt.vec,fe,X))
       return false;
     if (!fe.dNdX.multiply(q,elMat.b.front(),fe.detJxW,1.0)) // b += dNdX * q
       return false;
@@ -213,7 +213,10 @@ bool Darcy::formKmatrix (Matrix& K, const Vec3& X, bool inverse) const
 bool Darcy::evalSol2 (Vector& s, const Vectors& eV,
                       const FiniteElement& fe, const Vec3& X) const
 {
-  return this->evalDarcyVel(s,eV,fe,X);
+  if (!this->evalDarcyVel(s,eV,fe,X))
+    return false;
+  s.push_back(source ? (*source)(X) : 0.0);
+  return true;
 }
 
 
@@ -248,9 +251,12 @@ std::string Darcy::getField1Name (size_t, const char* prefix) const
 
 std::string Darcy::getField2Name (size_t i, const char* prefix) const
 {
-  if (i >= nsd) return "";
+  if (i >= nsd+1u) return "";
 
-  static const char* s[3] = {"v_x","v_y","v_z"};
+  if (nsd == 2 && i > 1)
+   ++i;
+
+  static const char* s[4] = {"v_x","v_y","v_z","source"};
   if (!prefix) return s[i];
 
   return prefix + std::string(" ") + s[i];
