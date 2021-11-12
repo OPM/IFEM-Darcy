@@ -229,8 +229,9 @@ protected:
   //! \brief Perform solution projection.
   bool doProjection();
 
-private:
   Darcy& drc;           //!< Darcy integrand
+
+private:
   DCY::AdaptationNorm adNorm = DCY::NO_ADAP; //!< Norm to adapt based on
   const Vector* solVec; //!< Pointer to solution vector
   Vector myReact;       //!< Nodal reaction forces
