@@ -195,6 +195,9 @@ public:
                                 const FiniteElement& fe,
                                 size_t level) const;
 
+  //! \brief Helper for CoSTA.
+  virtual void setParam(const std::string&, double) {}
+
 protected:
   VecFunc*  bodyforce;    //!< Body force function
   VecFunc*  permvalues;   //!< Permeability function
