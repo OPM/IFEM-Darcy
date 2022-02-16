@@ -63,7 +63,7 @@ LocalIntegral* MixedDarcy::getLocalIntegral (size_t nen, size_t, bool neumann) c
   result->redim(pp, nen, 1, 1);
   result->redim(cc, nen, 1, 1);
   result->redimOffDiag(cp, 0);
-  result->redimNewtonMat();
+  result->finalize();
 
   return result;
 }
@@ -80,7 +80,7 @@ LocalIntegral* MixedDarcy::getLocalIntegral (const std::vector<size_t>& nen,
   result->redim(pp, nen[0], 1, 1);
   result->redim(cc, nen[1], 1, 2);
   result->redimOffDiag(cp, 0);
-  result->redimNewtonMat();
+  result->finalize();
 
   return result;
 }
