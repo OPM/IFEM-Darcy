@@ -81,7 +81,7 @@ void Darcy::setMode (SIM::SolutionMode mode)
 }
 
 
-void Darcy::setReactionIntegral (GlobalIntegral* gq)
+void Darcy::setSecondaryInt (GlobalIntegral* gq)
 {
   delete reacInt;
   reacInt = gq;

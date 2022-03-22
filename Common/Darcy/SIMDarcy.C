@@ -24,11 +24,9 @@
 #include "LogStream.h"
 #include "Profiler.h"
 #include "Property.h"
-#include "ReactionsOnly.h"
 #include "SIM1D.h"
 #include "SIM2D.h"
 #include "SIM3D.h"
-#include "SIMbase.h"
 #include "SIMenums.h"
 #include "TimeDomain.h"
 #include "TimeStep.h"
@@ -36,16 +34,8 @@
 
 #include <cmath>
 #include <cstdlib>
-#include <iostream>
-#include <map>
 #include <strings.h>
 #include "tinyxml.h"
-#include <vector>
-
-
-class AlgEqSystem;
-class RealFunc;
-class VecFunc;
 
 
 template<class Dim>
@@ -166,7 +156,7 @@ bool SIMDarcy<Dim>::parse (const TiXmlElement* elem)
       }
       else {
         Dim::mySol = new AnaSol(child);
-        std::cout <<"\tAnalytical solution: expression"<< std::endl;
+        IFEM::cout <<"\tAnalytical solution: expression"<< std::endl;
       }
       // Define the analytical boundary traction field
       int code = 0;
@@ -421,14 +411,7 @@ bool SIMDarcy<Dim>::solveSystem (Vector& solution, int printSol,
 
   // Assemble the reaction forces. Strictly, we only need to assemble those
   // elements that have nodes on the Dirichlet boundaries, but...
-  drc.setReactionIntegral(new ReactionsOnly(myReact,Dim::mySam,Dim::adm));
-  AlgEqSystem* tmpEqSys = Dim::myEqSys;
-  Dim::myEqSys = nullptr;
-  bool ok = this->setMode(SIM::RHS_ONLY) && this->assembleSystem({solution});
-  Dim::myEqSys = tmpEqSys;
-  drc.setReactionIntegral(nullptr);
-
-  return ok;
+  return this->assembleForces({solution},0.0,&myReact);
 }
 
 

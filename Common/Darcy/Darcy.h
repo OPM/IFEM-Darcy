@@ -17,23 +17,11 @@
 #include "BDF.h"
 #include "EqualOrderOperators.h"
 #include "IntegrandBase.h"
-#include "MatVec.h"
-#include "SIMenums.h"
 
-#include <cstddef>
 #include <memory>
-#include <string>
 
-
-class AnaSol;
-class Fields;
-class FiniteElement;
-class GlobalIntegral;
-class LocalIntegral;
 class RealFunc;
 class SIMbase;
-struct TimeDomain;
-class Vec3;
 class VecFunc;
 
 
@@ -104,7 +92,7 @@ public:
   }
 
   //! \brief Defines the global integral for calculating reaction forces only.
-  void setReactionIntegral(GlobalIntegral* gq);
+  void setSecondaryInt(GlobalIntegral* gq) override;
   //! \brief Returns the system quantity to be integrated by \a *this.
   GlobalIntegral& getGlobalInt(GlobalIntegral* gq) const override;
 
