@@ -97,6 +97,7 @@ bool DiracSum::parse (const char* input)
         (myDim == 2) ? 0.46651239317833007 :
                        0.44108888727660440;
     std::stringstream s3;
+    s3.precision(17);
     s3 << "r2=pow(x-" << x << ",2)";
     if (myDim > 1)
       s3 << "+pow(y-" << y << ",2)";

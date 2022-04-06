@@ -13,7 +13,7 @@ Number of elements    256
 Number of nodes       289
 Number of dofs        289
 Number of unknowns    272
-L2-norm            : 3.85313
+L2-norm            : 3.85312
 Max pressure       : 9.38263
   H1 norm |p^h| = a(p^h,p^h)^0.5     : 4.59729
   External energy |(h,p^h)|^0.5      : 4.59729
