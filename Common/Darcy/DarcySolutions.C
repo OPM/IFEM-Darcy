@@ -90,6 +90,12 @@ bool DiracSum::parse (const char* input)
     if (myDim > 2)
       IFEM::cout << ", " << z;
     IFEM::cout << ") = " << value;
+
+    // Computed with quadrature - needed to normalize integral to 1
+    double normfactor =
+        (myDim == 1) ? 0.44399381616807944 :
+        (myDim == 2) ? 0.46651239317833007 :
+                       0.44108888727660440;
     std::stringstream s3;
     s3 << "r2=pow(x-" << x << ",2)";
     if (myDim > 1)
@@ -98,9 +104,11 @@ bool DiracSum::parse (const char* input)
       s3 << "+pow(z-" << z << ",2)";
     s3 << "; r=sqrt(r2); "
        << "eps=" << pointTol << "; "
+       << "n=" << normfactor << "; "
        << "eps2=eps*eps; "
+       << "epsd=pow(eps," << myDim << "); "
        << value
-       << "*below(r,eps)*eps2*exp(-eps2/(eps2-r2))";
+       << "*below(r,eps)*(1/(epsd*n))*exp(-eps2/(eps2-r2))";
     EvalFunction* e = new EvalFunction(s3.str().c_str());
     this->add(e);
     ok = true;
