@@ -108,7 +108,7 @@ bool DiracSum::parse (const char* input)
        << "n=" << normfactor << "; "
        << "eps2=eps*eps; "
        << "epsd=pow(eps," << myDim << "); "
-       << value
+       << "(" << value << ")"
        << "*below(r,eps)*(1/(epsd*n))*exp(-eps2/(eps2-r2))";
     EvalFunction* e = new EvalFunction(s3.str().c_str());
     this->add(e);
