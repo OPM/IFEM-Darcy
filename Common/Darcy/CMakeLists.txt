@@ -24,7 +24,7 @@ include(IFEMTesting)
 
 IFEM_add_test_app(${PROJECT_SOURCE_DIR}/Test/*.C
                   ${PROJECT_SOURCE_DIR}/../../Test
-                  Darcy
+                  Darcy 0
                   CommonDarcy IFEMAppCommon ${IFEM_LIBRARIES})
 
 
@@ -33,5 +33,4 @@ foreach(src ${DARCY_SOURCES})
 endforeach()
 
 set(TEST_APPS ${TEST_APPS} PARENT_SCOPE)
-set(UNIT_TEST_NUMBER ${UNIT_TEST_NUMBER} PARENT_SCOPE)
 set(CHECK_SOURCES ${CHECK_SOURCES} PARENT_SCOPE)
