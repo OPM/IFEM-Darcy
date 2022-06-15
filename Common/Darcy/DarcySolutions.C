@@ -112,11 +112,19 @@ bool DiracSum::parse (const char* input)
        << "*below(r,eps)*(1/(epsd*n))*exp(-eps2/(eps2-r2))";
     EvalFunction* e = new EvalFunction(s3.str().c_str());
     this->add(e);
+    m_funcs.push_back(e);
     ok = true;
   }
 
   IFEM::cout << std::endl;
   return ok;
+}
+
+
+void DiracSum::setParam (const std::string& name, double value)
+{
+  for (const auto& func : m_funcs)
+    func->setParam(name,value);
 }
 
 
@@ -182,9 +190,17 @@ bool ElementSum::parse (const char* input, const SIMbase& sim)
     IFEM::cout << " -> " << s3.str();
     EvalFunction* e = new EvalFunction(s3.str().c_str());
     this->add(e);
+    m_funcs.push_back(e);
     ok = true;
   }
 
   IFEM::cout << std::endl;
   return ok;
+}
+
+
+void ElementSum::setParam (const std::string& name, double value)
+{
+  for (const auto& func : m_funcs)
+    func->setParam(name,value);
 }
