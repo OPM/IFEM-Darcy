@@ -21,6 +21,7 @@
 #include <vector>
 
 
+class EvalFunction;
 class SIMbase;
 
 
@@ -72,12 +73,15 @@ public:
   //! \param dim Dimensionality of world
   DiracSum(double tol, int dim) : pointTol(tol), myDim(dim) {}
 
+  //! \brief Empty constructor.
+  virtual ~DiracSum() {}
+
   //! \brief Parse functions from a string.
   //! \param input The string to parse
   bool parse(const char* input);
 
-  //! \brief Empty constructor.
-  virtual ~DiracSum() {}
+  //! \brief Set an additional parameter in the function.
+  void setParam(const std::string& name, double value);
 
 protected:
   //! \brief Evaluates the function in a point.
@@ -87,6 +91,7 @@ protected:
 
   double pointTol; //!< Interval around point associated with functions
   int myDim; //!< Dimensionality of world
+  std::vector<EvalFunction*> m_funcs; //!< Vector of pointers to functions
 };
 
 
@@ -101,13 +106,16 @@ public:
   //! \param dim Dimensionality of world
   ElementSum(int dim) : myDim(dim) {}
 
+  //! \brief Empty constructor.
+  virtual ~ElementSum() {}
+
   //! \brief Parse functions from a string.
   //! \param input The string to parse
   //! \param sim Simulator with elements information
   bool parse(const char* input, const SIMbase& sim);
 
-  //! \brief Empty constructor.
-  virtual ~ElementSum() {}
+  //! \brief Set an additional parameter in the function.
+  void setParam(const std::string& name, double value);
 
 protected:
   //! \brief Evaluates the function in a point.
@@ -116,6 +124,7 @@ protected:
   { return this->FunctionSum::getValue(X).front(); }
 
   int myDim; //!< Dimensionality of world
+  std::vector<EvalFunction*> m_funcs; //!< Vector of pointers to functions
 };
 
 #endif
