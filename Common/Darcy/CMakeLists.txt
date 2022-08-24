@@ -11,8 +11,8 @@ set(DARCY_SOURCES Darcy.C
                   DarcyEnums.h
                   DarcySolutions.C
                   DarcySolutions.h
-                  MixedDarcy.C
-                  MixedDarcy.h
+                  DarcyTransport.C
+                  DarcyTransport.h
                   SIMDarcy.C
                   SIMDarcy.h
                   SIMDarcyAdap.h)

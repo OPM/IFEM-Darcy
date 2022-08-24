@@ -1,33 +1,33 @@
 // $Id$
 //==============================================================================
 //!
-//! \file MixedDarcy.h
+//! \file DarcyTransport.h
 //!
 //! \date Oct 20 2021
 //!
 //! \author Arne Morten Kvarving / SINTEF
 //!
-//! \brief Integrand implementations for mixed-formulation Darcy flow problems.
+//! \brief Integrand implementations for Darcy flow with tracer transport.
 //!
 //==============================================================================
 
-#ifndef _MIXED_DARCY_H_
-#define _MIXED_DARCY_H_
+#ifndef _DARCY_TRANSPORT_H_
+#define _DARCY_TRANSPORT_H_
 
 #include "Darcy.h"
 
 
 /*!
-  \brief Class representing the integrand of the mixed Darcy problem.
+  \brief Class representing the integrand of the Darcy transport problem.
 */
 
-class MixedDarcy : public Darcy
+class DarcyTransport : public Darcy
 {
 public:
   //! \brief The constructor initializes all pointers to zero.
-  explicit MixedDarcy(unsigned short int n, int torder = 0);
+  explicit DarcyTransport(unsigned short int n, int torder = 0);
   //! \brief Empty destructor.
-  virtual ~MixedDarcy() {}
+  virtual ~DarcyTransport() = default;
 
   //! \brief Defines the concentration source function.
   void setCSource(RealFunc* s) override { sourceC = s; }
@@ -192,22 +192,22 @@ protected:
 
 
 /*!
-  \brief Class representing the integrand of mixed Darcy energy norms.
+  \brief Class representing the integrand of Darcy transport energy norms.
 */
 
-class MixedDarcyNorm : public DarcyNorm
+class DarcyTransportNorm : public DarcyNorm
 {
 public:
   //! \brief The only constructor initializes its data members.
   //! \param[in] p The Poisson problem to evaluate norms for
   //! \param[in] a The analytical pressure gradient (optional)
   //! \param[in] c The analytical concentration gradient (optional)
-  explicit MixedDarcyNorm(MixedDarcy& p,
-                          VecFunc* a = nullptr,
-                          VecFunc* c = nullptr);
+  explicit DarcyTransportNorm(DarcyTransport& p,
+                              VecFunc* a = nullptr,
+                              VecFunc* c = nullptr);
 
   //! \brief Empty destructor.
-  virtual ~MixedDarcyNorm() {}
+  virtual ~DarcyTransportNorm() {}
 
   using NormBase::evalInt;
   //! \brief Evaluates the integrand at an interior point.
