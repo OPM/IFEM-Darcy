@@ -248,6 +248,8 @@ private:
 
   int maxCycle = -1;      //!< Max number of sub-iterations
   double cycleTol = 1e-6; //! < Convergence tolerance in sub-iterations
+
+  bool newTangent = true; //!< True to assemble element matrices
 };
 
 

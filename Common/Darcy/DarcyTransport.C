@@ -51,7 +51,7 @@ LocalIntegral* DarcyTransport::getLocalIntegral (size_t nen, size_t, bool neuman
 {
   BlockElmMats* result = new BlockElmMats(2, 1);
 
-  result->rhsOnly = neumann;
+  result->rhsOnly = neumann || this->reuseMats;
   result->withLHS = !neumann;
   result->resize(5, 3);
   result->redim(pp, nen, 1, 1);
@@ -100,11 +100,13 @@ bool DarcyTransport::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   const double D = this->getMaterial().getDispersivity(X);
   const double phi = this->getMaterial().getPorosity(X);
 
-  WeakOps::Laplacian(elMat.A[cc], fe, D, false);
+  if (!elMat.A.empty() && !reuseMats) {
+    WeakOps::Laplacian(elMat.A[cc], fe, D, false);
 
-  double cn = this->concentration(elmInt.vec, fe, 0);
-  Vec3 perm = this->getMaterial().getPermeability(X);
-  elMat.A[cp].multiply(fe.grad(1),fe.grad(1),false,true,true,perm[0]*cn*fe.detJxW);
+    double cn = this->concentration(elmInt.vec, fe, 0);
+    Vec3 perm = this->getMaterial().getPermeability(X);
+    elMat.A[cp].multiply(fe.grad(1),fe.grad(1),false,true,true,perm[0]*cn*fe.detJxW);
+  }
 
   if (sourceC)
     WeakOps::Source(elMat.b[2], fe, (*sourceC)(X), 1);
@@ -116,7 +118,8 @@ bool DarcyTransport::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
       c -= val * phi * bdf[t] / time.dt;
     }
     WeakOps::Source(elMat.b[2], fe, c, 1);
-    WeakOps::Mass(elMat.A[cc], fe, phi*bdf[0] / time.dt);
+    if (!elMat.A.empty() && !reuseMats)
+      WeakOps::Mass(elMat.A[cc], fe, phi*bdf[0] / time.dt);
   }
 
   return true;

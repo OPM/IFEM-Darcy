@@ -72,6 +72,13 @@ bool SIMDarcy<Dim>::parse (const TiXmlElement* elem)
   if (strcasecmp(elem->Value(),"darcy"))
     return this->Dim::parse(elem);
 
+  bool useCache;
+  if (utl::getAttribute(elem,"cache",useCache)) {
+    IFEM::cout << (useCache ? "\tEnabling" : "\tDisabling")
+               << " caching of element matrices.\n";
+    drc.lCache(useCache);
+  }
+
   const TiXmlElement* child = elem->FirstChildElement();
   for (; child; child = child->NextSiblingElement()) {
     const char* value = nullptr;
@@ -209,12 +216,16 @@ template<class Dim>
 void SIMDarcy<Dim>::clearProperties ()
 {
   // To prevent SIMbase::clearProperties deleting the analytical solution
-  if (aCode[0] > 0) Dim::myScalars.erase(aCode[0]);
-  if (aCode[1] > 0) Dim::myVectors.erase(aCode[1]);
+  if (aCode[0] > 0)
+    Dim::myScalars.erase(aCode[0]);
+  if (aCode[1] > 0)
+    Dim::myVectors.erase(aCode[1]);
   aCode[0] = aCode[1] = 0;
 
-  drc.setFlux((RealFunc*)nullptr);
-  drc.setFlux((VecFunc*)nullptr);
+  drc.setFlux(static_cast<RealFunc*>(nullptr));
+  drc.setFlux(static_cast<VecFunc*>(nullptr));
+  newTangent = true;
+  mVec.clear();
   this->Dim::clearProperties();
 }
 
@@ -317,6 +328,10 @@ bool SIMDarcy<Dim>::solveStep (const TimeStep& tp)
 
   bool conv = false;
   tp.iter = 0;
+
+  if (tp.step == drc.getOrder())
+    this->initLHSbuffers();
+
   while (!conv)
   {
     if (!this->setMode(SIM::DYNAMIC))
@@ -324,7 +339,7 @@ bool SIMDarcy<Dim>::solveStep (const TimeStep& tp)
 
     Vector dummy;
     this->updateDirichlet(tp.time.t,&dummy);
-    if (!this->assembleSystem(tp.time, solution))
+    if (!this->assembleSystem(tp.time, solution, newTangent))
       return false;
 
     if (!this->solveSystem(solution.front(),maxCycle > -1 ? 0 : Dim::msgLevel-1,"pressure    "))
@@ -350,6 +365,7 @@ bool SIMDarcy<Dim>::solveStep (const TimeStep& tp)
     } else
       conv = true;
 
+    newTangent = tp.step < drc.getOrder() || !drc.lCache();
     ++tp.iter;
   }
 

@@ -89,6 +89,28 @@ public:
   LocalIntegral* getLocalIntegral(size_t nen, size_t,
                                   bool neumann) const override;
 
+  using IntegrandBase::initElement;
+  //! \brief Initializes current element for numerical integration.
+  //! \param[in] MNPC Matrix of nodal point correspondance for current element
+  //! \param[in] fe Nodal and integration point data for current element
+  //! \param[in] X0 Cartesian coordinates of the element center
+  //! \param[in] nPt Number of integration points on this element
+  //! \param elmInt Local integral for element
+  bool initElement (const std::vector<int>& MNPC,
+                    const FiniteElement& fe,
+                    const Vec3& XC,
+                    size_t nPt, LocalIntegral& elmInt) override;
+
+  using IntegrandBase::finalizeElement;
+  //! \brief Finalizes the element quantities after the numerical integration.
+  //! \param elmInt The local integral object to receive the contributions
+  //! \param[in] fe Nodal and integration point data for current element
+  //! \param[in] time Parameters for nonlinear and time-dependent simulations
+  //! \param[in] iGP Global integration point counter of first point in element
+  bool finalizeElement(LocalIntegral& elmInt,
+                       const FiniteElement& fe,
+                       const TimeDomain& time, size_t iGP) override;
+
   using IntegrandBase::evalInt;
   //! \brief Evaluates the integrand at an interior point.
   //! \param elmInt The local integral object to receive the contributions
@@ -185,6 +207,15 @@ public:
   //! \brief Returns gravitational acceleration.
   double getGravity() const { return gacc; }
 
+  //! \brief Initializes and toggles the use of left-hand-side matrix buffers.
+  void initLHSbuffers(size_t) override;
+
+  //! \brief Enable/disable caching of element matrices.
+  void lCache(bool enable) { useLCache = enable; }
+
+  //! \brief Returns whether or not caching of element matrices is enabled.
+  bool lCache() { return useLCache; }
+
 protected:
   VecFunc*  bodyforce;    //!< Body force function
   VecFunc*  vflux;        //!< Flux function
@@ -197,6 +228,9 @@ protected:
   TimeIntegration::BDF bdf; //!< BDF helper class
 
   double gacc = 9.81; //!< Gravity acceleration
+  bool useLCache = true; //!< True to enable caching of element matrices
+  bool reuseMats = false; //!< True to reuse matrices
+  Matrices myKmats; //!< Cached element matrices
 
 public:
   char extEner; //!< If \e true, external energy is to be computed

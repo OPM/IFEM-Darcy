@@ -93,7 +93,7 @@ LocalIntegral* Darcy::getLocalIntegral (size_t nen, size_t, bool neumann) const
 {
   ElmMats* result = new ElmMats();
 
-  result->rhsOnly = neumann;
+  result->rhsOnly = neumann || this->reuseMats;
   result->withLHS = !neumann;
   result->resize(neumann ? 0 : 1, 1);
   result->redim(nen);
@@ -102,12 +102,45 @@ LocalIntegral* Darcy::getLocalIntegral (size_t nen, size_t, bool neumann) const
 }
 
 
+bool Darcy::initElement (const std::vector<int>& MNPC,
+                         const FiniteElement& fe,
+                         const Vec3& XC,
+                         size_t nPt, LocalIntegral& elmInt)
+{
+  if (fe.iel > 0 && this->reuseMats)
+  {
+    size_t iel = fe.iel - 1;
+    ElmMats* A = dynamic_cast<ElmMats*>(&elmInt);
+    if (A && iel < this->myKmats.size() && !A->A.empty())
+      A->A[0] = this->myKmats[iel];
+  }
+
+  return this->IntegrandBase::initElement(MNPC,fe,XC,nPt,elmInt);
+}
+
+
+bool Darcy::finalizeElement (LocalIntegral& elmInt,
+                             const FiniteElement& fe,
+                             const TimeDomain& time, size_t iGP)
+{
+  if (fe.iel > 0 && !this->reuseMats)
+  {
+    size_t iel = fe.iel - 1;
+    ElmMats* A = dynamic_cast<ElmMats*>(&elmInt);
+    if (A && iel < this->myKmats.size())
+      this->myKmats[iel] = A->getNewtonMatrix();
+  }
+
+  return this->IntegrandBase::finalizeElement(elmInt,fe,time,iGP);
+}
+
+
 bool Darcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
                      const TimeDomain& time, const Vec3& X) const
 {
   ElmMats& elMat = static_cast<ElmMats&>(elmInt);
 
-  if (!elMat.A.empty())
+  if (!elMat.A.empty() && !this->reuseMats)
   {
     // Evaluate the hydraulic conductivity matrix at this point
     Matrix K;
@@ -136,7 +169,8 @@ bool Darcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
       p -= val * bdf[t] / time.dt;
     }
     WeakOps::Source(elMat.b[pp], fe, p);
-    WeakOps::Mass(elMat.A[pp], fe, bdf[0] / time.dt);
+    if (!elMat.A.empty() && !this->reuseMats)
+      WeakOps::Mass(elMat.A[pp], fe, bdf[0] / time.dt);
   }
 
   if (m_mode == SIM::RHS_ONLY && !elmInt.vec.empty() && reacInt)
@@ -297,6 +331,21 @@ double Darcy::pressure (const Vectors& eV,
                         size_t level) const
 {
   return fe.N.dot(eV[level]);
+}
+
+
+void Darcy::initLHSbuffers (size_t nEl)
+{
+  if (!this->useLCache)
+    return;
+
+  if (nEl > 1) {
+    this->myKmats.resize(nEl);
+    this->reuseMats = false;
+  } else if (nEl == 1)
+    this->reuseMats = false;
+  else if (nEl == 0 && !this->myKmats.empty())
+    this->reuseMats = true;
 }
 
 
