@@ -250,7 +250,7 @@ bool SIMDarcy<Dim>::saveModel (char* fileName, int& geoBlk, int& nBlock)
 template<class Dim>
 bool SIMDarcy<Dim>::saveStep (const TimeStep& tp, int& nBlock)
 {
-  if (Dim::opt.format < 0)
+  if (Dim::opt.format < 0 || (tp.step % Dim::opt.saveInc) > 0)
     return true;
 
   int iDump = tp.step/Dim::opt.saveInc + (drc.getOrder() == 0 ? 1 : 0);
