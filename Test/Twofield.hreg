@@ -12,6 +12,12 @@ Twofield.xinp
 /0/DarcyFlow-1/fields/c,y/1 Dataset {100}
 /0/DarcyFlow-1/fields/p&&c Group
 /0/DarcyFlow-1/fields/p&&c/1 Dataset {200}
+/0/DarcyFlow-1/fields/perm_x Group
+/0/DarcyFlow-1/fields/perm_x/1 Dataset {100}
+/0/DarcyFlow-1/fields/perm_y Group
+/0/DarcyFlow-1/fields/perm_y/1 Dataset {100}
+/0/DarcyFlow-1/fields/porosity Group
+/0/DarcyFlow-1/fields/porosity/1 Dataset {100}
 /0/DarcyFlow-1/fields/source Group
 /0/DarcyFlow-1/fields/source/1 Dataset {100}
 /0/DarcyFlow-1/fields/source_c Group
