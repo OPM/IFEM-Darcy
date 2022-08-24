@@ -261,7 +261,7 @@ std::string Darcy::getField2Name (size_t i, const char* prefix) const
   if (nsd == 2 && i > 1)
    ++i;
 
-  static const char* s[7] = {"v_x","v_y","v_z","source", "perm_x", "perm_y", "perm_z"};
+  static const char* s[7] = {"v_x","v_y","v_z", "source", "perm_x", "perm_y", "perm_z"};
   if (!prefix) return s[i];
 
   return prefix + std::string(" ") + s[i];

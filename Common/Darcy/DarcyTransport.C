@@ -1,7 +1,7 @@
 // $Id$
 //==============================================================================
 //!
-//! \file MixedDarcy.C
+//! \file DarcyTransport.C
 //!
 //! \date oct 20 2021
 //!
@@ -11,7 +11,7 @@
 //!
 //==============================================================================
 
-#include "MixedDarcy.h"
+#include "DarcyTransport.h"
 
 #include "AnaSol.h"
 #include "ASMbase.h"
@@ -36,7 +36,7 @@
 #include <vector>
 
 
-MixedDarcy::MixedDarcy (unsigned short int n, int torder) :
+DarcyTransport::DarcyTransport (unsigned short int n, int torder) :
   Darcy(n, torder)
 {
   pp = 1;
@@ -53,7 +53,7 @@ MixedDarcy::MixedDarcy (unsigned short int n, int torder) :
 }
 
 
-LocalIntegral* MixedDarcy::getLocalIntegral (size_t nen, size_t, bool neumann) const
+LocalIntegral* DarcyTransport::getLocalIntegral (size_t nen, size_t, bool neumann) const
 {
   BlockElmMats* result = new BlockElmMats(2, 1);
 
@@ -69,8 +69,8 @@ LocalIntegral* MixedDarcy::getLocalIntegral (size_t nen, size_t, bool neumann) c
 }
 
 
-LocalIntegral* MixedDarcy::getLocalIntegral (const std::vector<size_t>& nen,
-                                             size_t, bool neumann) const
+LocalIntegral* DarcyTransport::getLocalIntegral (const std::vector<size_t>& nen,
+                                                 size_t, bool neumann) const
 {
   BlockElmMats* result = new BlockElmMats(2, 2);
 
@@ -86,10 +86,10 @@ LocalIntegral* MixedDarcy::getLocalIntegral (const std::vector<size_t>& nen,
 }
 
 
-bool MixedDarcy::initElement (const std::vector<int>& MNPC,
-                              const std::vector<size_t>& elem_sizes,
-                              const std::vector<size_t>& basis_sizes,
-                              LocalIntegral& elmInt)
+bool DarcyTransport::initElement (const std::vector<int>& MNPC,
+                                  const std::vector<size_t>& elem_sizes,
+                                  const std::vector<size_t>& basis_sizes,
+                                  LocalIntegral& elmInt)
 {
   if (primsol.empty() || primsol.front().empty()) return true;
 
@@ -105,15 +105,15 @@ bool MixedDarcy::initElement (const std::vector<int>& MNPC,
   }
 
   if (ierr != 0)
-    std::cerr << " *** MixedDarcy::initElement: Detected " << ierr/2
+    std::cerr << " *** DarcyTransport::initElement: Detected " << ierr/2
               << " node numbers out of range." << std::endl;
 
   return ierr == 0;
 }
 
 
-bool MixedDarcy::initElement (const std::vector<int>& MNPC,
-                              LocalIntegral& elmInt)
+bool DarcyTransport::initElement (const std::vector<int>& MNPC,
+                                  LocalIntegral& elmInt)
 {
   if (primsol.empty() || primsol.front().empty()) return true;
 
@@ -128,15 +128,15 @@ bool MixedDarcy::initElement (const std::vector<int>& MNPC,
   }
 
   if (ierr != 0)
-    std::cerr << " *** MixedDarcy::initElement: Detected " << ierr
+    std::cerr << " *** DarcyTransport::initElement: Detected " << ierr
               << " node numbers out of range." << std::endl;
 
   return ierr == 0;
 }
 
 
-bool MixedDarcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
-                          const TimeDomain& time, const Vec3& X) const
+bool DarcyTransport::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
+                              const TimeDomain& time, const Vec3& X) const
 {
   ElmMats& elMat = static_cast<ElmMats&>(elmInt);
 
@@ -173,8 +173,8 @@ bool MixedDarcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
 }
 
 
-bool MixedDarcy::evalBou (LocalIntegral& elmInt, const FiniteElement& fe,
-                          const Vec3& X, const Vec3& normal) const
+bool DarcyTransport::evalBou (LocalIntegral& elmInt, const FiniteElement& fe,
+                              const Vec3& X, const Vec3& normal) const
 {
   if (!this->Darcy::evalBou(elmInt,fe,X,normal))
     return false;
@@ -197,7 +197,7 @@ bool MixedDarcy::evalBou (LocalIntegral& elmInt, const FiniteElement& fe,
 }
 
 
-bool MixedDarcy::finalizeElement (LocalIntegral& A)
+bool DarcyTransport::finalizeElement (LocalIntegral& A)
 {
   if (m_mode == SIM::RHS_ONLY && !reacInt) {
     ElmMats& elMat = static_cast<ElmMats&>(A);
@@ -210,8 +210,8 @@ bool MixedDarcy::finalizeElement (LocalIntegral& A)
 }
 
 
-bool MixedDarcy::evalSolInt (Vector& s, const Vectors& eV,
-                             const FiniteElement& fe, const Vec3& X) const
+bool DarcyTransport::evalSolInt (Vector& s, const Vectors& eV,
+                                 const FiniteElement& fe, const Vec3& X) const
 {
   if (!this->Darcy::evalDarcyVel(s,eV,fe,X))
     return false;
@@ -232,33 +232,33 @@ bool MixedDarcy::evalSolInt (Vector& s, const Vectors& eV,
 }
 
 
-bool MixedDarcy::evalSol (Vector& s, const FiniteElement& fe,
-                          const Vec3& X,
-                          const std::vector<int>& MNPC) const
+bool DarcyTransport::evalSol (Vector& s, const FiniteElement& fe,
+                              const Vec3& X,
+                              const std::vector<int>& MNPC) const
 {
   ElmMats A;
-  if (!const_cast<MixedDarcy*>(this)->initElement(MNPC,A))
+  if (!const_cast<DarcyTransport*>(this)->initElement(MNPC,A))
     return false;
 
   return this->evalSolInt(s,A.vec,fe,X);
 }
 
-bool MixedDarcy::evalSol (Vector& s,
-                          const MxFiniteElement& fe,
-                          const Vec3& X,
-                          const std::vector<int>& MNPC,
-                          const std::vector<size_t>& elem_sizes,
-                          const std::vector<size_t>& basis_sizes) const
+bool DarcyTransport::evalSol (Vector& s,
+                              const MxFiniteElement& fe,
+                              const Vec3& X,
+                              const std::vector<int>& MNPC,
+                              const std::vector<size_t>& elem_sizes,
+                              const std::vector<size_t>& basis_sizes) const
 {
   ElmMats A;
-  if (!const_cast<MixedDarcy*>(this)->initElement(MNPC,elem_sizes,basis_sizes,A))
+  if (!const_cast<DarcyTransport*>(this)->initElement(MNPC,elem_sizes,basis_sizes,A))
     return false;
 
   return this->evalSolInt(s,A.vec,fe,X);
 }
 
 
-std::string MixedDarcy::getField1Name (size_t i, const char* prefix) const
+std::string DarcyTransport::getField1Name (size_t i, const char* prefix) const
 {
   if (i == 11)
     return cBasis == 1 ? "p&&c" : "p";
@@ -275,7 +275,7 @@ std::string MixedDarcy::getField1Name (size_t i, const char* prefix) const
 }
 
 
-std::string MixedDarcy::getField2Name (size_t i, const char* prefix) const
+std::string DarcyTransport::getField2Name (size_t i, const char* prefix) const
 {
   if (i >= (nsd == 2 ? 9 : 12)) return "";
 
@@ -299,17 +299,17 @@ std::string MixedDarcy::getField2Name (size_t i, const char* prefix) const
 }
 
 
-double MixedDarcy::concentration (const Vectors& vec,
-                                  const FiniteElement& fe,
-                                  size_t level) const
+double DarcyTransport::concentration (const Vectors& vec,
+                                      const FiniteElement& fe,
+                                      size_t level) const
 {
   return fe.basis(cBasis).dot(vec[level*2+1]);
 }
 
 
-Vec3 MixedDarcy::concentrationGradient (const Vectors& vec,
-                                        const FiniteElement& fe,
-                                        size_t level) const
+Vec3 DarcyTransport::concentrationGradient (const Vectors& vec,
+                                            const FiniteElement& fe,
+                                            size_t level) const
 {
   Vector dCh(nsd);
   fe.grad(cBasis).multiply(vec[2*level+1],dCh,true);
@@ -318,17 +318,17 @@ Vec3 MixedDarcy::concentrationGradient (const Vectors& vec,
 }
 
 
-double MixedDarcy::pressure (const Vectors& eV,
-                             const FiniteElement& fe,
-                             size_t level) const
+double DarcyTransport::pressure (const Vectors& eV,
+                                 const FiniteElement& fe,
+                                 size_t level) const
 {
   return fe.basis(1).dot(eV[2*level]);
 }
 
 
-Vec3 MixedDarcy::pressureGradient (const Vectors& eV,
-                                   const FiniteElement& fe,
-                                   size_t level) const
+Vec3 DarcyTransport::pressureGradient (const Vectors& eV,
+                                       const FiniteElement& fe,
+                                       size_t level) const
 {
   Vector dPh(nsd);
   fe.grad(1).multiply(eV[2*level],dPh,true);
@@ -337,10 +337,10 @@ Vec3 MixedDarcy::pressureGradient (const Vectors& eV,
 }
 
 
-void MixedDarcy::getSolutionNorms (const SIMbase& sim,
-                                   const Vector& solution,
-                                   double& dNorm,
-                                   double* dMax, size_t* iMax) const
+void DarcyTransport::getSolutionNorms (const SIMbase& sim,
+                                       const Vector& solution,
+                                       double& dNorm,
+                                       double* dMax, size_t* iMax) const
 {
   if (ASMmxBase::Type == ASMmxBase::REDUCED_CONT_RAISE_BASIS2 ||
       ASMmxBase::Type == ASMmxBase::FULL_CONT_RAISE_BASIS2) {
@@ -354,32 +354,32 @@ void MixedDarcy::getSolutionNorms (const SIMbase& sim,
 
 
 
-NormBase* MixedDarcy::getNormIntegrand (AnaSol* asol) const
+NormBase* DarcyTransport::getNormIntegrand (AnaSol* asol) const
 {
   if (asol)
-    return new MixedDarcyNorm(*const_cast<MixedDarcy*>(this),
-                              asol->getScalarSecSol(0),
-                              asol->getScalarSecSol(1));
+    return new DarcyTransportNorm(*const_cast<DarcyTransport*>(this),
+                                  asol->getScalarSecSol(0),
+                                  asol->getScalarSecSol(1));
 
   else
-    return new MixedDarcyNorm(*const_cast<MixedDarcy*>(this));
+    return new DarcyTransportNorm(*const_cast<DarcyTransport*>(this));
 }
 
 
-MixedDarcyNorm::MixedDarcyNorm (MixedDarcy& p, VecFunc* a, VecFunc* c)
+DarcyTransportNorm::DarcyTransportNorm (DarcyTransport& p, VecFunc* a, VecFunc* c)
   : DarcyNorm(p,a), anac(c)
 {
 }
 
 
-bool MixedDarcyNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
-                              const TimeDomain& time, const Vec3& X) const
+bool DarcyTransportNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
+                                  const TimeDomain& time, const Vec3& X) const
 {
   if (!this->DarcyNorm::evalInt(elmInt,fe,X))
     return false;
 
   ElmNorm& pnorm = static_cast<ElmNorm&>(elmInt);
-  const MixedDarcy& problem = static_cast<const MixedDarcy&>(myProblem);
+  const DarcyTransport& problem = static_cast<const DarcyTransport&>(myProblem);
   const double D = problem.getDispersivity(X);
 
   // Evaluate the concentration field gradient

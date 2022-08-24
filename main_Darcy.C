@@ -12,7 +12,7 @@
 //==============================================================================
 
 #include "DarcyArgs.h"
-#include "MixedDarcy.h"
+#include "DarcyTransport.h"
 #include "SIMDarcy.h"
 
 #include "ASMenums.h"
@@ -51,7 +51,7 @@ int runSimulator(char* infile, const DarcyArgs& args)
       nf = {1,1};
     else
       nf = {2};
-    itg = std::make_unique<MixedDarcy>(Dim::dimension,0);
+    itg = std::make_unique<DarcyTransport>(Dim::dimension,0);
   } else {
     nf = {1};
     itg = std::make_unique<Darcy>(Dim::dimension,0);
@@ -100,7 +100,7 @@ int runSimulatorTransient(char* infile, const DarcyArgs& args)
       nf = {1,1};
     else
       nf = {2};
-    itg = std::make_unique<MixedDarcy>(Dim::dimension, TimeIntegration::Order(args.timeMethod));
+    itg = std::make_unique<DarcyTransport>(Dim::dimension, TimeIntegration::Order(args.timeMethod));
   } else {
     nf = {1};
     itg = std::make_unique<Darcy>(Dim::dimension, TimeIntegration::Order(args.timeMethod));
