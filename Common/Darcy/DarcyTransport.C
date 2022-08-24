@@ -43,13 +43,7 @@ DarcyTransport::DarcyTransport (unsigned short int n, int torder) :
   cc = 2;
   cp = 4;
   sourceC = nullptr;
-  if (ASMmxBase::Type == ASMmxBase::REDUCED_CONT_RAISE_BASIS2 ||
-      ASMmxBase::Type == ASMmxBase::FULL_CONT_RAISE_BASIS2)
-    cBasis = 2;
-  else {
-    npv = 2;
-    cBasis = 1;
-  }
+  npv = 2;
 }
 
 
@@ -66,49 +60,6 @@ LocalIntegral* DarcyTransport::getLocalIntegral (size_t nen, size_t, bool neuman
   result->finalize();
 
   return result;
-}
-
-
-LocalIntegral* DarcyTransport::getLocalIntegral (const std::vector<size_t>& nen,
-                                                 size_t, bool neumann) const
-{
-  BlockElmMats* result = new BlockElmMats(2, 2);
-
-  result->rhsOnly = neumann;
-  result->withLHS = !neumann;
-  result->resize(5, 3);
-  result->redim(pp, nen[0], 1, 1);
-  result->redim(cc, nen[1], 1, 2);
-  result->redimOffDiag(cp, 0);
-  result->finalize();
-
-  return result;
-}
-
-
-bool DarcyTransport::initElement (const std::vector<int>& MNPC,
-                                  const std::vector<size_t>& elem_sizes,
-                                  const std::vector<size_t>& basis_sizes,
-                                  LocalIntegral& elmInt)
-{
-  if (primsol.empty() || primsol.front().empty()) return true;
-
-  // Extract the element level solution vectors
-  elmInt.vec.resize(2*this->getNoSolutions());
-  int ierr = 0;
-  auto fstart = MNPC.begin() + elem_sizes[0];
-  auto fend = fstart + elem_sizes[1];
-  for (size_t k = 0; k < elmInt.vec.size() / 2; ++k) {
-    ierr  += utl::gather(IntVec(MNPC.begin(), fstart), 1, primsol[k], elmInt.vec[k*2+0]);
-    ierr +=  utl::gather(IntVec(fstart, fend), 0, 1, primsol[k],
-                         elmInt.vec[k*2+1], basis_sizes[0], basis_sizes[0]);
-  }
-
-  if (ierr != 0)
-    std::cerr << " *** DarcyTransport::initElement: Detected " << ierr/2
-              << " node numbers out of range." << std::endl;
-
-  return ierr == 0;
 }
 
 
@@ -149,15 +100,15 @@ bool DarcyTransport::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   const double D = (*this->dispersivity)(X);
   const double phi = (*this->porosity)(X);
 
-  WeakOps::Laplacian(elMat.A[cc], fe, D, false, cBasis);
+  WeakOps::Laplacian(elMat.A[cc], fe, D, false);
 
   double cn = this->concentration(elmInt.vec, fe, 0);
 
   Vec3 perm = this->getPermeability(X);
-  elMat.A[cp].multiply(fe.grad(cBasis),fe.grad(1),false,true,true,perm[0]*cn*fe.detJxW);
+  elMat.A[cp].multiply(fe.grad(1),fe.grad(1),false,true,true,perm[0]*cn*fe.detJxW);
 
   if (sourceC)
-    WeakOps::Source(elMat.b[2], fe, (*sourceC)(X), 1, cBasis);
+    WeakOps::Source(elMat.b[2], fe, (*sourceC)(X), 1);
 
   if (bdf.getActualOrder() > 0) {
     double c = 0.0;
@@ -165,8 +116,8 @@ bool DarcyTransport::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
       double val = this->concentration(elmInt.vec, fe, t);
       c -= val * phi * bdf[t] / time.dt;
     }
-    WeakOps::Source(elMat.b[2], fe, c, 1, cBasis);
-    WeakOps::Mass(elMat.A[cc], fe, phi*bdf[0] / time.dt, cBasis);
+    WeakOps::Source(elMat.b[2], fe, c, 1);
+    WeakOps::Mass(elMat.A[cc], fe, phi*bdf[0] / time.dt);
   }
 
   return true;
@@ -210,17 +161,22 @@ bool DarcyTransport::finalizeElement (LocalIntegral& A)
 }
 
 
-bool DarcyTransport::evalSolInt (Vector& s, const Vectors& eV,
-                                 const FiniteElement& fe, const Vec3& X) const
+bool DarcyTransport::evalSol (Vector& s, const FiniteElement& fe,
+                              const Vec3& X,
+                              const std::vector<int>& MNPC) const
 {
-  if (!this->Darcy::evalDarcyVel(s,eV,fe,X))
+  ElmMats A;
+  if (!const_cast<DarcyTransport*>(this)->initElement(MNPC,A))
+    return false;
+
+  if (!this->Darcy::evalDarcyVel(s,A.vec,fe,X))
     return false;
 
   s.push_back(source ? (*source)(X) : 0.0);
   s.push_back(sourceC ? (*sourceC)(X) : 0.0);
   s.push_back((*this->porosity)(X));
 
-  Vec3 dCh = this->concentrationGradient(eV,fe,0);
+  Vec3 dCh = this->concentrationGradient(A.vec,fe,0);
   for (int i = 0; i < nsd; ++i)
     s.push_back(dCh[i]);
 
@@ -231,39 +187,10 @@ bool DarcyTransport::evalSolInt (Vector& s, const Vectors& eV,
   return true;
 }
 
-
-bool DarcyTransport::evalSol (Vector& s, const FiniteElement& fe,
-                              const Vec3& X,
-                              const std::vector<int>& MNPC) const
-{
-  ElmMats A;
-  if (!const_cast<DarcyTransport*>(this)->initElement(MNPC,A))
-    return false;
-
-  return this->evalSolInt(s,A.vec,fe,X);
-}
-
-bool DarcyTransport::evalSol (Vector& s,
-                              const MxFiniteElement& fe,
-                              const Vec3& X,
-                              const std::vector<int>& MNPC,
-                              const std::vector<size_t>& elem_sizes,
-                              const std::vector<size_t>& basis_sizes) const
-{
-  ElmMats A;
-  if (!const_cast<DarcyTransport*>(this)->initElement(MNPC,elem_sizes,basis_sizes,A))
-    return false;
-
-  return this->evalSolInt(s,A.vec,fe,X);
-}
-
-
 std::string DarcyTransport::getField1Name (size_t i, const char* prefix) const
 {
   if (i == 11)
-    return cBasis == 1 ? "p&&c" : "p";
-  if (i == 12)
-    return "c";
+    return "p&&c";
 
   if (i >= 2)
     return "";
@@ -303,7 +230,7 @@ double DarcyTransport::concentration (const Vectors& vec,
                                       const FiniteElement& fe,
                                       size_t level) const
 {
-  return fe.basis(cBasis).dot(vec[level*2+1]);
+  return fe.basis(1).dot(vec[level*2+1]);
 }
 
 
@@ -312,7 +239,7 @@ Vec3 DarcyTransport::concentrationGradient (const Vectors& vec,
                                             size_t level) const
 {
   Vector dCh(nsd);
-  fe.grad(cBasis).multiply(vec[2*level+1],dCh,true);
+  fe.grad(1).multiply(vec[2*level+1],dCh,true);
 
   return dCh;
 }
@@ -334,22 +261,6 @@ Vec3 DarcyTransport::pressureGradient (const Vectors& eV,
   fe.grad(1).multiply(eV[2*level],dPh,true);
 
   return dPh;
-}
-
-
-void DarcyTransport::getSolutionNorms (const SIMbase& sim,
-                                       const Vector& solution,
-                                       double& dNorm,
-                                       double* dMax, size_t* iMax) const
-{
-  if (ASMmxBase::Type == ASMmxBase::REDUCED_CONT_RAISE_BASIS2 ||
-      ASMmxBase::Type == ASMmxBase::FULL_CONT_RAISE_BASIS2) {
-    double dNormp = sim.solutionNorms(solution, dMax, iMax, 1, 'D');
-    double dNormc = sim.solutionNorms(solution, dMax+1, iMax+1, 1, 'P');
-
-    dNorm = sqrt(pow(dNormp,2.0)+pow(dNormc,2.0));
-  } else
-    dNorm = sim.solutionNorms(solution,dMax,iMax,2);
 }
 
 

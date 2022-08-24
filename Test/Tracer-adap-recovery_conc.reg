@@ -1,8 +1,8 @@
-Twofield-adap.xinp -adap recovery
+Tracer-adap.xinp -adap recovery_conc
 
-Input file: Twofield-adap.xinp
+Input file: Tracer-adap.xinp
 LR-spline basis functions are used
-Using two-field formulation (single basis).
+Including a tracer field.
 	Permeability: 1.0|1.0
 	Porosity: 1
 	Dispersivity: 1.0
@@ -37,14 +37,14 @@ Error estimates based on >>> Continuous global L2-projection <<<
   Effectivity index eta^p            : 0.963451
   Effectivity index eta^c            : 0.963442
   Effectivity index eta^tot          : 0.963446
-Error estimate  |e|, (p,c)^r-(p,c)^h : 0.025415
+Error estimate a(e,e)^0.5, e=c^r-c^h : 0.0179711
 Relative error (%) : 12.0556
-Effectivity index  : 0.963446
-Root mean square (RMS) of error      : 0.349435
-Min element error                    : 0.00085897
-Max element error                    : 0.00444033
-Average element error                : 0.00299905
-Refining 5 basis functions with errors in range \[0.0170768,0.0177613\] 6.17284% of all basis functions
+Effectivity index  : 0.963442
+Root mean square (RMS) of error      : 0.349448
+Min element error                    : 0.000607161
+Max element error                    : 0.00313963
+Average element error                : 0.00212063
+Refining 5 basis functions with errors in range \[0.0120746,0.0125585\] 6.17284% of all basis functions
 Refined mesh: 100 elements 109 nodes.
 Adaptive step 2
 Number of elements    100
@@ -70,14 +70,14 @@ Error estimates based on >>> Continuous global L2-projection <<<
   Effectivity index eta^p            : 0.945223
   Effectivity index eta^c            : 0.945239
   Effectivity index eta^tot          : 0.945231
-Error estimate  |e|, (p,c)^r-(p,c)^h : 0.0221583
-Relative error (%) : 10.5108
-Effectivity index  : 0.945231
-Root mean square (RMS) of error      : 0.487662
-Min element error                    : 0.000860784
-Max element error                    : 0.0037391
-Average element error                : 0.00199163
-Refining 8 basis functions with errors in range \[0.0158504,0.0158504\] 7.33945% of all basis functions
+Error estimate a(e,e)^0.5, e=c^r-c^h : 0.0156684
+Relative error (%) : 10.5109
+Effectivity index  : 0.945239
+Root mean square (RMS) of error      : 0.487718
+Min element error                    : 0.000608422
+Max element error                    : 0.00264413
+Average element error                : 0.00140828
+Refining 8 basis functions with errors in range \[0.011208,0.011208\] 7.33945% of all basis functions
 Refined mesh: 160 elements 165 nodes.
 Adaptive step 3
 Number of elements    160
@@ -103,11 +103,11 @@ Error estimates based on >>> Continuous global L2-projection <<<
   Effectivity index eta^p            : 0.865972
   Effectivity index eta^c            : 0.865971
   Effectivity index eta^tot          : 0.865971
-Error estimate  |e|, (p,c)^r-(p,c)^h : 0.0162376
+Error estimate a(e,e)^0.5, e=c^r-c^h : 0.0114817
 Relative error (%) : 7.70229
 Effectivity index  : 0.865971
-Root mean square (RMS) of error      : 0.311247
-Min element error                    : 0.000795284
-Max element error                    : 0.00285805
-Average element error                : 0.0012257
+Root mean square (RMS) of error      : 0.311276
+Min element error                    : 0.00056244
+Max element error                    : 0.00202091
+Average element error                : 0.000866691
    \* Stopping the adaptive cycles as max steps 3 was reached.
