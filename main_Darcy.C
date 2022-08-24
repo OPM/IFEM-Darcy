@@ -45,12 +45,8 @@ int runSimulator(char* infile, const DarcyArgs& args)
 {
   std::unique_ptr<Darcy> itg;
   std::vector<unsigned char> nf;
-  if (args.twofield) {
-    if (ASMmxBase::Type == ASMmxBase::FULL_CONT_RAISE_BASIS2 ||
-        ASMmxBase::Type == ASMmxBase::REDUCED_CONT_RAISE_BASIS2)
-      nf = {1,1};
-    else
-      nf = {2};
+  if (args.tracer) {
+    nf = {2};
     itg = std::make_unique<DarcyTransport>(Dim::dimension,0);
   } else {
     nf = {1};
@@ -94,12 +90,8 @@ int runSimulatorTransient(char* infile, const DarcyArgs& args)
 {
   std::unique_ptr<Darcy> itg;
   std::vector<unsigned char> nf;
-  if (args.twofield) {
-    if (ASMmxBase::Type == ASMmxBase::FULL_CONT_RAISE_BASIS2 ||
-        ASMmxBase::Type == ASMmxBase::REDUCED_CONT_RAISE_BASIS2)
-      nf = {1,1};
-    else
-      nf = {2};
+  if (args.tracer) {
+    nf = {2};
     itg = std::make_unique<DarcyTransport>(Dim::dimension, TimeIntegration::Order(args.timeMethod));
   } else {
     nf = {1};
@@ -215,14 +207,8 @@ int main (int argc, char** argv)
 
   IFEM::cout <<"\nInput file: "<< infile;
   IFEM::getOptions().print(IFEM::cout) << std::endl;
-  if (args.twofield) {
-    if (ASMmxBase::Type == ASMmxBase::NONE)
-      IFEM::cout << "Using two-field formulation (single basis)." << std::endl;
-    else if (ASMmxBase::Type == ASMmxBase::REDUCED_CONT_RAISE_BASIS2)
-      IFEM::cout << "Using two-field formulation (Taylor-Hood)." << std::endl;
-    else if (ASMmxBase::Type == ASMmxBase::FULL_CONT_RAISE_BASIS2)
-      IFEM::cout << "Using two-field formulation (Full regularity Taylor-Hood)." << std::endl;
-  }
+  if (args.tracer)
+    IFEM::cout << "Including a tracer field." << std::endl;
   if (args.timeMethod == TimeIntegration::BE)
     IFEM::cout << "Using Backward-Euler time stepping." << std::endl;
   else if (args.timeMethod == TimeIntegration::BDF2)

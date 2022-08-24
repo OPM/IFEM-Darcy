@@ -4,18 +4,16 @@
 
   <!-- General - geometry definitions !-->
   <geometry dim="2" sets="true">
-    <raiseorder patch="1" u="1" v="1"/>
-    <refine  patch="1" u="7" v="7"/>
+    <refine patch="1" u="7" v="7"/>
   </geometry>
 
   <!-- General - boundary conditions !-->
   <boundaryconditions>
-    <dirichlet set="Boundary" comp="1" basis="1"/>
-    <dirichlet set="Boundary" comp="1" basis="2"/>
+    <dirichlet set="Boundary" comp="12"/>
   </boundaryconditions>
 
   <!-- Problem-specific block !-->
-  <darcy twofield="true" formulation="th">
+  <darcy tracer="true">
     <source type="expression">
         -2*(x-1)*x-2*(y-1)*y
     </source>
@@ -43,7 +41,19 @@
   </darcy>
 
   <discretization>
-    <nGauss>3</nGauss>
+    <nGauss>2</nGauss>
   </discretization>
+
+  <postprocessing>
+    <projection>
+      <CGL2/>
+    </projection>
+  </postprocessing>
+
+  <adaptive>
+    <beta type="symmetrized">2</beta>
+    <maxstep>3</maxstep>
+    <scheme>isotropic_function</scheme>
+  </adaptive>
 
 </simulation>

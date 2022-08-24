@@ -31,7 +31,7 @@ class DarcyArgs : public SIMargsBase
 {
 public:
   TimeIntegration::Method timeMethod = TimeIntegration::NONE; //!< Time integration method
-  bool twofield = false; //!< Use two-field formulation
+  bool tracer = false; //!< Include a tracer field
   DCY::AdaptationNorm adNorm = DCY::NO_ADAP; //!< Norm to adapt based on
 
   //! \brief Default constructor.

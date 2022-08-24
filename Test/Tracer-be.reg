@@ -1,7 +1,7 @@
-Twofield-unsteady.xinp -be
+Tracer-unsteady.xinp -be
 
-Input file: Twofield-unsteady.xinp
-Using two-field formulation (single basis).
+Input file: Tracer-unsteady.xinp
+Including a tracer field.
 Using Backward-Euler time stepping.
 Number of elements    64
 Number of nodes       100

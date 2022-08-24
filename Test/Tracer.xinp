@@ -14,7 +14,7 @@
   </boundaryconditions>
 
   <!-- Problem-specific block !-->
-  <darcy twofield="true">
+  <darcy tracer="true">
     <source type="expression">
         -2*(x-1)*x-2*(y-1)*y
     </source>

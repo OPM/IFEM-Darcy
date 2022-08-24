@@ -10,12 +10,11 @@
 
   <!-- General - boundary conditions !-->
   <boundaryconditions>
-    <dirichlet set="Boundary" comp="1" basis="1"/>
-    <dirichlet set="Boundary" comp="1" basis="2"/>
+    <dirichlet set="Boundary" comp="12"/>
   </boundaryconditions>
 
   <!-- Problem-specific block !-->
-  <darcy twofield="true" formulation="th">
+  <darcy tracer="true">
     <source type="expression">
       h=sin(t);
       (-2*(x-1)*x-2*(y-1)*y)*h

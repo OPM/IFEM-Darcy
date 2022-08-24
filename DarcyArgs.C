@@ -25,15 +25,9 @@ bool DarcyArgs::parseArg (const char* argv)
   TimeIntegration::Method tmp;
   if (argv[0] != '-')
     return false;
-  else if (strcasecmp(argv, "-twofield") == 0)
-    twofield = true;
-  else if (strcasecmp(argv,"-mixed") == 0) {
-    twofield = true;
-    ASMmxBase::Type = ASMmxBase::REDUCED_CONT_RAISE_BASIS2;
-  } else if (strcasecmp(argv,"-mixed_full") == 0) {
-    twofield = true;
-    ASMmxBase::Type = ASMmxBase::FULL_CONT_RAISE_BASIS2;
-  } else if ((tmp = TimeIntegration::get(argv+1)) > TimeIntegration::NONE)
+  else if (strcasecmp(argv, "-tracer") == 0)
+    tracer = true;
+  else if ((tmp = TimeIntegration::get(argv+1)) > TimeIntegration::NONE)
     timeMethod = tmp;
   else
     return this->SIMargsBase::parseArg(argv);
@@ -80,20 +74,8 @@ bool DarcyArgs::parse (const TiXmlElement* elem)
       timeMethod = TimeIntegration::get(type);
   }
   if (!strcasecmp(elem->Value(),"darcy")) {
-    utl::getAttribute(elem,"twofield",twofield);
+    utl::getAttribute(elem,"tracer",tracer);
     ASMmxBase::Type = ASMmxBase::NONE;
-    const char* formulation = elem->Attribute("formulation");
-    if (formulation) {
-      if (strcasecmp(formulation, "th" ) == 0 ||
-          strcasecmp(formulation, "mixed") == 0) {
-        ASMmxBase::Type = ASMmxBase::REDUCED_CONT_RAISE_BASIS2;
-        twofield = true;
-      } else if (strcasecmp(formulation,"frth") == 0 ||
-                 strcasecmp(formulation,"mixed_full") == 0) {
-        ASMmxBase::Type = ASMmxBase::FULL_CONT_RAISE_BASIS2;
-        twofield = true;
-      }
-    }
     const char* ad = elem->Attribute("adap");
     if (ad) {
       if (strcasecmp(ad,"pressure") == 0)
