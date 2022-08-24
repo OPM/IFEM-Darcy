@@ -20,6 +20,7 @@
 #include "SIMconfigure.h"
 #include "SIMenums.h"
 #include "SIMsolution.h"
+#include "TextureProperties.h"
 
 #include <cstddef>
 #include <iosfwd>
@@ -238,6 +239,7 @@ private:
   int aCode[2];         //!< Analytical BC code (used by destructor)
   Matrix eNorm;         //!< Element wise norms
   Vectors proj;         //!< Projected solution vectors
+  TextureProperties props; //!< Textured properties
 
   int maxCycle = -1;      //!< Max number of sub-iterations
   double cycleTol = 1e-6; //! < Convergence tolerance in sub-iterations

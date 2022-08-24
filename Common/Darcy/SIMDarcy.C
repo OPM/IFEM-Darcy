@@ -78,6 +78,15 @@ bool SIMDarcy<Dim>::parse (const TiXmlElement* elem)
     if ((value = utl::getValue(child,"permvalues"))) {
       IFEM::cout <<"\tPermeability: " << value << std::endl;
       drc.setPermValues(new VecFuncExpr(value));
+    } else if ((value = utl::getValue(child,"textureproperties"))) {
+      props.parse(child);
+      props.printLog();
+      if (props.hasProperty("permeability"))
+        drc.setPermValues(new PropertyVecFunc("permeability",props));
+      if (props.hasProperty("porosity"))
+        drc.setPorosity(new PropertyFunc("porosity",props));
+      if (props.hasProperty("dispersivity"))
+        drc.setDispersivity(new PropertyFunc("dispersivity",props));
     } else if ((value = utl::getValue(child,"permeability"))) {
       std::string type;
       utl::getAttribute(child,"type",type);
