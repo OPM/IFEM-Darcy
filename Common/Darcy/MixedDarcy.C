@@ -216,14 +216,17 @@ bool MixedDarcy::evalSolInt (Vector& s, const Vectors& eV,
   if (!this->Darcy::evalDarcyVel(s,eV,fe,X))
     return false;
 
-  // Evaluate the concentration gradient
-  Vec3 dCh = this->concentrationGradient(eV,fe,0);
+  s.push_back(source ? (*source)(X) : 0.0);
+  s.push_back(sourceC ? (*sourceC)(X) : 0.0);
+  s.push_back((*this->porosity)(X));
 
+  Vec3 dCh = this->concentrationGradient(eV,fe,0);
   for (int i = 0; i < nsd; ++i)
     s.push_back(dCh[i]);
 
-  s.push_back(source ? (*source)(X) : 0.0);
-  s.push_back(sourceC ? (*sourceC)(X) : 0.0);
+  Vec3 perm = this->getPermeability(X);
+  for (int i = 0; i < nsd; ++i)
+    s.push_back(perm[i]);
 
   return true;
 }
@@ -274,14 +277,19 @@ std::string MixedDarcy::getField1Name (size_t i, const char* prefix) const
 
 std::string MixedDarcy::getField2Name (size_t i, const char* prefix) const
 {
-  if (i >= (nsd == 2 ? 6 : 8)) return "";
+  if (i >= (nsd == 2 ? 9 : 12)) return "";
 
-  static const char* s2[6] = {"v_x", "v_y", "c,x", "c,y",
-                              "source", "source_c"};
+  static const char* s2[9] = {"v_x", "v_y",
+                              "source", "source_c",
+                              "porosity",
+                              "c,x", "c,y",
+                              "perm_x", "perm_y"};
 
-  static const char* s3[8] = {"v_x","v_y","v_z",
-                             "c,x","c,y","c,z",
-                             "source","source_c"};
+  static const char* s3[12] = {"v_x","v_y","v_z",
+                               "source","source_c",
+                               "porosity",
+                               "c,x","c,y","c,z",
+                               "perm_x", "perm_y", "perm_z"};
 
   const char** s = (nsd == 2 ? s2 : s3);
 
@@ -399,11 +407,11 @@ bool MixedDarcyNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
         Vector vals;
         projFields[f-2]->valueFE(fe, vals);
         for (size_t i = 0; i < fe.dNdX.cols(); ++i)
-          dCr[i] = vals[i+fe.dNdX.cols()];
+          dCr[i] = vals[i+3+fe.dNdX.cols()];
       } else {
         // Evaluate projected concentration field
-        for (size_t j = 0; j < fe.dNdX.cols(); j++)
-          dCr[j] = psol.dot(fe.N,j+fe.dNdX.cols(),nrcmp);
+        for (size_t i = 0; i < fe.dNdX.cols(); ++i)
+          dCr[i] = psol.dot(fe.N,i+3+fe.dNdX.cols(),nrcmp);
       }
 
       // Integrate the energy norm a(c^r,c^r)
