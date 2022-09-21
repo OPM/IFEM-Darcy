@@ -24,6 +24,7 @@
 
 class RealFunc;
 class SIMbase;
+class TractionFunc;
 class VecFunc;
 
 
@@ -61,6 +62,8 @@ public:
   void setFlux(RealFunc* f) { flux = f; }
   //! \brief Defines a vectorial flux function.
   void setFlux(VecFunc* f) { vflux = f; }
+  //! \brief Defines a vectorial flux function.
+  void setFlux(TractionFunc* f) { tflux = f; }
 
   //! \brief Evaluates the boundary fluid flux (if any) at specified point.
   double getFlux(const Vec3& X, const Vec3& normal) const;
@@ -220,6 +223,7 @@ protected:
   VecFunc*  bodyforce;    //!< Body force function
   VecFunc*  vflux;        //!< Flux function
   RealFunc* flux;         //!< Flux function
+  TractionFunc* tflux;    //!< Flux traction function
   RealFunc* source;       //!< Source function
 
   DarcyMaterial* mat = nullptr; //!< Material parameters
