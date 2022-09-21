@@ -180,10 +180,13 @@ template<class Dim>
 bool SIMDarcy<Dim>::initNeumann (size_t propInd)
 {
   const auto sit = Dim::myScalars.find(propInd);
+  const auto tit = Dim::myTracs.find(propInd);
   const auto vit = Dim::myVectors.find(propInd);
 
   if (sit != Dim::myScalars.end())
     drc.setFlux(sit->second);
+  else if (tit != Dim::myTracs.end())
+    drc.setFlux(tit->second);
   else if (vit != Dim::myVectors.end())
     drc.setFlux(vit->second);
   else

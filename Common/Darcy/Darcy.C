@@ -39,6 +39,7 @@ Darcy::Darcy (unsigned short int n, int torder) :
 {
   primsol.resize(1 + torder);
 
+  tflux = nullptr;
   vflux = bodyforce = nullptr;
   flux = source = nullptr;
   reacInt = nullptr;
@@ -58,6 +59,8 @@ double Darcy::getFlux (const Vec3& X, const Vec3& normal) const
     return (*flux)(X);
   else if (vflux)
     return (*vflux)(X)*normal;
+  else if (tflux)
+    return (*tflux)(X,normal)*normal;
   else
     return 0.0;
 }
@@ -156,7 +159,7 @@ bool Darcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
 bool Darcy::evalBou (LocalIntegral& elmInt, const FiniteElement& fe,
                      const Vec3& X, const Vec3& normal) const
 {
-  if (!flux && !vflux)
+  if (!flux && !vflux && !tflux)
   {
     std::cerr <<" *** Darcy::evalBou: No fluxes."<< std::endl;
     return false;
