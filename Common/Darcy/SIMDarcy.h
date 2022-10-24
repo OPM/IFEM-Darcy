@@ -15,10 +15,12 @@
 #define _SIM_DARCY_H_
 
 #include "DarcyEnums.h"
+#include "DarcyMaterial.h"
 
 #include "MatVec.h"
 #include "SIMconfigure.h"
 #include "SIMenums.h"
+#include "SIMMultiPatchModelGen.h"
 #include "SIMsolution.h"
 
 #include <cstddef>
@@ -38,7 +40,7 @@ class VTF;
 */
 
 template<class Dim>
-class SIMDarcy : public Dim, public SIMsolution
+class SIMDarcy : public SIMMultiPatchModelGen<Dim>, public SIMsolution
 {
 public:
   //! \brief Setup properties.
@@ -70,6 +72,9 @@ public:
   //! \brief Initializes for integration of Neumann terms for a given property.
   //! \param[in] propInd Physical property index
   bool initNeumann(size_t propInd) override;
+
+  //! \brief Initializes the material parameters for current patch.
+  bool initMaterial(size_t propInd) override;
 
   //! \brief Initializes the property containers of the model.
   //! \details Use this method to clear the model before re-reading
@@ -238,6 +243,8 @@ private:
   int aCode[2];         //!< Analytical BC code (used by destructor)
   Matrix eNorm;         //!< Element wise norms
   Vectors proj;         //!< Projected solution vectors
+
+  std::vector<DarcyMaterial> mVec; //!< Vector of patchwise material data
 
   int maxCycle = -1;      //!< Max number of sub-iterations
   double cycleTol = 1e-6; //! < Convergence tolerance in sub-iterations

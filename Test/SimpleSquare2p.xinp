@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
+<simulation>
+
+  <geometry dim="2" sets="true" nx="2">
+    <refine type="uniform" lowerpatch="1" upperpatch="2" u="7" v="7"/>
+    <topologysets>
+      <set name="P1" type="face">
+        <item patch="1"/>
+      </set>
+      <set name="P2" type="face">
+        <item patch="2"/>
+      </set>
+    </topologysets>
+  </geometry>
+
+  <darcy>
+    <boundaryconditions>
+      <dirichlet set="Boundary" comp="1" type="anasol"/>
+    </boundaryconditions>
+    <source type="expression">
+      uxx=2*y*(y-1);
+      uyy=2*x*(x-1);
+      -uxx-uyy
+    </source>
+    <anasol type="expression">
+      <primary>x*(x-1)*y*(y-1)</primary>
+      <secondary>-(2*x-1)*y*(y-1)|-(2*y-1)*x*(x-1)</secondary>
+    </anasol>
+    <materialdata set="P1">
+      <permvalues>1.0|1.0</permvalues>
+    </materialdata>
+    <materialdata set="P2">
+      <permvalues>1.0|1.0</permvalues>
+    </materialdata>
+    <gravity>1.0</gravity>
+  </darcy>
+
+</simulation>

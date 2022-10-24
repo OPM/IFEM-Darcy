@@ -28,7 +28,9 @@ TEST(TestSIMDarcy, Parse)
 
   const Darcy& darcy = static_cast<const Darcy&>(*sim.getProblem());
 
-  Vec3 perm = darcy.getPermeability(Vec3());
+  sim.init();
+
+  Vec3 perm = darcy.getMaterial().getPermeability(Vec3());
   ASSERT_FLOAT_EQ(perm[0], 98.1);
   ASSERT_FLOAT_EQ(perm[1], 9.81);
   ASSERT_FLOAT_EQ(perm[2], 0.0);
