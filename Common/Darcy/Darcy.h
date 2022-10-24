@@ -14,6 +14,8 @@
 #ifndef _DARCY_H_
 #define _DARCY_H_
 
+#include "DarcyMaterial.h"
+
 #include "BDF.h"
 #include "EqualOrderOperators.h"
 #include "IntegrandBase.h"
@@ -44,20 +46,10 @@ public:
   //! \brief Empty destructor.
   virtual ~Darcy() {}
 
-  //! \brief Sets the permeability function.
-  void setPermValues(VecFunc* perm) { permvalues = perm; }
-  //! \brief Sets the permeability scalar field function.
-  void setPermField(RealFunc* perm) { permeability = perm; }
-  //! \brief Returns the permeability at a given point.
-  Vec3 getPermeability(const Vec3& X) const;
-
   //! \brief Defines the body force vector.
   void setBodyForce(VecFunc* b) { bodyforce = b; }
   //! \brief Returns the body force vector at a given point.
   Vec3 getBodyForce(const Vec3& X) const;
-
-  //! \brief Returns the dispersivity at a given point.
-  double getDispersivity(const Vec3& X) const;
 
   //! \brief Defines the source function.
   void setSource(RealFunc* s) { source = s; }
@@ -69,12 +61,6 @@ public:
   void setFlux(RealFunc* f) { flux = f; }
   //! \brief Defines a vectorial flux function.
   void setFlux(VecFunc* f) { vflux = f; }
-
-  //! \brief Defines a scalar dispersivity function.
-  void setDispersivity(RealFunc* f) { dispersivity = f; }
-
-  //! \brief Defines a scalar porosity function.
-  void setPorosity(RealFunc* f) { porosity = f; }
 
   //! \brief Evaluates the boundary fluid flux (if any) at specified point.
   double getFlux(const Vec3& X, const Vec3& normal) const;
@@ -186,32 +172,34 @@ public:
   //! \brief Helper for CoSTA.
   virtual void setParam(const std::string&, double) {}
 
+  //! \brief Set material parameters.
+  void setMaterial(DarcyMaterial& mat1) { mat = &mat1; }
+
+  //! \brief Returns a const ref to material parameters.
+  const DarcyMaterial& getMaterial() const { return *mat; }
+
+  //! \brief Evaluates the darcy velocity in a point.
+  bool evalDarcyVel (Vector& s, const Vectors& eV,
+                     const FiniteElement& fe, const Vec3& X) const;
+
+  //! \brief Returns gravitational acceleration.
+  double getGravity() const { return gacc; }
+
 protected:
   VecFunc*  bodyforce;    //!< Body force function
-  VecFunc*  permvalues;   //!< Permeability function
-  RealFunc* permeability; //!< Permeability field function
-  RealFunc* porosity;     //!< Porosity function
-  RealFunc* dispersivity; //!< Dispersivity function
   VecFunc*  vflux;        //!< Flux function
   RealFunc* flux;         //!< Flux function
   RealFunc* source;       //!< Source function
 
+  DarcyMaterial* mat = nullptr; //!< Material parameters
+
   GlobalIntegral* reacInt; //!< Reaction-forces-only integral
   TimeIntegration::BDF bdf; //!< BDF helper class
 
+  double gacc = 9.81; //!< Gravity acceleration
+
 public:
-  const double rhow; //!< Density of fluid
-  double gacc; //!< Gravity acceleration
-
   char extEner; //!< If \e true, external energy is to be computed
-
-  //! \brief Evaluates the secondary solution at a result point.
-  //! \param[out] s Array of solution field values at current point
-  //! \param[in] eV Element solution vectors
-  //! \param[in] fe Finite element data at current point
-  //! \param[in] X Cartesian coordinates of current point
-  bool evalDarcyVel(Vector& s, const Vectors& eV,
-                    const FiniteElement& fe, const Vec3& X) const;
 };
 
 

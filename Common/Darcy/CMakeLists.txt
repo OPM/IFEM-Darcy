@@ -9,6 +9,8 @@ include_directories(../../../Common)
 set(DARCY_SOURCES Darcy.C
                   Darcy.h
                   DarcyEnums.h
+                  DarcyMaterial.C
+                  DarcyMaterial.h
                   DarcySolutions.C
                   DarcySolutions.h
                   DarcyTransport.C

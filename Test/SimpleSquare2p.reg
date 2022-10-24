@@ -1,0 +1,22 @@
+SimpleSquare2p.xinp
+
+Input file: SimpleSquare2p.xinp
+	Source function: uxx=2\*y\*(y-1); uyy=2\*x\*(x-1); -uxx-uyy
+	Primary=x\*(x-1)\*y\*(y-1)
+	Secondary=-(2\*x-1)\*y\*(y-1)|-(2\*y-1)\*x\*(x-1)
+	Analytical solution: expression
+	Material data with code 0:
+		Permeability: 1.0|1.0
+	Material data with code 1:
+		Permeability: 1.0|1.0
+Number of elements    128
+Number of nodes       153
+Number of dofs        153
+Number of constraints 48
+Number of unknowns    105
+L2-norm            : 0.0307321
+Max pressure       : 0.0629834
+  H1 norm |p^h| = a(p^h,p^h)^0.5     : 0.148337
+  H1 norm |p| = a(p,p)^0.5           : 0.149071
+  H1 norm |e| = a(e,e)^0.5, e=p-p^h  : 0.0147789
+  Exact relative error (%)           : 9.91396

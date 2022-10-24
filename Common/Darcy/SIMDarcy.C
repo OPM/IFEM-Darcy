@@ -47,7 +47,7 @@ SIMDarcy<Dim>::SIMDarcy (Darcy& itg, unsigned char nf) :
 
 template<class Dim>
 SIMDarcy<Dim>::SIMDarcy (Darcy& itg, const std::vector<unsigned char>& nf) :
-  Dim(nf), drc(itg), solVec(nullptr)
+  SIMMultiPatchModelGen<Dim>(nf), drc(itg), solVec(nullptr)
 {
   Dim::myProblem = &drc;
   Dim::myHeading = "Darcy solver";
@@ -75,32 +75,21 @@ bool SIMDarcy<Dim>::parse (const TiXmlElement* elem)
   const TiXmlElement* child = elem->FirstChildElement();
   for (; child; child = child->NextSiblingElement()) {
     const char* value = nullptr;
-    if ((value = utl::getValue(child,"permvalues"))) {
-      IFEM::cout <<"\tPermeability: " << value << std::endl;
-      drc.setPermValues(new VecFuncExpr(value));
-    } else if ((value = utl::getValue(child,"permeability"))) {
-      std::string type;
-      utl::getAttribute(child,"type",type);
-      IFEM::cout <<"\tPermeability";
-      drc.setPermField(utl::parseRealFunc(value,type));
-      IFEM::cout << std::endl;
-    } else if ((value = utl::getValue(child,"porosity"))) {
-      std::string type;
-      utl::getAttribute(child,"type",type);
-      IFEM::cout <<"\tPorosity";
-      drc.setPorosity(utl::parseRealFunc(value,type));
-      IFEM::cout << std::endl;
-    } else if ((value = utl::getValue(child,"dispersivity"))) {
-      std::string type;
-      utl::getAttribute(child,"type",type);
-      IFEM::cout <<"\tDispersivity";
-      drc.setDispersivity(utl::parseRealFunc(value,"expression"));
-      IFEM::cout << std::endl;
-    } else if ((value = utl::getValue(child,"bodyforce")))
+    if ((value = utl::getValue(child,"bodyforce")))
       drc.setBodyForce(new VecFuncExpr(value));
     else if ((value = utl::getValue(child,"gravity")))
       drc.setGravity(atof(value));
-    else if (!strcasecmp(child->Value(),"source") || !strcasecmp(child->Value(),"source_c")) {
+    else if (!strcasecmp(child->Value(), "materialdata")) {
+      int code = this->parseMaterialSet(child,mVec.size());
+      mVec.resize(mVec.size()+1);
+      IFEM::cout << "\tMaterial data with code " << code <<":\n";
+      if (!mVec.back().parse(child))
+        mVec.pop_back();
+    } else if (DarcyMaterial::handlesTag(child->Value())) {
+      if (mVec.empty())
+        mVec.resize(1);
+      mVec.back().parse(child);
+    } else if (!strcasecmp(child->Value(),"source") || !strcasecmp(child->Value(),"source_c")) {
       bool isC = strcasecmp(child->Value(),"source") != 0;
       std::string type;
       utl::getAttribute(child,"type",type);
@@ -205,6 +194,18 @@ bool SIMDarcy<Dim>::initNeumann (size_t propInd)
 
 
 template<class Dim>
+bool SIMDarcy<Dim>::initMaterial (size_t propInd)
+{
+  if (propInd >= mVec.size())
+    return false;
+
+  drc.setMaterial(mVec[propInd]);
+
+  return true;
+}
+
+
+template<class Dim>
 void SIMDarcy<Dim>::clearProperties ()
 {
   // To prevent SIMbase::clearProperties deleting the analytical solution
@@ -297,6 +298,12 @@ bool SIMDarcy<Dim>::init ()
 
   this->initSystem(Dim::opt.solver);
   this->setQuadratureRule(Dim::opt.nGauss[0],true);
+
+  if (mVec.empty())
+    mVec.push_back(DarcyMaterial());
+  if (mVec.size() == 1)
+    drc.setMaterial(mVec.front());
+
   return true;
 }
 
