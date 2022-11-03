@@ -129,7 +129,7 @@ bool DarcyAdvection::evalDarcyVel (Vector& q,
   Vector dP;
   this->pField->gradFE(fe, dP);
 
-  return K.multiply(dP, q, - 1.0/drc.getMaterial().getViscosity());
+  return K.multiply(dP, q, - 1.0 / mat->getViscosity());
 }
 
 

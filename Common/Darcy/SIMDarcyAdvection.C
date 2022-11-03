@@ -172,6 +172,9 @@ bool SIMDarcyAdvection<Dim>::init ()
 
   this->initSystem(Dim::opt.solver);
   this->setQuadratureRule(Dim::opt.nGauss[0],true);
+  if (mVec.size() == 1)
+    drc.setMaterial(mVec.front());
+
   return true;
 }
 
