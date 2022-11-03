@@ -260,12 +260,16 @@ bool SIMDarcy<Dim>::saveModel (char* fileName, int& geoBlk, int& nBlock)
 
 
 template<class Dim>
-bool SIMDarcy<Dim>::saveStep (const TimeStep& tp, int& nBlock)
+bool SIMDarcy<Dim>::saveStep (const TimeStep& tp, int& nBlock, bool newData)
 {
   if (Dim::opt.format < 0 || (tp.step % Dim::opt.saveInc) > 0)
     return true;
 
   int iDump = tp.step/Dim::opt.saveInc + (drc.getOrder() == 0 ? 1 : 0);
+  double param2 = drc.getOrder() == 0 ? iDump : tp.time.t;
+
+  if (!newData)
+      return this->writeGlvStep(iDump,param2,drc.getOrder() == 0 ? 1 : 0);
 
   // Write solution fields
   if (!this->writeGlvS(*solVec,iDump,nBlock,tp.time.t))
@@ -295,7 +299,6 @@ bool SIMDarcy<Dim>::saveStep (const TimeStep& tp, int& nBlock)
     if (!this->writeGlvN(eNorm,iDump,nBlock))
       return false;
 
-  double param2 = drc.getOrder() == 0 ? iDump : tp.time.t;
   return this->writeGlvStep(iDump,param2,drc.getOrder() == 0 ? 1 : 0);
 }
 
