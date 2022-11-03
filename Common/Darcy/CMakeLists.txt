@@ -19,7 +19,9 @@ set(DARCY_SOURCES Darcy.C
                   DarcyTransport.h
                   SIMDarcy.C
                   SIMDarcy.h
-                  SIMDarcyAdap.h)
+                  SIMDarcyAdap.h
+                  SIMDarcyAdvection.C
+                  SIMDarcyAdvection.h)
 
 add_library(CommonDarcy STATIC ${DARCY_SOURCES})
 
