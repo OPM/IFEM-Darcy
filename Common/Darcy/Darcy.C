@@ -236,6 +236,7 @@ bool Darcy::evalSol2 (Vector& s, const Vectors& eV,
     return false;
 
   s.push_back(source ? (*source)(X) : 0.0);
+  s.push_back(this->getMaterial().getPorosity(X));
   Vec3 perm = this->getMaterial().getPermeability(X);
   for (size_t i = 0; i < nsd; ++i)
     s.push_back(perm[i]);
@@ -275,12 +276,12 @@ std::string Darcy::getField1Name (size_t, const char* prefix) const
 
 std::string Darcy::getField2Name (size_t i, const char* prefix) const
 {
-  if (i >= 2*nsd+1u) return "";
+  if (i >= 2*nsd+2u) return "";
 
   if (nsd == 2 && i > 1)
    ++i;
 
-  static const char* s[7] = {"v_x","v_y","v_z", "source", "perm_x", "perm_y", "perm_z"};
+  static const char* s[8] = {"v_x","v_y","v_z", "source", "porosity", "perm_x", "perm_y", "perm_z"};
   if (!prefix) return s[i];
 
   return prefix + std::string(" ") + s[i];
