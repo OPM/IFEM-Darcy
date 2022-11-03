@@ -8,6 +8,8 @@ include_directories(../../../Common)
 
 set(DARCY_SOURCES Darcy.C
                   Darcy.h
+                  DarcyAdvection.C
+                  DarcyAdvection.h
                   DarcyEnums.h
                   DarcyMaterial.C
                   DarcyMaterial.h
