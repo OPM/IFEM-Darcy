@@ -32,6 +32,7 @@ class DarcyArgs : public SIMargsBase
 public:
   TimeIntegration::Method timeMethod = TimeIntegration::NONE; //!< Time integration method
   bool tracer = false; //!< Include a tracer field
+  bool scheduled = false; //!< If true, update pressure on a schedule, separate ad step.
   DCY::AdaptationNorm adNorm = DCY::NO_ADAP; //!< Norm to adapt based on
 
   //! \brief Default constructor.
