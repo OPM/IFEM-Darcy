@@ -21,7 +21,9 @@ set(DARCY_SOURCES Darcy.C
                   SIMDarcy.h
                   SIMDarcyAdap.h
                   SIMDarcyAdvection.C
-                  SIMDarcyAdvection.h)
+                  SIMDarcyAdvection.h
+                  SIMDarcySchedule.C
+                  SIMDarcySchedule.h)
 
 add_library(CommonDarcy STATIC ${DARCY_SOURCES})
 

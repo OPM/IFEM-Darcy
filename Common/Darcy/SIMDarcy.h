@@ -104,7 +104,8 @@ public:
   //! \brief Saves the converged results to VTF file of a given time step.
   //! \param[in] tp Time stepping parameters
   //! \param[in] nBlock Running VTF block counter
-  bool saveStep(const TimeStep& tp, int& nBlock);
+  //! \param[in] newData If true we have new pressure data
+  bool saveStep(const TimeStep& tp, int& nBlock, bool newData = true);
 
   //! \brief Initialize simulator.
   bool init();
