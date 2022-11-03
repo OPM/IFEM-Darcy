@@ -91,6 +91,10 @@ bool DarcyArgs::parse (const TiXmlElement* elem)
       else if (strcasecmp(ad,"recovery") == 0)
         adNorm = DCY::RECOVERY;
     }
+
+    const TiXmlElement* child = elem->FirstChildElement("schedule");
+    if (child)
+      scheduled = true;
   }
 
   return this->SIMargsBase::parse(elem);
