@@ -10,6 +10,8 @@ Wavefront_k10_p2_b20.xinp -2D
 /0/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ perm_x/1 Dataset {784}
 /0/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ perm_y Group
 /0/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ perm_y/1 Dataset {784}
+/0/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ porosity Group
+/0/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ porosity/1 Dataset {784}
 /0/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ source Group
 /0/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ source/1 Dataset {784}
 /0/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ v_x Group
@@ -20,6 +22,8 @@ Wavefront_k10_p2_b20.xinp -2D
 /0/DarcyFlow-1/fields/perm_x/1 Dataset {784}
 /0/DarcyFlow-1/fields/perm_y Group
 /0/DarcyFlow-1/fields/perm_y/1 Dataset {784}
+/0/DarcyFlow-1/fields/porosity Group
+/0/DarcyFlow-1/fields/porosity/1 Dataset {784}
 /0/DarcyFlow-1/fields/pressure Group
 /0/DarcyFlow-1/fields/pressure/1 Dataset {784}
 /0/DarcyFlow-1/fields/source Group

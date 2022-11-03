@@ -146,7 +146,7 @@ public:
 
   //! \brief Returns the number of primary/secondary solution field components.
   //! \param[in] fld which field set to consider (1=primary, 2=secondary)
-  size_t getNoFields(int fld) const override { return fld > 1 ? 2*nsd+1 : 1; }
+  size_t getNoFields(int fld) const override { return fld > 1 ? 2*nsd+2 : 1; }
 
   //! \brief Returns the name of the primary solution field.
   //! \param[in] prefix Name prefix

@@ -10,6 +10,8 @@ Lshape_p2_b5.xinp -adap recovery_press
 /0/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ perm_x/1 Dataset {66}
 /0/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ perm_y Group
 /0/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ perm_y/1 Dataset {66}
+/0/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ porosity Group
+/0/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ porosity/1 Dataset {66}
 /0/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ source Group
 /0/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ source/1 Dataset {66}
 /0/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ v_x Group
@@ -20,6 +22,8 @@ Lshape_p2_b5.xinp -adap recovery_press
 /0/DarcyFlow-1/fields/perm_x/1 Dataset {66}
 /0/DarcyFlow-1/fields/perm_y Group
 /0/DarcyFlow-1/fields/perm_y/1 Dataset {66}
+/0/DarcyFlow-1/fields/porosity Group
+/0/DarcyFlow-1/fields/porosity/1 Dataset {66}
 /0/DarcyFlow-1/fields/pressure Group
 /0/DarcyFlow-1/fields/pressure/1 Dataset {66}
 /0/DarcyFlow-1/fields/source Group
@@ -74,6 +78,8 @@ Lshape_p2_b5.xinp -adap recovery_press
 /1/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ perm_x/1 Dataset {99}
 /1/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ perm_y Group
 /1/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ perm_y/1 Dataset {99}
+/1/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ porosity Group
+/1/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ porosity/1 Dataset {99}
 /1/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ source Group
 /1/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ source/1 Dataset {99}
 /1/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ v_x Group
@@ -84,6 +90,8 @@ Lshape_p2_b5.xinp -adap recovery_press
 /1/DarcyFlow-1/fields/perm_x/1 Dataset {99}
 /1/DarcyFlow-1/fields/perm_y Group
 /1/DarcyFlow-1/fields/perm_y/1 Dataset {99}
+/1/DarcyFlow-1/fields/porosity Group
+/1/DarcyFlow-1/fields/porosity/1 Dataset {99}
 /1/DarcyFlow-1/fields/pressure Group
 /1/DarcyFlow-1/fields/pressure/1 Dataset {99}
 /1/DarcyFlow-1/fields/source Group
@@ -138,6 +146,8 @@ Lshape_p2_b5.xinp -adap recovery_press
 /2/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ perm_x/1 Dataset {123}
 /2/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ perm_y Group
 /2/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ perm_y/1 Dataset {123}
+/2/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ porosity Group
+/2/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ porosity/1 Dataset {123}
 /2/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ source Group
 /2/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ source/1 Dataset {123}
 /2/DarcyFlow-1/fields/Continuous\ global\ L2-projection\ v_x Group
@@ -148,6 +158,8 @@ Lshape_p2_b5.xinp -adap recovery_press
 /2/DarcyFlow-1/fields/perm_x/1 Dataset {123}
 /2/DarcyFlow-1/fields/perm_y Group
 /2/DarcyFlow-1/fields/perm_y/1 Dataset {123}
+/2/DarcyFlow-1/fields/porosity Group
+/2/DarcyFlow-1/fields/porosity/1 Dataset {123}
 /2/DarcyFlow-1/fields/pressure Group
 /2/DarcyFlow-1/fields/pressure/1 Dataset {123}
 /2/DarcyFlow-1/fields/source Group
