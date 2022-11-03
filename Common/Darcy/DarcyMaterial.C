@@ -62,6 +62,7 @@ bool DarcyMaterial::parse (const TiXmlElement* elem)
     } else if ((value = utl::getValue(child,"viscosity"))) {
       double viscosity = atof(value);
       IFEM::cout << "\t\tFluid viscosity: " << viscosity << std::endl;
+      this->setViscosity(viscosity);
     } else
       return false;
 

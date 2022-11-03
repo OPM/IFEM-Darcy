@@ -11,9 +11,12 @@
 //!
 //==============================================================================
 
+#include "DarcyAdvection.h"
 #include "DarcyArgs.h"
 #include "DarcyTransport.h"
 #include "SIMDarcy.h"
+#include "SIMDarcyAdap.h"
+#include "SIMDarcySchedule.h"
 
 #include "ASMenums.h"
 #include "ASMmxBase.h"
@@ -25,7 +28,6 @@
 #include "SIM3D.h"
 #include "SIMoptions.h"
 #include "SIMSolver.h"
-#include "SIMDarcyAdap.h"
 #include "TimeIntUtils.h"
 #include "TimeStep.h"
 
@@ -123,6 +125,50 @@ int runSimulatorTransient(char* infile, const DarcyArgs& args)
   return res;
 }
 
+/*!
+  \brief Launch a simulator using a specified solver template.
+  \param infile The input file to parse
+  \param args Darcy arguments
+*/
+
+template<class Dim>
+int runSimulatorScheduled(char* infile, const DarcyArgs& args)
+{
+  Darcy dcy(Dim::dimension);
+  DarcyAdvection dcya(Dim::dimension,dcy,TimeIntegration::Order(args.timeMethod));
+  SIMDarcy<Dim> darcy(dcy);
+  SIMDarcyAdvection<Dim> darcya(dcya);
+  SIMDarcySchedule<Dim> schedule(darcy, darcya);
+  SIMSolver<SIMDarcySchedule<Dim>> solver(schedule);
+
+  utl::profiler->start("Model input");
+
+  if (!darcy.read(infile) || !darcya.read(infile) ||
+      !schedule.read(infile) || !solver.read(infile))
+    return 1;
+
+  utl::profiler->stop("Model input");
+
+  if (!darcy.preprocess() || ! darcya.preprocess())
+    return 2;
+
+  darcy.init();
+  darcya.init();
+  schedule.setupDependencies();
+
+  if (darcy.opt.dumpHDF5(infile))
+    solver.handleDataOutput(darcy.opt.hdf5,
+                            darcy.getProcessAdm(),
+                            darcy.opt.saveInc,
+                            darcy.opt.restartInc);
+
+  int res = solver.solveProblem(infile,"Solving Darcy advection problem");
+  if (!res)
+    darcy.printFinalNorms(solver.getTimePrm());
+
+  return res;
+}
+
 
 /*!
   \brief Choose a solver template and then launch a simulator.
@@ -135,6 +181,8 @@ int runSimulator1(char* infile, const DarcyArgs& args)
 {
   if (args.adap)
     return runSimulator<Dim,SIMDarcyAdap>(infile,args);
+  else if (args.scheduled)
+      return runSimulatorScheduled<Dim>(infile,args);
   else if (args.timeMethod != TimeIntegration::NONE)
     return runSimulatorTransient<Dim>(infile,args);
   else
@@ -213,6 +261,10 @@ int main (int argc, char** argv)
     IFEM::cout << "Using Backward-Euler time stepping." << std::endl;
   else if (args.timeMethod == TimeIntegration::BDF2)
     IFEM::cout << "Using BDF2 time stepping." << std::endl;
+  if (args.scheduled) {
+    IFEM::cout << "Including a tracer field." << std::endl;
+    IFEM::cout << "Updating pressure according to a schedule." << std::endl;
+  }
 
   utl::profiler->stop("Initialization");
 

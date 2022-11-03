@@ -1,0 +1,55 @@
+Tracer-schedule.xinp
+
+Using BDF2 time stepping.
+Including a tracer field.
+Updating pressure according to a schedule.
+		Permeability: 1.0|1.0
+		Porosity: 1
+		Dispersivity: 1.0
+		Fluid viscosity: 1
+	Scheduled pressure updates:
+		Update at 0.5
+Number of elements    64
+Number of nodes       100
+Number of dofs        100
+Number of unknowns    64
+Solving Darcy advection problem
+===============================
+  step = 1  time = 0.1
+L2-norm            : 0.0277344
+Max pressure       : 0.0625
+L2-norm            : 0.00273631
+Max concentration   : 0.00612666
+  step=2  time=0.2
+L2-norm            : 0.00546891
+Max concentration   : 0.0122485
+  step=3  time=0.3
+L2-norm            : 0.00820651
+Max concentration   : 0.0183905
+  step=4  time=0.4
+L2-norm            : 0.0109546
+Max concentration   : 0.0245663
+\* Scheduled pressure change at time 0.5, calculating new pressure matrix.
+  step = 5  time = 0.5
+L2-norm            : 0.0277344
+Max pressure       : 0.0625
+L2-norm            : 0.0137151
+Max concentration   : 0.0307802
+  step=6  time=0.6
+L2-norm            : 0.0164883
+Max concentration   : 0.037033
+  step=7  time=0.7
+L2-norm            : 0.0192741
+Max concentration   : 0.0433243
+  step=8  time=0.8
+L2-norm            : 0.0220723
+Max concentration   : 0.049654
+  step=9  time=0.9
+L2-norm            : 0.024883
+Max concentration   : 0.056022
+  step=10  time=1
+L2-norm            : 0.0277062
+Max concentration   : 0.0624281
+  H1 norm |p^h| = a(p^h,p^h)^0.5     : 0.149071
+  External energy |(h,p^h)|^0.5      : 0.149071
+  H1 norm |p| = a(p,p)^0.5           : 0.149071

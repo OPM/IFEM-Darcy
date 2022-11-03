@@ -309,6 +309,7 @@ bool SIMDarcy<Dim>::init ()
   this->initSolution(this->getNoDOFs(), 1 + drc.getOrder());
   if (!this->solVec)
     this->solVec = &this->solution.front();
+  this->registerField("pressure", *solVec);
 
   this->initSystem(Dim::opt.solver);
   this->setQuadratureRule(Dim::opt.nGauss[0],true);
