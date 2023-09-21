@@ -19,7 +19,6 @@
 #include "AnaSol.h"
 #include "DataExporter.h"
 #include "ExprFunctions.h"
-#include "Functions.h"
 #include "IFEM.h"
 #include "LogStream.h"
 #include "Profiler.h"

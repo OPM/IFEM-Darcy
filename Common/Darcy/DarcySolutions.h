@@ -18,10 +18,10 @@
 #include "FunctionSum.h"
 #include "Vec3.h"
 
+#include <memory>
 #include <vector>
 
 
-class EvalFunction;
 class SIMbase;
 
 
@@ -91,7 +91,8 @@ protected:
 
   double pointTol; //!< Interval around point associated with functions
   int myDim; //!< Dimensionality of world
-  std::vector<EvalFunction*> m_funcs; //!< Vector of pointers to functions
+
+  std::vector<std::unique_ptr<RealFunc>> m_funcs; //!< Vector of pointers to functions
 };
 
 
@@ -124,7 +125,7 @@ protected:
   { return this->FunctionSum::getValue(X).front(); }
 
   int myDim; //!< Dimensionality of world
-  std::vector<EvalFunction*> m_funcs; //!< Vector of pointers to functions
+  std::vector<std::unique_ptr<RealFunc>> m_funcs; //!< Vector of pointers to functions
 };
 
 #endif
