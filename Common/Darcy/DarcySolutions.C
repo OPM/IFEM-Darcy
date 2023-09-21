@@ -110,9 +110,8 @@ bool DiracSum::parse (const char* input)
        << "epsd=pow(eps," << myDim << "); "
        << "(" << value << ")"
        << "*below(r,eps)*(1/(epsd*n))*exp(-eps2/(eps2-r2))";
-    EvalFunction* e = new EvalFunction(s3.str().c_str());
-    this->add(e);
-    m_funcs.push_back(e);
+    m_funcs.push_back(std::make_unique<EvalFunction>(s3.str().c_str()));
+    this->add(m_funcs.back().get());
     ok = true;
   }
 
@@ -124,7 +123,7 @@ bool DiracSum::parse (const char* input)
 void DiracSum::setParam (const std::string& name, double value)
 {
   for (const auto& func : m_funcs)
-    func->setParam(name,value);
+    static_cast<EvalFunction*>(func.get())->setParam(name,value);
 }
 
 
@@ -188,9 +187,8 @@ bool ElementSum::parse (const char* input, const SIMbase& sim)
           << "below(z-0.001," << X(3,8) << ")";
     s3 << "*" << value;
     IFEM::cout << " -> " << s3.str();
-    EvalFunction* e = new EvalFunction(s3.str().c_str());
-    this->add(e);
-    m_funcs.push_back(e);
+    m_funcs.push_back(std::make_unique<EvalFunction>(s3.str().c_str()));
+    this->add(m_funcs.back().get());
     ok = true;
   }
 
@@ -202,5 +200,5 @@ bool ElementSum::parse (const char* input, const SIMbase& sim)
 void ElementSum::setParam (const std::string& name, double value)
 {
   for (const auto& func : m_funcs)
-    func->setParam(name,value);
+    static_cast<EvalFunction*>(func.get())->setParam(name,value);
 }
