@@ -34,7 +34,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <strings.h>
-#include "tinyxml.h"
+#include "tinyxml2.h"
 
 
 template<class Dim>
@@ -66,7 +66,7 @@ SIMDarcy<Dim>::~SIMDarcy ()
 
 
 template<class Dim>
-bool SIMDarcy<Dim>::parse (const TiXmlElement* elem)
+bool SIMDarcy<Dim>::parse (const tinyxml2::XMLElement* elem)
 {
   if (strcasecmp(elem->Value(),"darcy"))
     return this->Dim::parse(elem);
@@ -78,7 +78,7 @@ bool SIMDarcy<Dim>::parse (const TiXmlElement* elem)
     drc.lCache(useCache);
   }
 
-  const TiXmlElement* child = elem->FirstChildElement();
+  const tinyxml2::XMLElement* child = elem->FirstChildElement();
   for (; child; child = child->NextSiblingElement()) {
     const char* value = nullptr;
     if ((value = utl::getValue(child,"bodyforce")))

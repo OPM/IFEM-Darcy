@@ -17,7 +17,7 @@
 #include <memory>
 
 class RealFunc;
-class TiXmlElement;
+namespace tinyxml2 { class XMLElement; }
 class VecFunc;
 class Vec3;
 
@@ -34,7 +34,7 @@ public:
   static bool handlesTag(const char* name);
 
   //! \brief Parse an XML block.
-  bool parse(const TiXmlElement* elem);
+  bool parse(const tinyxml2::XMLElement* elem);
 
   //! \brief Sets the permeability function.
   void setPermValues(VecFunc* perm);

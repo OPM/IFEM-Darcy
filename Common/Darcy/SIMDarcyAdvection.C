@@ -29,10 +29,9 @@
 #include "TimeStep.h"
 #include "Utilities.h"
 
-#include <cmath>
 #include <cstdlib>
 #include <strings.h>
-#include "tinyxml.h"
+#include "tinyxml2.h"
 
 
 template<class Dim>
@@ -53,7 +52,7 @@ SIMDarcyAdvection<Dim>::~SIMDarcyAdvection ()
 
 
 template<class Dim>
-bool SIMDarcyAdvection<Dim>::parse (const TiXmlElement* elem)
+bool SIMDarcyAdvection<Dim>::parse (const tinyxml2::XMLElement* elem)
 {
   if (strcasecmp(elem->Value(),"darcyadvection"))
     return this->Dim::parse(elem);
@@ -65,7 +64,7 @@ bool SIMDarcyAdvection<Dim>::parse (const TiXmlElement* elem)
     drc.lCache(useCache);
   }
 
-  const TiXmlElement* child = elem->FirstChildElement();
+  const tinyxml2::XMLElement* child = elem->FirstChildElement();
   for (; child; child = child->NextSiblingElement()) {
     if (!strcasecmp(child->Value(),"source")) {
       std::string type;
