@@ -41,7 +41,7 @@ public:
   void setupDependencies() override;
 
   //! \brief Parse an XML input element.
-  bool parse(const TiXmlElement* elem) override;
+  bool parse(const tinyxml2::XMLElement* elem) override;
 
 protected:
   size_t currSchedule = 0;

@@ -20,7 +20,7 @@
 #include "Utilities.h"
 #include "Vec3.h"
 
-#include <tinyxml.h>
+#include <tinyxml2.h>
 
 
 bool DarcyMaterial::handlesTag(const char* name)
@@ -33,9 +33,9 @@ bool DarcyMaterial::handlesTag(const char* name)
 }
 
 
-bool DarcyMaterial::parse (const TiXmlElement* elem)
+bool DarcyMaterial::parse (const tinyxml2::XMLElement* elem)
 {
-  auto doParse = [this](const TiXmlElement* child)
+  auto doParse = [this](const tinyxml2::XMLElement* child)
   {
     const char* value = nullptr;
     if ((value = utl::getValue(child,"permvalues"))) {
@@ -72,7 +72,7 @@ bool DarcyMaterial::parse (const TiXmlElement* elem)
   if (strcasecmp(elem->Value(), "materialdata"))
     return doParse(elem);
 
-  const TiXmlElement* child = elem->FirstChildElement();
+  const tinyxml2::XMLElement* child = elem->FirstChildElement();
   for (; child; child = child->NextSiblingElement())
     if (!doParse(child))
       return false;

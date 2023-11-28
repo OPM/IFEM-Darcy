@@ -19,7 +19,7 @@
 #include "SIM3D.h"
 #include "TimeStep.h"
 #include "Utilities.h"
-#include <tinyxml.h>
+#include <tinyxml2.h>
 
 
 template<class Dim>
@@ -76,15 +76,15 @@ void SIMDarcySchedule<Dim>::setupDependencies ()
 
 
 template<class Dim>
-bool SIMDarcySchedule<Dim>::parse (const TiXmlElement* elem)
+bool SIMDarcySchedule<Dim>::parse (const tinyxml2::XMLElement* elem)
 {
   if (strcasecmp(elem->Value(),"darcy"))
     return true;
 
-  const TiXmlElement* child = elem->FirstChildElement();
+  const tinyxml2::XMLElement* child = elem->FirstChildElement();
   for (; child; child = child->NextSiblingElement()) {
     if (!strcasecmp(child->Value(),"schedule")) {
-      const TiXmlElement* sched = child->FirstChildElement("update");
+      const tinyxml2::XMLElement* sched = child->FirstChildElement("update");
       IFEM::cout << "\n\tScheduled pressure updates:";
       for (; sched; sched = sched->NextSiblingElement("update")) {
         double t;

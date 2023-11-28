@@ -17,7 +17,7 @@
 
 #include <string>
 #include <strings.h>
-#include "tinyxml.h"
+#include "tinyxml2.h"
 
 
 bool DarcyArgs::parseArg (const char* argv)
@@ -66,7 +66,7 @@ bool DarcyArgs::parseArgComplex (int argc, char** argv, int& i)
 }
 
 
-bool DarcyArgs::parse (const TiXmlElement* elem)
+bool DarcyArgs::parse (const tinyxml2::XMLElement* elem)
 {
   if (!strcasecmp(elem->Value(),"timestepping")) {
     std::string type;
@@ -92,7 +92,7 @@ bool DarcyArgs::parse (const TiXmlElement* elem)
         adNorm = DCY::RECOVERY;
     }
 
-    const TiXmlElement* child = elem->FirstChildElement("schedule");
+    const tinyxml2::XMLElement* child = elem->FirstChildElement("schedule");
     if (child)
       scheduled = true;
   }
