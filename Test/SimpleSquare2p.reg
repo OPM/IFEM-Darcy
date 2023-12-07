@@ -2,8 +2,8 @@ SimpleSquare2p.xinp
 
 Input file: SimpleSquare2p.xinp
 	Source function: uxx=2\*y\*(y-1); uyy=2\*x\*(x-1); -uxx-uyy
-	Primary=x\*(x-1)\*y\*(y-1)
-	Secondary=-(2\*x-1)\*y\*(y-1)|-(2\*y-1)\*x\*(x-1)
+	Primary: x\*(x-1)\*y\*(y-1)
+	Secondary: -(2\*x-1)\*y\*(y-1)|-(2\*y-1)\*x\*(x-1)
 	Analytical solution: expression
 	Material data with code 0:
 		Permeability: 1.0|1.0
