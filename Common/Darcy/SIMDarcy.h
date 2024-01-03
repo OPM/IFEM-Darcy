@@ -31,7 +31,6 @@
 class Darcy;
 class DataExporter;
 class TimeStep;
-namespace tinyxml2 { class TiXmlElement; }
 class VTF;
 
 
