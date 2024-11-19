@@ -404,10 +404,10 @@ void SIMDarcy<Dim>::printSolutionSummary (const Vector& solution,
   const size_t nf = this->getNoFields();
   if (nf > 1) {
     // Compute and print solution norms
-    size_t iMax[nf];
-    double dMax[nf];
+    std::vector<size_t> iMax(nf);
+    std::vector<double> dMax(nf);
     double dNorm;
-    drc.getSolutionNorms(*this,solution,dNorm,dMax,iMax);
+    drc.getSolutionNorms(*this, solution, dNorm, dMax.data(), iMax.data());
 
     int oldPrec = this->adm.cout.precision();
     if (outPrec > 0)
