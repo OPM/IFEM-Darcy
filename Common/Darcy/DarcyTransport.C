@@ -71,7 +71,7 @@ bool DarcyTransport::initElement (const std::vector<int>& MNPC,
   // Extract the element level solution vectors
   elmInt.vec.resize(2*this->getNoSolutions());
   int ierr = 0;
-  for (size_t k = 0; k < elmInt.vec.size() / 2; ++k) {
+  for (size_t k = 0; k < elmInt.vec.size() / 2 && !primsol[k].empty(); ++k) {
     Matrix tmp(2,MNPC.size());
     utl::gather(MNPC,npv,primsol[k],tmp);
     elmInt.vec[2*k] = tmp.getRow(1);
