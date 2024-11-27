@@ -45,7 +45,7 @@ public:
   //! \brief The constructor initializes all pointers to zero.
   explicit Darcy(unsigned short int n, int torder = 0);
   //! \brief Empty destructor.
-  virtual ~Darcy() {}
+  virtual ~Darcy();
 
   //! \brief Defines the body force vector.
   void setBodyForce(VecFunc* b) { bodyforce = b; }
@@ -53,10 +53,10 @@ public:
   Vec3 getBodyForce(const Vec3& X) const;
 
   //! \brief Defines the source function.
-  void setSource(RealFunc* s) { source = s; }
+  void setSource(std::unique_ptr<RealFunc> s) { source = std::move(s); }
 
   //! \brief Defines the concentration source function.
-  virtual void setCSource(RealFunc*) {}
+  virtual void setCSource(std::unique_ptr<RealFunc>) {}
 
   //! \brief Defines a scalar flux function.
   void setFlux(RealFunc* f) { flux = f; }
@@ -224,7 +224,7 @@ protected:
   VecFunc*  vflux;        //!< Flux function
   RealFunc* flux;         //!< Flux function
   TractionFunc* tflux;    //!< Flux traction function
-  RealFunc* source;       //!< Source function
+  std::unique_ptr<RealFunc> source; //!< Source function
 
   DarcyMaterial* mat = nullptr; //!< Material parameters
 

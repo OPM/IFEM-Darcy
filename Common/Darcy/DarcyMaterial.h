@@ -69,7 +69,7 @@ protected:
   std::unique_ptr<RealFunc> permeability; //!< Permeability field function
   std::unique_ptr<RealFunc> porosity;     //!< Porosity function
   std::unique_ptr<RealFunc> dispersivity; //!< Dispersivity function
-  double viscosity; //!< Fluid viscosity
+  double viscosity{}; //!< Fluid viscosity
 };
 
 #endif

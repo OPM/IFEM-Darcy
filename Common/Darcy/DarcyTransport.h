@@ -16,6 +16,8 @@
 
 #include "Darcy.h"
 
+#include <memory>
+
 
 /*!
   \brief Class representing the integrand of the Darcy transport problem.
@@ -27,10 +29,10 @@ public:
   //! \brief The constructor initializes all pointers to zero.
   explicit DarcyTransport(unsigned short int n, int torder = 0);
   //! \brief Empty destructor.
-  virtual ~DarcyTransport() = default;
+  ~DarcyTransport() override;
 
   //! \brief Defines the concentration source function.
-  void setCSource(RealFunc* s) override { sourceC = s; }
+  void setCSource(std::unique_ptr<RealFunc> s) override { sourceC = std::move(s); }
 
   using IntegrandBase::getLocalIntegral;
   //! \brief Returns a local integral contribution object for given element.
@@ -133,7 +135,7 @@ public:
                         size_t level) const override;
 
 protected:
-  RealFunc* sourceC; //!< Concentration source function
+  std::unique_ptr<RealFunc> sourceC; //!< Concentration source function
 };
 
 
