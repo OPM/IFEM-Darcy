@@ -41,10 +41,13 @@ Darcy::Darcy (unsigned short int n, int torder) :
 
   tflux = nullptr;
   vflux = bodyforce = nullptr;
-  flux = source = nullptr;
+  flux = nullptr;
   reacInt = nullptr;
   extEner = false;
 }
+
+
+Darcy::~Darcy() = default;
 
 
 double Darcy::getPotential (const Vec3& X) const

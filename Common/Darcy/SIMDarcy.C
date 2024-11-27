@@ -100,13 +100,13 @@ bool SIMDarcy<Dim>::parse (const tinyxml2::XMLElement* elem)
       std::string type;
       utl::getAttribute(child,"type",type);
       IFEM::cout <<"\tSource function" << (isC ? " (concentration):" : ":");
-      RealFunc* src = nullptr;
+      std::unique_ptr<RealFunc> src;
       const char* input = isC ? utl::getValue(child, "source_c")
                               : utl::getValue(child, "source");
       if (type == "expression") {
         if (input)
           IFEM::cout << " " << input << std::endl;
-        src = new EvalFunction(input);
+        src.reset(new EvalFunction(input));
       }
       else if (type == "diracsum") {
         double tol = 1e-2;
@@ -115,7 +115,7 @@ bool SIMDarcy<Dim>::parse (const tinyxml2::XMLElement* elem)
           IFEM::cout << " DiracSum";
           DiracSum* f = new DiracSum(tol, Dim::dimension);
           if (f->parse(input))
-            src = f;
+            src.reset(f);
           else
             delete f;
         }
@@ -128,7 +128,7 @@ bool SIMDarcy<Dim>::parse (const tinyxml2::XMLElement* elem)
           ElementSum* f = new ElementSum(Dim::dimension);
 
           if (f->parse(input, *this))
-            src = f;
+            src.reset(f);
           else
             delete f;
         }
@@ -137,9 +137,9 @@ bool SIMDarcy<Dim>::parse (const tinyxml2::XMLElement* elem)
 
       if (src) {
         if (isC)
-          drc.setCSource(src);
+          drc.setCSource(std::move(src));
         else
-          drc.setSource(src);
+          drc.setSource(std::move(src));
       }
     }
     else if (!strcasecmp(child->Value(),"anasol")) {
