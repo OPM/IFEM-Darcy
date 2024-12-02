@@ -190,7 +190,7 @@ void DarcyAdvection::initLHSbuffers (size_t nEl)
     this->reuseMats = false;
   } else if (nEl == 1)
     this->reuseMats = false;
-  else if (nEl == 0 && !myKmats.empty())
+  else if (!myKmats.empty())
     this->reuseMats = true;
 }
 
