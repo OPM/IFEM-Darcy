@@ -150,7 +150,8 @@ protected:
   //! \param q Resulting darcy velocity
   //! \param fe Finite element data at current point
   //! \param X Coordinates of current point
-  bool evalDarcyVel (Vector& q, const FiniteElement& fe, const Vec3& X) const;
+  bool evalDarcyVel(RealArray& q,
+                    const FiniteElement& fe, const Vec3& X) const;
 
   const DarcyMaterial* mat; //!< Material to use
 

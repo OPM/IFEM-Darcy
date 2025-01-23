@@ -255,20 +255,14 @@ bool Darcy::evalDarcyVel (Vector& s, const Vectors& eV,
                           const FiniteElement& fe, const Vec3& X) const
 {
   Vec3 dP = this->pressureGradient(eV, fe, 0);
-  Vector temp(nsd);
-  temp.fill(dP.ptr(),nsd);
-
   if (bodyforce)
-  {
-    Vec3 b = (*bodyforce)(X);
-    for (size_t i = 0; i < nsd; i++)
-      temp[i] -= this->getMaterial().rhow*b[i];
-  }
+    dP -= this->getMaterial().rhow * (*bodyforce)(X);
 
   Matrix K;
   this->formKmatrix(K,X);
 
-  return K.multiply(temp,s,-1.0/(this->getMaterial().rhow*gacc));
+  return K.multiply(Vector(dP.ptr(),nsd), s,
+                    -1.0/(this->getMaterial().rhow*gacc));
 }
 
 
@@ -296,10 +290,8 @@ std::string Darcy::getField2Name (size_t i, const char* prefix) const
 
 NormBase* Darcy::getNormIntegrand (AnaSol* asol) const
 {
-  if (asol)
-    return new DarcyNorm(*const_cast<Darcy*>(this),asol->getScalarSecSol());
-  else
-    return new DarcyNorm(*const_cast<Darcy*>(this));
+  return new DarcyNorm(*const_cast<Darcy*>(this),
+                       asol ? asol->getScalarSecSol() : nullptr);
 }
 
 
@@ -326,7 +318,7 @@ Vec3 Darcy::pressureGradient (const Vectors& eV,
                               const FiniteElement& fe,
                               size_t level) const
 {
-  Vector dP(nsd);
+  RealArray dP(nsd);
   fe.dNdX.multiply(eV.front(),dP,true);
 
   return dP;
@@ -362,9 +354,7 @@ DarcyNorm::DarcyNorm (Darcy& p, VecFunc* a) : NormBase(p), anasol(a)
 }
 
 
-DarcyNorm::~DarcyNorm()
-{
-}
+DarcyNorm::~DarcyNorm() = default;
 
 
 bool DarcyNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,

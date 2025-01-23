@@ -101,7 +101,7 @@ bool DarcyTransport::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
     return false;
 
   const double D = this->getMaterial().getDispersivity(X);
-  const double phi = this->getMaterial().getPorosity(X);
+  const double phiDt = this->getMaterial().getPorosity(X) / time.dt;
 
   if (!elMat.A.empty() && !reuseMats) {
     WeakOps::Laplacian(elMat.A[cc], fe, D, false);
@@ -116,13 +116,11 @@ bool DarcyTransport::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
 
   if (bdf.getActualOrder() > 0) {
     double c = 0.0;
-    for (int t = 1; t <= bdf.getOrder(); t++) {
-      double val = this->concentration(elmInt.vec, fe, t);
-      c -= val * phi * bdf[t] / time.dt;
-    }
+    for (int t = 1; t <= bdf.getOrder(); t++)
+      c -= this->concentration(elmInt.vec,fe,t) * phiDt*bdf[t];
     WeakOps::Source(elMat.b[2], fe, c, 1);
     if (!elMat.A.empty() && !reuseMats)
-      WeakOps::Mass(elMat.A[cc], fe, phi*bdf[0] / time.dt);
+      WeakOps::Mass(elMat.A[cc], fe, phiDt*bdf[0]);
   }
 
   return true;
@@ -192,6 +190,7 @@ bool DarcyTransport::evalSol (Vector& s, const FiniteElement& fe,
   return true;
 }
 
+
 std::string DarcyTransport::getField1Name (size_t i, const char* prefix) const
 {
   if (i == 11)
@@ -243,7 +242,7 @@ Vec3 DarcyTransport::concentrationGradient (const Vectors& vec,
                                             const FiniteElement& fe,
                                             size_t level) const
 {
-  Vector dCh(nsd);
+  RealArray dCh(nsd);
   fe.grad(1).multiply(vec[2*level+1],dCh,true);
 
   return dCh;
@@ -262,23 +261,18 @@ Vec3 DarcyTransport::pressureGradient (const Vectors& eV,
                                        const FiniteElement& fe,
                                        size_t level) const
 {
-  Vector dPh(nsd);
+  RealArray dPh(nsd);
   fe.grad(1).multiply(eV[2*level],dPh,true);
 
   return dPh;
 }
 
 
-
 NormBase* DarcyTransport::getNormIntegrand (AnaSol* asol) const
 {
-  if (asol)
-    return new DarcyTransportNorm(*const_cast<DarcyTransport*>(this),
-                                  asol->getScalarSecSol(0),
-                                  asol->getScalarSecSol(1));
-
-  else
-    return new DarcyTransportNorm(*const_cast<DarcyTransport*>(this));
+  return new DarcyTransportNorm(*const_cast<DarcyTransport*>(this),
+                                asol ? asol->getScalarSecSol(0) : nullptr,
+                                asol ? asol->getScalarSecSol(1) : nullptr);
 }
 
 

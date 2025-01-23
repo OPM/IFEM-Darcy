@@ -79,7 +79,7 @@ bool DarcyAdvection::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   if (!elMat.A.empty() && !reuseMats) {
     WeakOps::Laplacian(elMat.A[0], fe, D, false);
 
-    Vector q;
+    RealArray q;
     if (!this->evalDarcyVel(q,fe,X))
       return false;
 
@@ -113,14 +113,14 @@ bool DarcyAdvection::finalizeElement (LocalIntegral& elmInt,
     size_t iel = fe.iel - 1;
     ElmMats* A = dynamic_cast<ElmMats*>(&elmInt);
     if (A && iel < this->myKmats.size())
-        this->myKmats[iel] = A->getNewtonMatrix();
+      this->myKmats[iel] = A->getNewtonMatrix();
   }
 
   return this->IntegrandBase::finalizeElement(elmInt,fe,time,iGP);
 }
 
 
-bool DarcyAdvection::evalDarcyVel (Vector& q,
+bool DarcyAdvection::evalDarcyVel (RealArray& q,
                                    const FiniteElement& fe, const Vec3& X) const
 {
   Matrix K;
