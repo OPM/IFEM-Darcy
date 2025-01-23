@@ -286,7 +286,7 @@ bool SIMDarcy<Dim>::saveStep (const TimeStep& tp, int& nBlock, bool newData)
       if (!this->project(tmp,*solVec))
         return false;
 
-      if (!this->writeGlvV(tmp,"velocity",iDump,nBlock,110,Dim::nsd))
+      if (!this->writeGlvV(tmp.vec(),"velocity",iDump,nBlock,110,Dim::nsd))
         return false;
 
       size_t i = 0;
