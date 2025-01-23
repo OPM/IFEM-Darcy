@@ -147,8 +147,8 @@ public:
   bool solveSystem(Vector& solution, int printSol, double* rCond,
                    const char* compName, size_t idxRHS) override;
 
-  //! \brief Returns current reaction force vector.
-  const Vector* getReactionForces() const override
+  //! \brief Returns current reaction force container.
+  const RealArray* getReactionForces() const override
   {
     return myReact.empty() ? nullptr : &myReact;
   }
@@ -239,7 +239,7 @@ protected:
 private:
   DCY::AdaptationNorm adNorm = DCY::NO_ADAP; //!< Norm to adapt based on
   const Vector* solVec; //!< Pointer to solution vector
-  Vector myReact;       //!< Nodal reaction forces
+  RealArray myReact;    //!< Nodal reaction forces
   int aCode[2];         //!< Analytical BC code (used by destructor)
   Matrix eNorm;         //!< Element wise norms
   Vectors proj;         //!< Projected solution vectors
