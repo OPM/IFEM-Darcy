@@ -75,10 +75,7 @@ public:
   void setMode(SIM::SolutionMode mode) override;
 
   //! \brief Update time stepping scheme (BE -> BDF2 transition).
-  void advanceStep()
-  {
-    bdf.advanceStep();
-  }
+  void advanceStep() { bdf.advanceStep();  }
 
   //! \brief Defines the global integral for calculating reaction forces only.
   void setSecondaryInt(GlobalIntegral* gq) override;
@@ -99,10 +96,9 @@ public:
   //! \param[in] X0 Cartesian coordinates of the element center
   //! \param[in] nPt Number of integration points on this element
   //! \param elmInt Local integral for element
-  bool initElement (const std::vector<int>& MNPC,
-                    const FiniteElement& fe,
-                    const Vec3& XC,
-                    size_t nPt, LocalIntegral& elmInt) override;
+  bool initElement(const std::vector<int>& MNPC,
+                   const FiniteElement& fe, const Vec3& XC, size_t nPt,
+                   LocalIntegral& elmInt) override;
 
   using IntegrandBase::finalizeElement;
   //! \brief Finalizes the element quantities after the numerical integration.
@@ -194,9 +190,6 @@ public:
                                 const FiniteElement& fe,
                                 size_t level) const;
 
-  //! \brief Helper for CoSTA.
-  virtual void setParam(const std::string&, double) {}
-
   //! \brief Set material parameters.
   void setMaterial(DarcyMaterial& mat1) { mat = &mat1; }
 
@@ -204,8 +197,8 @@ public:
   const DarcyMaterial& getMaterial() const { return *mat; }
 
   //! \brief Evaluates the darcy velocity in a point.
-  bool evalDarcyVel (Vector& s, const Vectors& eV,
-                     const FiniteElement& fe, const Vec3& X) const;
+  bool evalDarcyVel(Vector& s, const Vectors& eV,
+                    const FiniteElement& fe, const Vec3& X) const;
 
   //! \brief Returns gravitational acceleration.
   double getGravity() const { return gacc; }
@@ -296,14 +289,14 @@ public:
   //! \param[in] fe Finite Element quantities
   //! \param[in] X Cartesian coordinates of current integration point
   //! \param[in] normal Boundary normal vector at current integration point
-  bool evalBou(LocalIntegral& elmInt,  const FiniteElement& fe,
+  bool evalBou(LocalIntegral& elmInt, const FiniteElement& fe,
                const Vec3& X, const Vec3& normal) const override;
 
   using NormBase::finalizeElement;
   //! \brief Finalizes the element norms after the numerical integration.
   //! \details This method is used to compute effectivity indices.
   //! \param elmInt The local integral object to receive the contributions
-  bool finalizeElement(LocalIntegral& elmInt, const TimeDomain&,size_t) override;
+  bool finalizeElement(LocalIntegral& elmInt, const TimeDomain&, size_t) override;
 
   //! \brief Returns whether this norm has explicit boundary contributions.
   bool hasBoundaryTerms() const override { return true; }
