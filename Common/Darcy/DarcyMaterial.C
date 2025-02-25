@@ -133,7 +133,7 @@ void DarcyMaterial::setParam (const std::string& name, double value)
 {
   VecFuncExpr* f = dynamic_cast<VecFuncExpr*>(permvalues.get());
   if (f)
-    f->setParam(name, value);
+    f->setParam(name,value);
 
   EvalFunction* fs = dynamic_cast<EvalFunction*>(porosity.get());
   if (fs)
