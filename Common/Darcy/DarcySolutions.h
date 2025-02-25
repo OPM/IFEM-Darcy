@@ -81,7 +81,7 @@ public:
   bool parse(const char* input);
 
   //! \brief Set an additional parameter in the function.
-  void setParam(const std::string& name, double value);
+  void setParam(const std::string& name, double value) override;
 
 protected:
   //! \brief Evaluates the function in a point.
@@ -116,7 +116,7 @@ public:
   bool parse(const char* input, const SIMbase& sim);
 
   //! \brief Set an additional parameter in the function.
-  void setParam(const std::string& name, double value);
+  void setParam(const std::string& name, double value) override;
 
 protected:
   //! \brief Evaluates the function in a point.
