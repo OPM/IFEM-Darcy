@@ -12,9 +12,6 @@
 //==============================================================================
 
 #include "DarcyMaterial.h"
-
-#include "ExprFunctions.h"
-#include "Function.h"
 #include "Functions.h"
 #include "IFEM.h"
 #include "Utilities.h"
@@ -39,8 +36,9 @@ bool DarcyMaterial::parse (const tinyxml2::XMLElement* elem)
   {
     const char* value = nullptr;
     if ((value = utl::getValue(child,"permvalues"))) {
-      IFEM::cout <<"\t\tPermeability: " << value << std::endl;
-      this->setPermValues(new VecFuncExpr(value));
+      IFEM::cout <<"\t\tPermeability";
+      this->setPermValues(utl::parseVecFunc(value));
+      IFEM::cout << std::endl;
     } else if ((value = utl::getValue(child,"permeability"))) {
       std::string type;
       utl::getAttribute(child,"type",type);
@@ -131,19 +129,15 @@ Vec3 DarcyMaterial::getPermeability (const Vec3& X) const
 
 void DarcyMaterial::setParam (const std::string& name, double value)
 {
-  VecFuncExpr* f = dynamic_cast<VecFuncExpr*>(permvalues.get());
-  if (f)
-    f->setParam(name, value);
+  if (permvalues.get())
+    permvalues->setParam(name,value);
 
-  EvalFunction* fs = dynamic_cast<EvalFunction*>(porosity.get());
-  if (fs)
-    fs->setParam(name,value);
+  if (porosity.get())
+    porosity->setParam(name,value);
 
-  fs = dynamic_cast<EvalFunction*>(dispersivity.get());
-  if (fs)
-    fs->setParam(name,value);
+  if (dispersivity.get())
+    dispersivity->setParam(name,value);
 
-  fs = dynamic_cast<EvalFunction*>(permeability.get());
-  if (fs)
-    fs->setParam(name,value);
+  if (permeability.get())
+    permeability->setParam(name,value);
 }
