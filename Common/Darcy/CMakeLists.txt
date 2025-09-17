@@ -30,10 +30,10 @@ add_library(CommonDarcy STATIC ${DARCY_SOURCES})
 # Unit tests
 include(IFEMTesting)
 
-IFEM_add_test_app(${PROJECT_SOURCE_DIR}/Test/*.C
-                  ${PROJECT_SOURCE_DIR}/../../Test
-                  Darcy 0
-                  CommonDarcy IFEMAppCommon ${IFEM_LIBRARIES})
+IFEM_add_test_app(SOURCES ${PROJECT_SOURCE_DIR}/Test/*.C
+                  WORKDIR ${PROJECT_SOURCE_DIR}/../../Test
+                  NAME Darcy
+                  LIBRARIES CommonDarcy IFEMAppCommon ${IFEM_LIBRARIES})
 
 
 foreach(src ${DARCY_SOURCES})
