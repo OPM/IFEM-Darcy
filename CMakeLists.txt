@@ -1,76 +1,139 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.22)
 
-project(Darcy)
+project(Darcy LANGUAGES C CXX)
 
-# Add local modules
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-                      ${PROJECT_SOURCE_DIR}/../../cmake/Modules)
-
-if(NOT IFEM_CONFIGURED)
-  find_package(IFEM REQUIRED)
-  include_directories(${IFEM_INCLUDE_DIRS})
-  add_definitions(${IFEM_DEFINITIONS})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${IFEM_CXX_FLAGS}")
+if(NOT TARGET IFEM)
+  if(IFEM_AS_SUBMODULE)
+    add_subdirectory(../.. IFEM)
+    set(IFEM_PATH ${PROJECT_SOURCE_DIR}/../..)
+  else()
+    get_filename_component(BUILD_DIR ${PROJECT_BINARY_DIR} NAME)
+    set(IFEM_DIR ${PROJECT_SOURCE_DIR}/../../${BUILD_DIR})
+    find_package(IFEM REQUIRED)
+  endif()
 endif()
 
-include_directories(${IFEM_INCLUDES} ${PROJECT_SOURCE_DIR} ../Common Common/Darcy)
+if(NOT TARGET CommonDarcy)
+  add_subdirectory(Common/Darcy)
+endif()
 
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
+ifem_add_application(
+  NAME
+    Darcy
+  SOURCES
+    DarcyArgs.C
+    main_Darcy.C
+  HEADERS
+    DarcyArgs.h
+  LIBRARIES
+    CommonDarcy
+)
 
 enable_testing()
-include(IFEMTesting)
 
-add_subdirectory(Common/Darcy)
+ifem_add_hdf5_test(
+  TARGET
+    Darcy
+  TEST_FILES
+    Tracer.hreg
+    Wavefront_k10_p2_b20.hreg
+)
 
-add_executable(Darcy main_Darcy.C DarcyArgs.C)
-target_link_libraries(Darcy CommonDarcy IFEMAppCommon ${IFEM_LIBRARIES})
-list(APPEND CHECK_SOURCES ${DARCY_SRCS} main_Darcy.C DarcyArgs.C)
+ifem_add_hdf5_test(
+  TARGET
+    Darcy
+  CONDITIONS
+    LRSpline_FOUND
+  TEST_FILES
+    Lshape_p2_b5_adap.hreg
+)
 
-# Installation
-install(TARGETS Darcy DESTINATION bin COMPONENT bin)
+ifem_add_vtf_test(
+  TARGET
+    Darcy
+  TEST_FILES
+    Wavefront_k10_p2_b20.vreg
+)
 
-# For generating the doxy
-set(EXTRA_DOXY_PATHS "${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}")
-add_doc_target(Darcy Darcy)
+ifem_add_vtf_test(
+  TARGET
+    Darcy
+  CONDITIONS
+    LRSpline_FOUND
+  TEST_FILES
+    Lshape_p2_b5_adap.vreg
+)
 
-# Regression tests
-if(MPI_FOUND)
-  ifem_add_test(MPI/Lshape_p2_b5.reg Darcy 4)
-  if(LRSPLINE_FOUND OR LRSpline_FOUND)
-    ifem_add_test(MPI/Lshape_p2_b5_adap.reg Darcy 4)
-  endif()
-endif()
-if(NOT MPI_FOUND OR IFEM_SERIAL_TESTS_IN_PARALLEL)
-  ifem_add_test(Lshape_p2_b5.reg Darcy)
-  ifem_add_test(Wavefront_k10_p2_b20.reg Darcy)
-  ifem_add_test(Dirac.reg Darcy)
-  ifem_add_test(Dirac3D.reg Darcy)
-  ifem_add_test(Element.reg Darcy)
-  ifem_add_test(Element3D.reg Darcy)
-  ifem_add_test(Tracer.reg Darcy)
-  ifem_add_test(Tracer-be.reg Darcy)
-  ifem_add_test(Tracer-bdf2.reg Darcy)
-  ifem_add_test(Tracer-schedule.reg Darcy)
-  if(LRSPLINE_FOUND OR LRSpline_FOUND)
-    foreach(adap pressure concentration total recovery recovery_press recovery_conc)
-      ifem_add_test(Tracer-adap-${adap}.reg Darcy)
-    endforeach()
-  endif()
-  ifem_add_test(SimpleSquare.reg Darcy)
-  ifem_add_test(SimpleSquare2p.reg Darcy)
-  ifem_add_vtf_test(Wavefront_k10_p2_b20.vreg Darcy)
-  ifem_add_hdf5_test(Wavefront_k10_p2_b20.hreg Darcy)
-  if(LRSPLINE_FOUND OR LRSpline_FOUND)
-    ifem_add_test(Lshape_p2_b5_adap.reg Darcy)
-    ifem_add_hdf5_test(Lshape_p2_b5_adap.hreg Darcy)
-    ifem_add_vtf_test(Lshape_p2_b5_adap.vreg Darcy)
-  endif()
-  ifem_add_hdf5_test(Tracer.hreg Darcy)
-endif()
-list(APPEND TEST_APPS Darcy)
+ifem_add_regression_test(
+  TARGET
+    Darcy
+  CONDITIONS
+    Zoltan_FOUND
+  TEST_FILES
+    MPI/Lshape_p2_b5.reg
+  PARALLEL
+    4
+)
+
+ifem_add_regression_test(
+  TARGET
+    Darcy
+  CONDITIONS
+    LRSpline_FOUND
+    Zoltan_FOUND
+  TEST_FILES
+    MPI/Lshape_p2_b5_adap.reg
+  PARALLEL
+    4
+)
+
+ifem_add_regression_test(
+  TARGET
+    Darcy
+  TEST_FILES
+    Lshape_p2_b5.reg
+    Wavefront_k10_p2_b20.reg
+    Dirac.reg
+    Dirac3D.reg
+    Element.reg
+    Element3D.reg
+    SimpleSquare.reg
+    SimpleSquare2p.reg
+    Tracer.reg
+    Tracer-be.reg
+    Tracer-bdf2.reg
+    Tracer-schedule.reg
+)
+
+ifem_add_regression_test(
+  TARGET
+    Darcy
+  CONDITIONS
+    LRSpline_FOUND
+  TEST_FILES
+    Lshape_p2_b5_adap.reg
+)
+
+foreach(adap pressure concentration total recovery recovery_press recovery_conc)
+  ifem_add_regression_test(
+    TARGET
+      Darcy
+    CONDITIONS
+      LRSpline_FOUND
+    TEST_FILES
+      Tracer-adap-${adap}.reg
+  )
+endforeach()
 
 if(IFEM_COMMON_APP_BUILD)
   set(TEST_APPS ${TEST_APPS} PARENT_SCOPE)
 else()
-  add_check_target()
+  ifem_add_check_target()
 endif()
+
+# For generating the doxy
+ifem_add_doc_target(TARGET Darcy)
+
+# Installation
+include(GNUInstallDirs)
+install(TARGETS Darcy DESTINATION ${CMAKE_INSTALL_BINDIR})
