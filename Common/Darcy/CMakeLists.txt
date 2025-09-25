@@ -1,44 +1,45 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.22)
 
-project(CommonDarcy)
+project(CommonDarcy LANGUAGES C CXX)
 
-set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
-
-include_directories(../../../Common)
-
-set(DARCY_SOURCES Darcy.C
-                  Darcy.h
-                  DarcyAdvection.C
-                  DarcyAdvection.h
-                  DarcyEnums.h
-                  DarcyMaterial.C
-                  DarcyMaterial.h
-                  DarcySolutions.C
-                  DarcySolutions.h
-                  DarcyTransport.C
-                  DarcyTransport.h
-                  SIMDarcy.C
-                  SIMDarcy.h
-                  SIMDarcyAdap.h
-                  SIMDarcyAdvection.C
-                  SIMDarcyAdvection.h
-                  SIMDarcySchedule.C
-                  SIMDarcySchedule.h)
-
-add_library(CommonDarcy STATIC ${DARCY_SOURCES})
+ifem_add_library(
+  NAME
+    CommonDarcy
+  SOURCES
+    Darcy.C
+    DarcyAdvection.C
+    DarcyMaterial.C
+    DarcySolutions.C
+    DarcyTransport.C
+    SIMDarcy.C
+    SIMDarcyAdvection.C
+    SIMDarcySchedule.C
+  HEADERS
+    Darcy.h
+    DarcyAdvection.h
+    DarcyEnums.h
+    DarcyMaterial.h
+    DarcySolutions.h
+    DarcyTransport.h
+    SIMDarcy.h
+    SIMDarcyAdap.h
+    SIMDarcyAdvection.h
+    SIMDarcySchedule.h
+  LIBRARIES
+    IFEMAppCommon
+    IFEM
+)
 
 # Unit tests
-include(IFEMTesting)
-
-IFEM_add_test_app(SOURCES ${PROJECT_SOURCE_DIR}/Test/*.C
-                  WORKDIR ${PROJECT_SOURCE_DIR}/../../Test
-                  NAME Darcy
-                  LIBRARIES CommonDarcy IFEMAppCommon ${IFEM_LIBRARIES})
-
-
-foreach(src ${DARCY_SOURCES})
-  list(APPEND CHECK_SOURCES ${PROJECT_SOURCE_DIR}/${src})
-endforeach()
+ifem_add_test_app(
+  SOURCES
+    ${PROJECT_SOURCE_DIR}/Test/TestSIMDarcy.C
+  WORKDIR
+    ${PROJECT_SOURCE_DIR}/../../Test
+  NAME
+    Darcy
+  LIBRARIES
+    CommonDarcy
+)
 
 set(TEST_APPS ${TEST_APPS} PARENT_SCOPE)
-set(CHECK_SOURCES ${CHECK_SOURCES} PARENT_SCOPE)
