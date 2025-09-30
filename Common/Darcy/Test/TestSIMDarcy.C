@@ -17,11 +17,7 @@
 #include "SIM2D.h"
 #include "Vec3.h"
 
-#include <catch2/catch_test_macros.hpp>
-#include <catch2/matchers/catch_matchers_floating_point.hpp>
-
-using Catch::Matchers::WithinAbs;
-using Catch::Matchers::WithinRel;
+#include "Catch2Support.h"
 
 
 TEST_CASE("TestSIMDarcy.Parse")
