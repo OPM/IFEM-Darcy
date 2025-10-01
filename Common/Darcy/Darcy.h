@@ -93,7 +93,7 @@ public:
   //! \brief Initializes current element for numerical integration.
   //! \param[in] MNPC Matrix of nodal point correspondance for current element
   //! \param[in] fe Nodal and integration point data for current element
-  //! \param[in] X0 Cartesian coordinates of the element center
+  //! \param[in] XC Cartesian coordinates of the element center
   //! \param[in] nPt Number of integration points on this element
   //! \param elmInt Local integral for element
   bool initElement(const std::vector<int>& MNPC,

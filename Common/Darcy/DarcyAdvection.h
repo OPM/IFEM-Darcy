@@ -47,7 +47,7 @@ public:
   using IntegrandBase::getLocalIntegral;
   //! \brief Returns a local integral contribution object for given element.
   //! \param[in] nen Number of nodes on element
-  //! \param[in] iel Element number
+  //! \param[in] iEl Element number
   //! \param[in] neumann Whether or not we are assembling Neumann BCs
   LocalIntegral* getLocalIntegral(size_t nen, size_t iEl,
                                   bool neumann) const override;
@@ -56,7 +56,7 @@ public:
   //! \brief Initializes current element for numerical integration.
   //! \param[in] MNPC Matrix of nodal point correspondance for current element
   //! \param[in] fe Nodal and integration point data for current element
-  //! \param[in] X0 Cartesian coordinates of the element center
+  //! \param[in] XC Cartesian coordinates of the element center
   //! \param[in] nPt Number of integration points on this element
   //! \param elmInt Local integral for element
   bool initElement (const std::vector<int>& MNPC,
@@ -78,8 +78,8 @@ public:
   //! \brief Evaluates the secondary solution at a result point.
   //! \param[out] s Array of solution field values at current point
   //! \param[in] fe Finite element data at current point
+  //! \param[in] eV Element vectors at current point
   //! \param[in] X Cartesian coordinates of current integration point
-  //! \param[in] MNPC Matrix of nodal point correspondance
   bool evalSol2(Vector& s, const Vectors& eV,
                 const FiniteElement& fe, const Vec3& X) const override;
 
@@ -98,8 +98,9 @@ public:
   size_t getNoFields(int fld) const override { return fld > 1 ? nsd+1  : 1; }
 
   //! \brief Returns the name of the primary solution field.
+  //! \param[in] i Index for field
   //! \param[in] prefix Name prefix
-  std::string getField1Name(size_t, const char* prefix) const override;
+  std::string getField1Name(size_t i, const char* prefix) const override;
 
   //! \brief Returns the name of a secondary solution field component.
   //! \param[in] i Field component index
@@ -179,8 +180,7 @@ class DarcyAdvectionNorm : public NormBase
 {
 public:
   //! \brief The only constructor initializes its data members.
-  //! \param[in] p The Poisson problem to evaluate norms for
-  //! \param[in] c The analytical concentration gradient (optional)
+  //! \param[in] p The DarcyAdvection problem to evaluate norms for
   explicit DarcyAdvectionNorm(DarcyAdvection& p);
 
   //! \brief Empty destructor.
@@ -190,6 +190,7 @@ public:
   //! \brief Evaluates the integrand at an interior point.
   //! \param elmInt The local integral object to receive the contributions
   //! \param[in] fe Finite element data of current integration point
+  //! \param[in] time Time stepping parameters
   //! \param[in] X Cartesian coordinates of current integration point
   bool evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
                const TimeDomain& time, const Vec3& X) const override;
