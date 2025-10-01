@@ -87,6 +87,7 @@ public:
   size_t getNoFields(int fld) const override { return fld > 1 ? 3*nsd+3 : 2; }
 
   //! \brief Returns the name of the primary solution field.
+  //! \param[in] i Index for field
   //! \param[in] prefix Name prefix
   std::string getField1Name(size_t, const char* prefix) const override;
 
@@ -161,6 +162,7 @@ public:
   //! \brief Evaluates the integrand at an interior point.
   //! \param elmInt The local integral object to receive the contributions
   //! \param[in] fe Finite element data of current integration point
+  //! \param[in] time Time stepping parameters
   //! \param[in] X Cartesian coordinates of current integration point
   bool evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
                const TimeDomain& time, const Vec3& X) const override;

@@ -48,17 +48,17 @@ public:
   };
 
   //! \brief Default constructor.
-  //! \param torder Order of BDF time stepping
+  //! \param itg Integrand to use
   //! \param nf Number of primary fields
   explicit SIMDarcy(Darcy& itg, unsigned char nf = 1);
 
   //! \brief Default constructor.
-  //! \param torder Order of BDF time stepping
+  //! \param itg Integrand to use
   //! \param nf Number of primary fields
   SIMDarcy(Darcy& itg, const std::vector<unsigned char>& nf);
 
   //! \brief Construct from setup properties.
-  //! \param torder Order of BDF time stepping
+  //! \param props Setup properties
   explicit SIMDarcy(const SetupProps& props) : SIMDarcy(*props.itg) {}
 
   //! \brief Destructor.
@@ -109,6 +109,7 @@ public:
   //! \brief Initialize simulator.
   bool init();
 
+  //! \brief Initialize time-dependent simulator.
   bool init(const TimeStep&) { return init(); }
 
   //! \brief Computes the solution for the current time step.
@@ -216,7 +217,7 @@ public:
 
   //! \brief Returns the global effectivity index.
   //! \param[in] gNorm Global norm values
-  //! \param[in] idx 0-based norm group index
+  //! \param[in] adaptor 0-based norm group index
   //! \param[in] inorm 1-based norm index within the specified norm group
   double getEffectivityIndex(const Vectors& gNorm,
                              size_t adaptor,
@@ -247,7 +248,7 @@ private:
   std::vector<DarcyMaterial> mVec; //!< Vector of patchwise material data
 
   int maxCycle = -1;      //!< Max number of sub-iterations
-  double cycleTol = 1e-6; //! < Convergence tolerance in sub-iterations
+  double cycleTol = 1e-6; //!< Convergence tolerance in sub-iterations
 
   bool newTangent = true; //!< True to assemble element matrices
 };

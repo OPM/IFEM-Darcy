@@ -714,10 +714,11 @@ setup (SIMDarcy<Dim>& darcy,
 }
 
 
-#define INSTANCE(T) \
+//! \brief Instantiation macro.
+#define INSTANTIATE(T) \
   template class SIMDarcy<T>; \
   template struct SolverConfigurator<SIMDarcy<T>>;
 
-INSTANCE(SIM1D)
-INSTANCE(SIM2D)
-INSTANCE(SIM3D)
+INSTANTIATE(SIM1D)
+INSTANTIATE(SIM2D)
+INSTANTIATE(SIM3D)

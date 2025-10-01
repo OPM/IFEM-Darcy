@@ -48,11 +48,11 @@ public:
   };
 
   //! \brief Default constructor.
-  //! \param torder Order of BDF time stepping
+  //! \param itg Integrand to use
   explicit SIMDarcyAdvection(DarcyAdvection& itg);
 
   //! \brief Construct from setup properties.
-  //! \param torder Order of BDF time stepping
+  //! \param props Setup properties
   explicit SIMDarcyAdvection(const SetupProps& props) : SIMDarcyAdvection(*props.itg) {}
 
   //! \brief Destructor.
@@ -82,6 +82,7 @@ public:
   //! \brief Initialize simulator.
   bool init();
 
+  //! \brief Initialize time-dependent simulator.
   bool init(const TimeStep&) { return init(); }
 
   //! \brief Computes the solution for the current time step.

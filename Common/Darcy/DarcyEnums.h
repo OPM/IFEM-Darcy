@@ -16,6 +16,7 @@
 
 namespace DCY //!< Darcy scope
 {
+  //! \brief Enumeration of Darcy adaptation norms.
   enum AdaptationNorm {
     NO_ADAP, //!< No adaptation
     TOTAL_H1, //!< Adapt based on total H1 error

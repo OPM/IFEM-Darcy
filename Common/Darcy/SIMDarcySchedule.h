@@ -44,7 +44,7 @@ public:
   bool parse(const tinyxml2::XMLElement* elem) override;
 
 protected:
-  size_t currSchedule = 0;
+  size_t currSchedule = 0; //!< Index for current schedule entry
   std::vector<double> schedule; //!< Scheduled pressure changes
   bool pressureSolved = false; //!< Pressure was solved for on this step
 };
