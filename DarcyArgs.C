@@ -27,6 +27,8 @@ bool DarcyArgs::parseArg (const char* argv)
     return false;
   else if (strcasecmp(argv, "-tracer") == 0)
     tracer = true;
+  else if (strcasecmp(argv, "-mixed") == 0)
+    mixed = true;
   else if ((tmp = TimeIntegration::get(argv+1)) > TimeIntegration::NONE)
     timeMethod = tmp;
   else

@@ -29,6 +29,18 @@ ifem_add_application(
     CommonDarcy
 )
 
+ifem_add_application(
+  NAME
+    DarcyCorrection
+  SOURCES
+    DarcyArgs.C
+    main_DarcyCorrection.C
+  HEADERS
+    DarcyArgs.h
+  LIBRARIES
+    CommonDarcy
+)
+
 enable_testing()
 
 ifem_add_hdf5_test(
@@ -136,4 +148,4 @@ ifem_add_doc_target(TARGET Darcy)
 
 # Installation
 include(GNUInstallDirs)
-install(TARGETS Darcy DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS Darcy DarcyCorrection DESTINATION ${CMAKE_INSTALL_BINDIR})

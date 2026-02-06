@@ -27,6 +27,7 @@ class SIMDarcySchedule : public SIMCoupled<SIMDarcy<Dim>, SIMDarcyAdvection<Dim>
                          public SIMadmin
 {
   using Base = SIMCoupled<SIMDarcy<Dim>, SIMDarcyAdvection<Dim>>; //!< Convenience typedef
+                                                                  //
 public:
   //! \brief Default constructor.
   SIMDarcySchedule(SIMDarcy<Dim>& dcySim, SIMDarcyAdvection<Dim>& advSim);

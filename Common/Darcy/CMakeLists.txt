@@ -11,9 +11,11 @@ ifem_add_library(
     DarcyMaterial.C
     DarcySolutions.C
     DarcyTransport.C
+    DarcyTransportCorr.C
     SIMDarcy.C
     SIMDarcyAdvection.C
     SIMDarcySchedule.C
+    SIMDarcyTransportCorr.C
   HEADERS
     Darcy.h
     DarcyAdvection.h
@@ -21,10 +23,12 @@ ifem_add_library(
     DarcyMaterial.h
     DarcySolutions.h
     DarcyTransport.h
+    DarcyTransportCorr.h
     SIMDarcy.h
     SIMDarcyAdap.h
     SIMDarcyAdvection.h
     SIMDarcySchedule.h
+    SIMDarcyTransportCorr.h
   LIBRARIES
     IFEMAppCommon
     IFEM
