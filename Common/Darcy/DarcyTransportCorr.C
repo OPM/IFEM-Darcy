@@ -71,6 +71,8 @@ bool DarcyTransportCorr::evalInt (LocalIntegral& elmInt,
                                   const FiniteElement& fe,
                                   const TimeDomain& time, const Vec3& X) const
 {
+  const double eps = 1.0e-6;
+
   ElmMats& elMat = static_cast<ElmMats&>(elmInt);
 
   const double  C   = (*observed_C)(X);
@@ -79,8 +81,11 @@ bool DarcyTransportCorr::evalInt (LocalIntegral& elmInt,
 
   const Vec3   q = (*input_q)(X);
   const double f = (*input_source)(X);
+  const double scale = 1.0 / (eps + q.length2());
 
-  EqualOrderOperators::Weak::Mass(elMat.A[0], fe);
+  EqualOrderOperators::Weak::Mass(elMat.A[0], fe, scale);
+  EqualOrderOperators::Weak::Source(elMat.b[0], fe, q, scale);
+
   for (size_t i = 1; i <= fe.N.size(); ++i)
     for (size_t j = 1; j <= fe.N.size(); ++j)
       for (unsigned short int k = 1; k <= nsd; ++k)
@@ -99,8 +104,6 @@ bool DarcyTransportCorr::evalInt (LocalIntegral& elmInt,
       const double transport_term = (f-dCdt) * (dC(d)*fe.N(i) + C*fe.dNdX(i,d));
       elMat.b[2]((i-1)*nsd + d) += transport_term * fe.detJxW;
     }
-
-  EqualOrderOperators::Weak::Source(elMat.b[0], fe, q);
 
   return true;
 }
