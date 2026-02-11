@@ -47,6 +47,9 @@ public:
   //! \brief Default destructor.
   ~DarcyTransportCorr() override;
 
+  //! \brief Parses a data section from an XML element.
+  bool parse(const tinyxml2::XMLElement* elem) override;
+
   using IntegrandBase::getLocalIntegral;
   //! \brief Returns a local integral container for the given element.
   //! \param[in] nen Number of nodes on element
@@ -74,15 +77,6 @@ public:
   //! \param[in] X Cartesian coordinates of current integration point
   bool evalIntMx(LocalIntegral& elmInt, const MxFiniteElement& fe,
                  const TimeDomain& time, const Vec3& X) const override;
-
-  using IntegrandBase::evalBou;
-  //! \brief Evaluates the integrand at a boundary point.
-  //! \param elmInt The local integral object to receive the contributions
-  //! \param[in] fe Finite element data of current integration point
-  //! \param[in] X Cartesian coordinates of current integration point
-  //! \param[in] normal Boundary normal vector at current integration point
-  bool evalBou(LocalIntegral& elmInt, const FiniteElement& fe,
-               const Vec3& X, const Vec3& normal) const override;
 
   using IntegrandBase::finalizeElement;
   //! \brief Finalizes the element quantities after the numerical integration.
@@ -117,26 +111,12 @@ public:
   //! \param[in] prefix Name prefix for all components
   std::string getField2Name(size_t i, const char* prefix) const override;
 
-  //! \brief Set observed concentration.
-  void setObservedConcentration(std::unique_ptr<RealFunc> obs_c);
-
-  //! \brief Set input source function.
-  void setInputSource(std::unique_ptr<RealFunc> f);
-
-  //! \brief Set input Darcy velocity.
-  void setInputVelocity(std::unique_ptr<VecFunc> inp_q);
-
-  //! \brief Set penalty parameter.
-  void setMassPenaltyParam(const double nmu) { alpha = nmu;}
-
-  //! \brief Set penalty parameter.
-  void setTransportPenaltyParam(const double nmu) { beta = nmu;}
-
 private:
   double residual(const Vec3& X) const;
 
   double alpha = 1.0e6;  //!< Mass penalty parameter
   double beta  = 1.0e6;  //!< Transport penalty parameter
+  double eps   = 1.0e-6; //!< Division by zero tolerance in mass-term scaling
   std::unique_ptr<VecFunc>  input_q;      //!< Input Darcy velocity
   std::unique_ptr<RealFunc> input_source; //!< Input source
   std::unique_ptr<RealFunc> observed_C;   //!< Observed tracer concentration

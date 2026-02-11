@@ -101,7 +101,6 @@ public:
 
 protected:
   bool constrainIntegratedLag = false; //!< Constrain integrated multiplier
-  DarcyTransportCorr& drc;           //!< Darcy integrand
   Vector qSol; //!< Solution vector
   int vCode = 0; //!< Velocity anasol code
 };

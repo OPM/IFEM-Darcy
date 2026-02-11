@@ -15,16 +15,20 @@
 
 #include "BlockElmMats.h"
 #include "EqualOrderOperators.h"
+#include "ExprFunctions.h"
 #include "FiniteElement.h"
-#include "Function.h"
+#include "Functions.h"
 #include "LocalIntegral.h"
 #include "TimeDomain.h"
 #include "Utilities.h"
 #include "Vec3.h"
 #include "Vec3Oper.h"
+#include "IFEM.h"
+#include "tinyxml2.h"
 
 #include <array>
 #include <cmath>
+#include <cstring>
 
 
 DarcyTransportCorr::DarcyTransportCorr (unsigned short int n) : IntegrandBase(n)
@@ -35,6 +39,52 @@ DarcyTransportCorr::DarcyTransportCorr (unsigned short int n) : IntegrandBase(n)
 
 
 DarcyTransportCorr::~DarcyTransportCorr() = default;
+
+
+bool DarcyTransportCorr::parse (const tinyxml2::XMLElement* elem)
+{
+  const char* input = nullptr;
+  if ((input = utl::getValue(elem,"observed_concentration")))
+  {
+    std::string type;
+    utl::getAttribute(elem,"type",type);
+    IFEM::cout <<"\tObserved concentration function: "<< input << std::endl;
+    if (type == "expression")
+      observed_C.reset(utl::parseExprRealFunc(input,true));
+    else
+      observed_C.reset(utl::parseRealFunc(input));
+  }
+  else if ((input = utl::getValue(elem,"input_source")))
+  {
+    std::string type;
+    utl::getAttribute(elem,"type",type);
+    IFEM::cout <<"\tInput source: "<< input << std::endl;
+    if (type == "expression")
+      input_source = std::make_unique<EvalFunction>(input);
+    else
+      input_source.reset(utl::parseRealFunc(input));
+  }
+  else if ((input = utl::getValue(elem,"input_velocity")))
+  {
+    std::string type;
+    utl::getAttribute(elem,"type",type);
+    IFEM::cout <<"\tInput velocity function: "<< input << std::endl;
+    if (type == "expression")
+      input_q.reset(utl::parseExprVecFunc(input,true));
+    else
+      input_q = std::make_unique<VecFuncExpr>(input);
+  }
+  else if (!strcasecmp(elem->Value(),"penalty"))
+  {
+    utl::getAttribute(elem, "alpha", alpha);
+    utl::getAttribute(elem, "beta", beta);
+    utl::getAttribute(elem, "eps", eps);
+  }
+  else
+    return false;
+
+  return true;
+}
 
 
 LocalIntegral* DarcyTransportCorr::getLocalIntegral (size_t nen,
@@ -71,8 +121,6 @@ bool DarcyTransportCorr::evalInt (LocalIntegral& elmInt,
                                   const FiniteElement& fe,
                                   const TimeDomain& time, const Vec3& X) const
 {
-  const double eps = 1.0e-6;
-
   ElmMats& elMat = static_cast<ElmMats&>(elmInt);
 
   const double  C   = (*observed_C)(X);
@@ -81,7 +129,8 @@ bool DarcyTransportCorr::evalInt (LocalIntegral& elmInt,
 
   const Vec3   q = (*input_q)(X);
   const double f = (*input_source)(X);
-  const double scale = 1.0 / (eps + q.length2());
+
+  const double scale = eps > 0.0 ? 1.0 / (eps + q.length2()) : 1.0;
 
   EqualOrderOperators::Weak::Mass(elMat.A[0], fe, scale);
   EqualOrderOperators::Weak::Source(elMat.b[0], fe, q, scale);
@@ -134,13 +183,6 @@ bool DarcyTransportCorr::evalIntMx (LocalIntegral& elmInt,
 
   EqualOrderOperators::Weak::ItgConstraint(elMat.A[lg], fe, 1.0, 2);
 
-  return true;
-}
-
-
-bool DarcyTransportCorr::evalBou (LocalIntegral& elmInt, const FiniteElement& fe,
-                              const Vec3& X, const Vec3& normal) const
-{
   return true;
 }
 
@@ -215,24 +257,6 @@ std::string DarcyTransportCorr::getField2Name (size_t i, const char* prefix) con
 
     const std::string res = nsd == 2 ? names2[i] : names3[i];
     return prefix ? prefix + std::string(" ") + res : res;
-}
-
-
-void DarcyTransportCorr::setObservedConcentration (std::unique_ptr<RealFunc> obs_c)
-{
-  observed_C = std::move(obs_c);
-}
-
-
-void DarcyTransportCorr::setInputSource (std::unique_ptr<RealFunc> f)
-{
-  input_source = std::move(f);
-}
-
-
-void DarcyTransportCorr::setInputVelocity (std::unique_ptr<VecFunc> inp_q)
-{
-  input_q = std::move(inp_q);
 }
 
 

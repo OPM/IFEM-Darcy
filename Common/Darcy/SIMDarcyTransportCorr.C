@@ -18,9 +18,6 @@
 
 #include "ASMbase.h"
 #include "DataExporter.h"
-#include "ExprFunctions.h"
-#include "Functions.h"
-#include "Function.h"
 #include "IFEM.h"
 #include "Profiler.h"
 #include "SIM1D.h"
@@ -50,9 +47,9 @@ namespace
 
 template<class Dim>
 SIMDarcyTransportCorr<Dim>::SIMDarcyTransportCorr (DarcyTransportCorr& itg) :
-  Dim(Dim::dimension), drc(itg)
+  Dim(Dim::dimension)
 {
-  Dim::myProblem = &drc;
+  Dim::myProblem = &itg;
   Dim::myHeading = "Darcy transport correction solver";
 }
 
@@ -60,10 +57,9 @@ SIMDarcyTransportCorr<Dim>::SIMDarcyTransportCorr (DarcyTransportCorr& itg) :
 template<class Dim>
 SIMDarcyTransportCorr<Dim>::
 SIMDarcyTransportCorr (DarcyTransportCorr& itg,
-                       const std::vector<unsigned char>& nf) :
-  Dim(nf), drc(itg)
+                       const std::vector<unsigned char>& nf) : Dim(nf)
 {
-  Dim::myProblem = &drc;
+  Dim::myProblem = &itg;
   Dim::myHeading = "Darcy transport correction solver";
 }
 
@@ -86,46 +82,7 @@ bool SIMDarcyTransportCorr<Dim>::parse (const tinyxml2::XMLElement* elem)
 
   const tinyxml2::XMLElement* child = elem->FirstChildElement();
   for (; child; child = child->NextSiblingElement())
-    if (!strcasecmp(child->Value(),"observed_concentration")) {
-      std::string type;
-      utl::getAttribute(child,"type",type);
-      IFEM::cout <<"\tObserved concentration function:";
-      const char* input = utl::getValue(child, "observed_concentration");
-      if (type == "expression") {
-        if (input)
-          IFEM::cout << " " << input << std::endl;
-        drc.setObservedConcentration(std::unique_ptr<RealFunc>(utl::parseExprRealFunc(input, true)));
-      } else
-        drc.setObservedConcentration(std::unique_ptr<RealFunc>(utl::parseRealFunc(input)));
-    } else if (!strcasecmp(child->Value(),"input_source")) {
-      std::string type;
-      utl::getAttribute(child,"type",type);
-      IFEM::cout <<"\tInput source function:";
-      const char* input = utl::getValue(child, "input_source");
-      if (type == "expression") {
-        if (input)
-          IFEM::cout << " " << input << std::endl;
-        drc.setInputSource(std::make_unique<EvalFunction>(input));
-      } else
-        drc.setObservedConcentration(std::unique_ptr<RealFunc>(utl::parseRealFunc(input)));
-    } else if (!strcasecmp(child->Value(),"input_velocity")) {
-      std::string type;
-      utl::getAttribute(child,"type",type);
-      IFEM::cout <<"\tInput velocity function:";
-      const char* input = utl::getValue(child, "input_velocity");
-      if (type == "expression") {
-        if (input)
-          IFEM::cout << " " << input << std::endl;
-        drc.setInputVelocity(std::make_unique<VecFuncExpr>(input));
-      } else
-        drc.setInputVelocity(std::unique_ptr<VecFunc>(utl::parseExprVecFunc(input, true)));
-    } else if (!strcasecmp(child->Value(),"penalty")) {
-       double alpha, beta;
-       utl::getAttribute(child, "alpha", alpha);
-       utl::getAttribute(child, "beta", beta);
-       drc.setMassPenaltyParam(alpha);
-       drc.setTransportPenaltyParam(beta);
-    } else if (!strcasecmp(child->Value(),"constrain_integrated_multiplier")) {
+    if (!strcasecmp(child->Value(),"constrain_integrated_multiplier")) {
       constrainIntegratedLag = true;
       IFEM::cout << "\tConstraining integrated multiplier";
     } else if (!strcasecmp(child->Value(), "anasol")) {
@@ -133,7 +90,7 @@ bool SIMDarcyTransportCorr<Dim>::parse (const tinyxml2::XMLElement* elem)
       utl::getAttribute(child,"type",type,true);
       if (type == "expression")
         this->mySol = new DarcyTCorr(child);
-    } else
+    } else if (!Dim::myProblem->parse(child))
       this->Dim::parse(child);
 
   return true;
