@@ -34,6 +34,20 @@
 #include <cstring>
 
 
+namespace
+{
+  //! \brief Analytical solution class for DarcyTransportCorr
+  class DarcyTCorr : public AnaSol
+  {
+  public:
+    //! \brief Constructor initializing expression functions from XML tags.
+    explicit DarcyTCorr(const tinyxml2::XMLElement* xml) : AnaSol(xml,false) {}
+    //! \brief Override parent class method to avoid the secondary solution.
+    void setupSecondarySolutions() override {}
+  };
+}
+
+
 template<class Dim>
 SIMDarcyTransportCorr<Dim>::SIMDarcyTransportCorr (DarcyTransportCorr& itg) :
   Dim(Dim::dimension), drc(itg)
@@ -118,7 +132,7 @@ bool SIMDarcyTransportCorr<Dim>::parse (const tinyxml2::XMLElement* elem)
       std::string type;
       utl::getAttribute(child,"type",type,true);
       if (type == "expression")
-        this->mySol = new AnaSol(child,false);
+        this->mySol = new DarcyTCorr(child);
     } else
       this->Dim::parse(child);
 
