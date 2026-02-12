@@ -13,7 +13,9 @@
 
 #include "DarcyTransportCorr.h"
 
+#include "AnaSol.h"
 #include "BlockElmMats.h"
+#include "ElmNorm.h"
 #include "EqualOrderOperators.h"
 #include "ExprFunctions.h"
 #include "FiniteElement.h"
@@ -201,17 +203,18 @@ bool DarcyTransportCorr::finalizeElement (LocalIntegral& A)
 }
 
 
-bool DarcyTransportCorr::evalSol (Vector& s,
-                                  const FiniteElement& fe, const Vec3& X,
-                                  const std::vector<int>& MNPC) const
+bool DarcyTransportCorr::evalSol2 (Vector& s, const Vectors& eV,
+                                   const FiniteElement& fe, const Vec3& X) const
 {
   s.resize(this->getNoFields(2));
   s[0] = (*observed_C)(X);
   s[1] = this->residual(X);
   s[2] = (*input_source)(X);
-  const Vec3 q = (*input_q)(X);
+  s[3] = this->residual(eV.front(),fe.N,fe.dNdX,X);
+  const Vec3 qh = (*input_q)(X);
+  s[4] = (qh - this->evalSol(eV.front(),fe.N)).length();
   for (size_t i = 0; i < nsd; ++i)
-    s[3+i] = q[i];
+    s[5+i] = qh[i];
   return true;
 }
 
@@ -239,24 +242,18 @@ std::string DarcyTransportCorr::getField1Name (size_t i, const char* prefix) con
 
 std::string DarcyTransportCorr::getField2Name (size_t i, const char* prefix) const
 {
-    const auto names2 = std::array {
-        "observed_C",
-        "residual",
-        "source",
-        "input q_x",
-        "input q_y",
-    };
-    const auto names3 = std::array {
-        "observed_C",
-        "residual",
-        "source",
-        "input q_x",
-        "input q_y",
-        "input q_z",
-    };
+  const auto names3 = std::array {
+    "observed_C",
+    "residual",
+    "source",
+    "FE residual",
+    "|q-q^|",
+    "input q_x",
+    "input q_y",
+    "input q_z"
+  };
 
-    const std::string res = nsd == 2 ? names2[i] : names3[i];
-    return prefix ? prefix + std::string(" ") + res : res;
+  return prefix ? prefix + std::string(" ") + names3[i] : names3[i];
 }
 
 
@@ -270,4 +267,100 @@ double DarcyTransportCorr::residual (const Vec3& X) const
   const double eq = -(grad_C[0]*q[0] + C*grad_q(1,1) +
                       grad_C[1]*q[1] + C*grad_q(2,2));
   return f + eq;
+}
+
+
+double DarcyTransportCorr::residual (const Vector& eV,
+                                     const Vector& N, const Matrix& dNdX,
+                                     const Vec3& X) const
+{
+  const double  f   = (*input_source)(X);
+  const double  C   = (*observed_C)(X);
+  const Vec3   dCdX = observed_C->gradient(X);
+  const Vec3    q   = this->evalSol(eV,N);
+  const Tensor dqdX = this->evalGrd(eV,dNdX);
+
+  return f - (dqdX.trace()*C + q*dCdX);
+}
+
+
+Vec3 DarcyTransportCorr::evalSol (const Vector& eV, const Vector& N) const
+{
+  Vec3 q;
+  for (unsigned short int i = 0; i < nsd; i++)
+    q[i] = eV.dot(N,i,nsd);
+
+  return q;
+}
+
+
+Tensor DarcyTransportCorr::evalGrd (const Vector& eV, const Matrix& dNdX) const
+{
+  Tensor dqdX(nsd);
+  for (unsigned short int j = 1; j <= nsd; j++)
+    for (unsigned short int i = 1; i <= nsd; i++)
+      dqdX(i,j) = eV.dot(dNdX.ptr(j-1),dNdX.rows(),i-1,nsd);
+
+  return dqdX;
+}
+
+
+Vec3 DarcyTransportCorr::evalInput (const Vec3& X) const
+{
+  return (*input_q)(X);
+}
+
+
+double DarcyTransportCorr::evalTracer (const Vec3& X) const
+{
+  return (*observed_C)(X);
+}
+
+
+NormBase* DarcyTransportCorr::getNormIntegrand (AnaSol* asol) const
+{
+  return new DarcyTCNorm(*const_cast<DarcyTransportCorr*>(this));
+}
+
+
+bool DarcyTCNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
+                           const Vec3& X) const
+{
+  DarcyTransportCorr& problem = static_cast<DarcyTransportCorr&>(myProblem);
+  ElmNorm& pnorm = static_cast<ElmNorm&>(elmInt);
+
+  const double c_i = problem.evalTracer(X);
+  const Vec3 q_inp = problem.evalInput(X);
+  const Vec3 q_hat = problem.evalSol(pnorm.vec.front(),fe.N);
+  const Tensor grd = problem.evalGrd(pnorm.vec.front(),fe.dNdX);
+  const double div = grd.trace();
+  const double res = problem.residual(pnorm.vec.front(),fe.N,fe.dNdX,X);
+
+  pnorm[0] += q_hat.length2() * fe.detJxW;
+  pnorm[1] += c_i*q_hat.length2() * fe.detJxW;
+  pnorm[2] += (q_hat-q_inp).length2() * fe.detJxW;
+  pnorm[3] += div*div * fe.detJxW;
+  pnorm[4] += res*res * fe.detJxW;
+
+  return true;
+}
+
+
+size_t DarcyTCNorm::getNoFields (int group) const
+{
+  return group < 1 ? 1 : (group > 1 ? 0 : 5);
+}
+
+
+std::string DarcyTCNorm::getName (size_t, size_t j, const char* prefix) const
+{
+  const auto names = std::array {
+    "L2(q^_h)",
+    "L2(c*q^_h)",
+    "L2(q^_h-q_h)",
+    "L2(div q^h)",
+    "L2(residual)"
+  };
+
+  return prefix ? prefix + std::string(" ") + names[j-1] : names[j-1];
 }

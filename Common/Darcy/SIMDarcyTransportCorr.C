@@ -224,6 +224,22 @@ printSolutionSummary (const Vector& solvec, int, const char*,
   }
 
   IFEM::cout << str.str() << std::endl;
+
+  // Evaluate solution norms
+  Matrix  eNorm;
+  Vectors gNorm;
+  this->setQuadratureRule(Dim::opt.nGauss[1]);
+  if (!this->solutionNorms(qSol,eNorm,gNorm))
+    return;
+
+  double diff = 100.0*gNorm.front()[2]/gNorm.front()[0];
+  double divQ = 100.0*gNorm.front()[3]/gNorm.front()[0];
+  double resQ = 100.0*gNorm.front()[4]/gNorm.front()[1];
+
+  IFEM::cout <<"\nL2(q - q^) / L2(q^) = "<< diff
+             <<"%\nL2(div q^) / L2(q^) = "<< divQ
+             <<"%\nL2(res q^) / L2(c*q^) = "<< resQ
+             <<"%"<< std::endl;
 }
 
 
