@@ -123,6 +123,8 @@ public:
 
   //! \brief Evaluates the input velocity function.
   Vec3 evalInput(const Vec3& X) const;
+  //! \brief Evaluates the divergence of the input velocity function.
+  double divInput(const Vec3& X) const;
   //! \brief Evaluates the tracer concentration solution.
   double evalTracer(const Vec3& X) const;
 

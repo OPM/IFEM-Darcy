@@ -235,11 +235,14 @@ printSolutionSummary (const Vector& solvec, int, const char*,
   double diff = 100.0*gNorm.front()[2]/gNorm.front()[0];
   double divQ = 100.0*gNorm.front()[3]/gNorm.front()[0];
   double resQ = 100.0*gNorm.front()[4]/gNorm.front()[1];
+  double divq = 100.0*gNorm.front()[6]/gNorm.front()[5];
 
   IFEM::cout <<"\nL2(q - q^) / L2(q^) = "<< diff
              <<"%\nL2(div q^) / L2(q^) = "<< divQ
              <<"%\nL2(res q^) / L2(c*q^) = "<< resQ
-             <<"%"<< std::endl;
+             <<"%\nL2(div q) / L2(q) = "<< divq
+             <<"% "<< gNorm.front()[6]
+             <<" "<< gNorm.front()[5] << std::endl;
 }
 
 

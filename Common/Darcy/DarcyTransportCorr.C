@@ -311,6 +311,12 @@ Vec3 DarcyTransportCorr::evalInput (const Vec3& X) const
 }
 
 
+double DarcyTransportCorr::divInput (const Vec3& X) const
+{
+  return input_q->gradient(X).trace();
+}
+
+
 double DarcyTransportCorr::evalTracer (const Vec3& X) const
 {
   return (*observed_C)(X);
@@ -342,13 +348,17 @@ bool DarcyTCNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   pnorm[3] += div*div * fe.detJxW;
   pnorm[4] += res*res * fe.detJxW;
 
+  const double divQ = problem.divInput(X);
+  pnorm[5] += q_inp.length2() * fe.detJxW;
+  pnorm[6] += divQ*divQ * fe.detJxW;
+
   return true;
 }
 
 
 size_t DarcyTCNorm::getNoFields (int group) const
 {
-  return group < 1 ? 1 : (group > 1 ? 0 : 5);
+  return group < 1 ? 1 : (group > 1 ? 0 : 7);
 }
 
 
@@ -359,7 +369,9 @@ std::string DarcyTCNorm::getName (size_t, size_t j, const char* prefix) const
     "L2(c*q^_h)",
     "L2(q^_h-q_h)",
     "L2(div q^h)",
-    "L2(residual)"
+    "L2(residual)",
+    "L2(q)",
+    "L2(div q)"
   };
 
   return prefix ? prefix + std::string(" ") + names[j-1] : names[j-1];
