@@ -32,15 +32,21 @@ public:
   //! \brief Enum for element level right-hand-side vectors
   enum ResidualVectors
   {
-    Fq = 1, Fl = 2, Fg = 3, NVEC = 4
+    Fq = 1, Fl = 2, Fm = 3, NVEC = 4
   };
 
-  //! \brief Enum for element level left-hand-side matrices
+  //! \brief Enum for element level left-hand-side matrices.
+  //!
+  //! \details The matrix layout for 3x3 blocks is as follows:
+  //! \code
+  //!     1 4 5
+  //!     6 2 8
+  //!     7 9 3
+  //! \endcode
+
   enum TangentMatrices
   {
-    qq   = 1, ql = 4,
-    lq   = 6,         lg = 7,
-    NMAT = 10
+    qq = 1, ql = 4, qm = 5, NMAT = 10
   };
 
   //! \brief Default constructor.

@@ -41,8 +41,8 @@ int runSimulator(char* infile, const DarcyArgs& args)
 {
   ASMmxBase::Type = ASMmxBase::FULL_CONT_RAISE_BASIS2;
   DarcyTransportCorr itg(Dim::dimension);
-  const auto fields  = args.mixed ? SIMinput::CharVec{Dim::dimension,1}
-                                  : SIMinput::CharVec{Dim::dimension};
+  const auto fields = args.mixed ? SIMinput::CharVec{Dim::dimension,2}
+                                 : SIMinput::CharVec{Dim::dimension};
   SIMDarcyTransportCorr<Dim> darcy(itg, fields);
   SIMSolverStat solver(darcy);
 

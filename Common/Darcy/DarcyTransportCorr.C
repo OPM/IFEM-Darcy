@@ -105,14 +105,14 @@ LocalIntegral*
 DarcyTransportCorr::getLocalIntegral (const std::vector<size_t>& nen,
                                       size_t, bool) const
 {
-  BlockElmMats* result = new BlockElmMats(3, true ? 3 : 2);
+  BlockElmMats* result = new BlockElmMats(3,2);
 
   result->resize(NMAT, NVEC);
   result->redim(1, nen[0], nsd);
   result->redim(2, nen[1], 1, -2);
-  result->redim(3, 1, true ? 1 : 0, -3);
-  result->redimOffDiag(ql, 1);
-  result->redimOffDiag(lg, 1);
+  result->redim(3, nen[1], 1, -2);
+  result->redimOffDiag(ql, -1);
+  result->redimOffDiag(qm, -1);
   result->finalize();
 
   return result;
@@ -173,17 +173,20 @@ bool DarcyTransportCorr::evalIntMx (LocalIntegral& elmInt,
   const Vec3   q = (*input_q)(X);
   const double R = (*input_source)(X);//this->residual(X);
 
-  EqualOrderOperators::Weak::Mass(elMat.A[qq], fe);
+  const double scale = 1.0;
+
+  EqualOrderOperators::Weak::Mass(elMat.A[qq], fe, scale);
 
   for (size_t i = 1; i <= fe.basis(2).size(); ++i)
-    for (size_t j = 1; j <= fe.N.size(); ++j)
+    for (size_t j = 1; j <= fe.basis(1).size(); ++j)
       for (unsigned short int d = 1; d <= nsd; ++d)
-        elMat.A[ql]((j-1)*nsd+d, i) += (dC(d)*fe.N(j) + C*fe.dNdX(j,d)) * fe.basis(2)(i) * fe.basis(1)(j) * fe.detJxW;
+      {
+        elMat.A[ql]((j-1)*nsd+d,i) += fe.grad(1)(j,d) * fe.basis(2)(i) * fe.detJxW;
+        elMat.A[qm]((j-1)*nsd+d,i) += (C*fe.grad(1)(j,d) + dC(d)*fe.basis(1)(j)) * fe.basis(2)(i) * fe.detJxW;
+      }
 
   EqualOrderOperators::Weak::Source(elMat.b[Fq], fe, q);
-  EqualOrderOperators::Weak::Source(elMat.b[Fl], fe, R - dCdt);
-
-  EqualOrderOperators::Weak::ItgConstraint(elMat.A[lg], fe, 1.0, 2);
+  EqualOrderOperators::Weak::Source(elMat.b[Fm], fe, R-dCdt, 1, 2);
 
   return true;
 }
@@ -191,13 +194,16 @@ bool DarcyTransportCorr::evalIntMx (LocalIntegral& elmInt,
 
 bool DarcyTransportCorr::finalizeElement (LocalIntegral& A)
 {
-  ElmMats& E = static_cast<ElmMats&>(A);
+  if (alpha > 0.0 && beta > 0.0)
+  {
+    ElmMats& E = static_cast<ElmMats&>(A);
 
-  E.A[0].add(E.A[1], alpha);
-  E.A[0].add(E.A[2], beta);
+    E.A.front().add(E.A[1], alpha);
+    E.A.front().add(E.A[2], beta);
 
-  E.b[0].add(E.b[1], alpha);
-  E.b[0].add(E.b[2], beta);
+    E.b.front().add(E.b[1], alpha);
+    E.b.front().add(E.b[2], beta);
+  }
 
   return true;
 }
@@ -264,9 +270,8 @@ double DarcyTransportCorr::residual (const Vec3& X) const
   const Vec3 grad_C = observed_C->gradient(X);
   const Tensor grad_q = input_q->gradient(X);
   const double f = (*input_source)(X);
-  const double eq = -(grad_C[0]*q[0] + C*grad_q(1,1) +
-                      grad_C[1]*q[1] + C*grad_q(2,2));
-  return f + eq;
+
+  return f - (grad_q.trace()*C + q*grad_C);
 }
 
 
