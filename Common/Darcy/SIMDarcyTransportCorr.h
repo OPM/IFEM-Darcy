@@ -17,8 +17,6 @@
 #include "MatVec.h"
 #include "SIMconfigure.h"
 
-#include <string>
-
 class DarcyTransportCorr;
 class DataExporter;
 class TimeStep;
@@ -85,9 +83,8 @@ public:
   bool solveStep(const TimeStep& tp);
 
   //! \brief Prints a summary of the calculated solution to std::cout.
-  //! \param[in] solvec The solution vector
   //! \param[in] outPrec Number of digits after the decimal point in norm print
-  void printSolutionSummary(const Vector& solvec, int, const char*,
+  void printSolutionSummary(const Vector&, int, const char*,
                             std::streamsize outPrec) override;
 
   //! \brief Adds a global multiplier for the constraint.
@@ -102,6 +99,7 @@ public:
 protected:
   bool constrainIntegratedLag = false; //!< Constrain integrated multiplier
   Vector qSol; //!< Solution vector
+  Matrix eNorm; //!< Element norms
   int vCode = 0; //!< Velocity anasol code
 };
 

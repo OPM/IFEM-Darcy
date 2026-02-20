@@ -28,8 +28,6 @@
 #include "Utilities.h"
 #include "tinyxml2.h"
 
-#include <cstring>
-
 
 namespace
 {
@@ -142,17 +140,15 @@ void SIMDarcyTransportCorr<Dim>::registerFields (DataExporter& exporter)
     results |= DataExporter::NORMS;
 
   exporter.registerField("q", "primary", DataExporter::SIM, results);
-  exporter.setFieldValue("q", this, &qSol);
+  exporter.setFieldValue("q", this, &qSol, nullptr,
+                         (results & DataExporter::NORMS) ? &eNorm : nullptr);
 }
 
 
 template<class Dim>
 bool SIMDarcyTransportCorr<Dim>::saveModel (char* fileName, int& geoBlk, int& nBlock)
 {
-  if (Dim::opt.format < 0)
-    return true; // No VTF-output
-
-  return this->writeGlvG(geoBlk, fileName);
+  return Dim::opt.format < 0 ? true : this->writeGlvG(geoBlk,fileName);
 }
 
 
@@ -165,6 +161,11 @@ bool SIMDarcyTransportCorr<Dim>::saveStep (const TimeStep& tp, int& nBlock)
   // Write solution fields
   if (!this->writeGlvS(qSol,1,nBlock,0.0,"Darcy velocity"))
     return false;
+
+  // Write element norms
+  if (Dim::opt.saveNorms)
+    if (!this->writeGlvN(eNorm,1,nBlock))
+      return false;
 
   return this->writeGlvStep(1, 0.0, 1);
 }
@@ -182,32 +183,26 @@ bool SIMDarcyTransportCorr<Dim>::init ()
 template<class Dim>
 bool SIMDarcyTransportCorr<Dim>::solveStep (const TimeStep&)
 {
-  // Schedule change, reinit buffers
   if (!this->setMode(SIM::DYNAMIC))
     return false;
-
-  Vector dummy;
   if (!this->initDirichlet())
     return false;
   if (!this->assembleSystem())
     return false;
 
-  if (!this->solveSystem(qSol,Dim::msgLevel-1,"darcy velocity"))
-    return false;
-
-  return true;
+  return this->solveSystem(qSol,Dim::msgLevel-1,"darcy velocity");
 }
 
 
 template<class Dim>
 void SIMDarcyTransportCorr<Dim>::
-printSolutionSummary (const Vector& solvec, int, const char*,
-                      std::streamsize outPrec)
+printSolutionSummary (const Vector&, int, const char*, std::streamsize outPrec)
 {
   const size_t nsd = this->getNoSpaceDim();
-  std::vector<size_t> iMax(nsd+1);
-  std::vector<double> dMax(nsd+1);
-  double dNorm = this->solutionNorms(qSol, dMax.data(), iMax.data(), nsd);
+
+  size_t iMax[3];
+  double dMax[3];
+  double dNorm = this->solutionNorms(qSol,dMax,iMax,nsd);
 
   std::stringstream str;
   if (Dim::adm.getProcId() == 0)
@@ -223,26 +218,27 @@ printSolutionSummary (const Vector& solvec, int, const char*,
             <<"-Darcy velocity : "<< dMax[d] <<" node "<< iMax[d];
   }
 
-  IFEM::cout << str.str() << std::endl;
+  this->setQuadratureRule(Dim::opt.nGauss[1]);
+  this->setMode(SIM::RECOVERY);
 
   // Evaluate solution norms
-  Matrix  eNorm;
   Vectors gNorm;
-  this->setQuadratureRule(Dim::opt.nGauss[1]);
-  if (!this->solutionNorms(qSol,eNorm,gNorm))
-    return;
+  if (this->solutionNorms(qSol,eNorm,gNorm))
+  {
+    double diff = 100.0*gNorm.front()[2]/gNorm.front()[0];
+    double divQ = 100.0*gNorm.front()[3]/gNorm.front()[0];
+    double resQ = 100.0*gNorm.front()[4]/gNorm.front()[1];
+    double divq = 100.0*gNorm.front()[6]/gNorm.front()[5];
 
-  double diff = 100.0*gNorm.front()[2]/gNorm.front()[0];
-  double divQ = 100.0*gNorm.front()[3]/gNorm.front()[0];
-  double resQ = 100.0*gNorm.front()[4]/gNorm.front()[1];
-  double divq = 100.0*gNorm.front()[6]/gNorm.front()[5];
+    if (Dim::adm.getProcId() == 0)
+      str <<"\nL2(q - q^) / L2(q^) = "<< diff
+          <<"%\nL2(div q^) / L2(q^) = "<< divQ
+          <<"%\nL2(res q^) / L2(c*q^) = "<< resQ
+          <<"%\nL2(div q) / L2(q) = "<< divq
+          <<"% "<< gNorm.front()[6] <<" "<< gNorm.front()[5];
+  }
 
-  IFEM::cout <<"\nL2(q - q^) / L2(q^) = "<< diff
-             <<"%\nL2(div q^) / L2(q^) = "<< divQ
-             <<"%\nL2(res q^) / L2(c*q^) = "<< resQ
-             <<"%\nL2(div q) / L2(q) = "<< divq
-             <<"% "<< gNorm.front()[6]
-             <<" "<< gNorm.front()[5] << std::endl;
+  IFEM::cout << str.str() << std::endl;
 }
 
 

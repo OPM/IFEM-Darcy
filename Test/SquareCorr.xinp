@@ -52,8 +52,8 @@
       </anasol>
   </darcycorrection>
 
-  <!--  <postprocessing>
-    <dump_lhs_matrix format="matlab">A.m</dump_lhs_matrix>
-  </postprocessing> -->
+  <postprocessing>
+    <saveNorms/>
+  </postprocessing>
 
 </simulation>
