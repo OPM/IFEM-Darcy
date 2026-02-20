@@ -32,7 +32,7 @@ public:
   ~DarcyTransport() override;
 
   //! \brief Defines the concentration source function.
-  void setCSource(std::unique_ptr<RealFunc> s) override { sourceC = std::move(s); }
+  void setCSource(RealFunc* s) override { sourceC.reset(s); }
 
   using IntegrandBase::getLocalIntegral;
   //! \brief Returns a local integral contribution object for given element.

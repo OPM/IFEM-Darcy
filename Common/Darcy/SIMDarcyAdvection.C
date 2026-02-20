@@ -66,57 +66,19 @@ bool SIMDarcyAdvection<Dim>::parse (const tinyxml2::XMLElement* elem)
 
   const tinyxml2::XMLElement* child = elem->FirstChildElement();
   for (; child; child = child->NextSiblingElement()) {
-    if (!strcasecmp(child->Value(),"source")) {
-      std::string type;
-      utl::getAttribute(child,"type",type);
-      IFEM::cout <<"\tSource function:";
-      RealFunc* src = nullptr;
-      const char* input = utl::getValue(child, "source");
-      if (type == "expression") {
-        if (input)
-          IFEM::cout << " " << input << std::endl;
-        src = new EvalFunction(input);
-      }
-      else if (type == "diracsum") {
-        double tol = 1e-2;
-        utl::getAttribute(child, "pointTol", tol);
-        if (input) {
-          IFEM::cout << " DiracSum";
-          DiracSum* f = new DiracSum(tol, Dim::dimension);
-          if (f->parse(input))
-            src = f;
-          else
-            delete f;
-        }
-      }
-      else if (type == "elementsum") {
-        if (input) {
-          if (!this->createFEMmodel())
-            continue;
-          IFEM::cout << " ElementSum";
-          ElementSum* f = new ElementSum(Dim::dimension);
-
-          if (f->parse(input, *this))
-            src = f;
-          else
-            delete f;
-        }
-      } else
-        IFEM::cout <<"(none)"<< std::endl;
-
-      if (src)
-        drc.setSource(src);
-    } else if (!strcasecmp(child->Value(), "materialdata")) {
+    if (!strcasecmp(child->Value(), "materialdata")) {
       int code = this->parseMaterialSet(child,mVec.size());
       mVec.resize(mVec.size()+1);
       IFEM::cout << "\tMaterial data with code " << code <<":\n";
       if (!mVec.back().parse(child))
         mVec.pop_back();
-    } else if (DarcyMaterial::handlesTag(child->Value())) {
+    }
+    else if (DarcyMaterial::handlesTag(child->Value())) {
       if (mVec.empty())
         mVec.resize(1);
       mVec.back().parse(child);
-    } else
+    }
+    else if (!Dim::myProblem->parse(child))
       this->Dim::parse(child);
   }
 

@@ -12,25 +12,25 @@
 //==============================================================================
 
 #include "Darcy.h"
+#include "DarcySolutions.h"
 
 #include "AnaSol.h"
 #include "ElmMats.h"
 #include "ElmNorm.h"
+#include "ExprFunctions.h"
 #include "Fields.h"
 #include "FiniteElement.h"
-#include "Function.h"
 #include "GlobalIntegral.h"
+#include "IFEM.h"
 #include "LocalIntegral.h"
 #include "SIMbase.h"
 #include "TimeDomain.h"
+#include "Utilities.h"
 #include "Vec3.h"
 #include "Vec3Oper.h"
 
-#include <cmath>
 #include <ext/alloc_traits.h>
-#include <iostream>
-#include <memory>
-#include <vector>
+#include "tinyxml2.h"
 
 
 Darcy::Darcy (unsigned short int n, int torder) :
@@ -48,6 +48,71 @@ Darcy::Darcy (unsigned short int n, int torder) :
 
 
 Darcy::~Darcy() = default;
+
+
+bool Darcy::parse (const tinyxml2::XMLElement* elem)
+{
+  char sourceType = 0;
+  const char* input = nullptr;
+  if ((input = utl::getValue(elem,"bodyforce")))
+    bodyforce = new VecFuncExpr(input);
+  else if ((input = utl::getValue(elem,"gravity")))
+    gacc = atof(input);
+  else if ((input = utl::getValue(elem,"source")))
+    sourceType = 'a';
+  else if ((input = utl::getValue(elem,"source_c")))
+    sourceType = 'c';
+  else if (!strcasecmp(elem->Value(),"reactions"))
+    extEner = 'R';
+  else
+    return false;
+
+  if (sourceType)
+  {
+    std::string type;
+    utl::getAttribute(elem,"type",type);
+    IFEM::cout <<"\tSource function";
+    if (sourceType == 'c') IFEM::cout <<" (concentration)";
+    IFEM::cout <<":";
+
+    RealFunc* src = nullptr;
+    if (type == "expression")
+    {
+      IFEM::cout <<" "<< input << std::endl;
+      src = new EvalFunction(input);
+    }
+    else if (type == "diracsum")
+    {
+      double tol = 1e-2;
+      utl::getAttribute(elem,"pointTol",tol);
+      IFEM::cout <<" DiracSum";
+      DiracSum* f = new DiracSum(tol,nsd);
+      if (f->parse(input))
+        src = f;
+      else
+        delete f;
+    }
+    else if (type == "elementsum" && ownerSim->createFEMmodel('y'))
+    {
+      IFEM::cout <<" ElementSum";
+      ElementSum* f = new ElementSum(nsd);
+      if (f->parse(input,*ownerSim))
+        src = f;
+      else
+        delete f;
+    }
+
+    if (src)
+    {
+      if (sourceType == 'c')
+        this->setCSource(src);
+      else
+        source.reset(src);
+    }
+  }
+
+  return true;
+}
 
 
 double Darcy::getPotential (const Vec3& X) const
@@ -238,6 +303,8 @@ bool Darcy::formKmatrix (Matrix& K, const Vec3& X, bool inverse) const
 bool Darcy::evalSol2 (Vector& s, const Vectors& eV,
                       const FiniteElement& fe, const Vec3& X) const
 {
+  s.clear();
+  s.reserve(2+2*nsd);
   if (!this->evalDarcyVel(s,eV,fe,X))
     return false;
 

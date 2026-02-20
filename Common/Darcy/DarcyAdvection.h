@@ -18,14 +18,15 @@
 
 #include "BDF.h"
 #include "Field.h"
-#include "Function.h"
 #include "IntegrandBase.h"
-
 #include "EqualOrderOperators.h"
 
 #include <memory>
 
 class Darcy;
+class RealFunc;
+class SIMbase;
+
 
 /*!
   \brief Class representing the integrand of the Darcy transport problem.
@@ -41,8 +42,11 @@ public:
   //! \brief Empty destructor.
   virtual ~DarcyAdvection() = default;
 
-  //! \brief Defines the tracer source function.
-  void setSource(RealFunc* s) { source.reset(s); }
+  //! \brief Assigns the owner simulator (used by parse()).
+  void setOwnerSim(SIMbase* sim) { ownerSim = sim; }
+
+  //! \brief Parses a data section from an XML element.
+  bool parse(const tinyxml2::XMLElement* elem) override;
 
   using IntegrandBase::getLocalIntegral;
   //! \brief Returns a local integral contribution object for given element.
@@ -59,10 +63,9 @@ public:
   //! \param[in] XC Cartesian coordinates of the element center
   //! \param[in] nPt Number of integration points on this element
   //! \param elmInt Local integral for element
-  bool initElement (const std::vector<int>& MNPC,
-                    const FiniteElement& fe,
-                    const Vec3& XC,
-                    size_t nPt, LocalIntegral& elmInt) override;
+  bool initElement(const std::vector<int>& MNPC,
+                   const FiniteElement& fe, const Vec3& XC, size_t nPt,
+                   LocalIntegral& elmInt) override;
 
   using IntegrandBase::evalInt;
   //! \brief Evaluates the integrand at an interior point.
@@ -154,6 +157,8 @@ protected:
   bool evalDarcyVel(RealArray& q,
                     const FiniteElement& fe, const Vec3& X) const;
 
+  SIMbase* ownerSim; //!< The simulator that owns this integrand
+
   const DarcyMaterial* mat; //!< Material to use
 
   TimeIntegration::BDF bdf; //!< BDF time stepping helper
@@ -179,12 +184,8 @@ protected:
 class DarcyAdvectionNorm : public NormBase
 {
 public:
-  //! \brief The only constructor initializes its data members.
-  //! \param[in] p The DarcyAdvection problem to evaluate norms for
-  explicit DarcyAdvectionNorm(DarcyAdvection& p);
-
-  //! \brief Empty destructor.
-  virtual ~DarcyAdvectionNorm() {}
+  //! \brief The constructor forwards to the parent class constructor.
+  explicit DarcyAdvectionNorm(DarcyAdvection& p) : NormBase(p) {}
 
   using NormBase::evalInt;
   //! \brief Evaluates the integrand at an interior point.
@@ -194,6 +195,16 @@ public:
   //! \param[in] X Cartesian coordinates of current integration point
   bool evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
                const TimeDomain& time, const Vec3& X) const override;
+
+  //! \brief Returns the number of norm groups or size of a specified group.
+  //! \param[in] group The norm group to return the size of
+  //! (if zero, return the number of groups)
+  size_t getNoFields(int group) const override;
+
+  //! \brief Returns the name of a norm quantity.
+  //! \param[in] j The norm number (one-based index)
+  //! \param[in] prefix Common prefix for all norm names
+  std::string getName(size_t, size_t j, const char* prefix) const override;
 };
 
 #endif

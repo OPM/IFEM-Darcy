@@ -18,7 +18,6 @@
 
 #include "AnaSol.h"
 #include "DataExporter.h"
-#include "ExprFunctions.h"
 #include "IFEM.h"
 #include "LogStream.h"
 #include "Profiler.h"
@@ -48,6 +47,7 @@ template<class Dim>
 SIMDarcy<Dim>::SIMDarcy (Darcy& itg, const std::vector<unsigned char>& nf) :
   SIMMultiPatchModelGen<Dim>(nf), drc(itg), solVec(nullptr)
 {
+  drc.setOwnerSim(this);
   Dim::myProblem = &drc;
   Dim::myHeading = "Darcy solver";
   aCode[0] = aCode[1] = 0;
@@ -79,13 +79,8 @@ bool SIMDarcy<Dim>::parse (const tinyxml2::XMLElement* elem)
   }
 
   const tinyxml2::XMLElement* child = elem->FirstChildElement();
-  for (; child; child = child->NextSiblingElement()) {
-    const char* value = nullptr;
-    if ((value = utl::getValue(child,"bodyforce")))
-      drc.setBodyForce(new VecFuncExpr(value));
-    else if ((value = utl::getValue(child,"gravity")))
-      drc.setGravity(atof(value));
-    else if (!strcasecmp(child->Value(), "materialdata")) {
+  for (; child; child = child->NextSiblingElement())
+    if (!strcasecmp(child->Value(), "materialdata")) {
       int code = this->parseMaterialSet(child,mVec.size());
       mVec.resize(mVec.size()+1);
       IFEM::cout << "\tMaterial data with code " << code <<":\n";
@@ -95,52 +90,6 @@ bool SIMDarcy<Dim>::parse (const tinyxml2::XMLElement* elem)
       if (mVec.empty())
         mVec.resize(1);
       mVec.back().parse(child);
-    } else if (!strcasecmp(child->Value(),"source") || !strcasecmp(child->Value(),"source_c")) {
-      bool isC = strcasecmp(child->Value(),"source") != 0;
-      std::string type;
-      utl::getAttribute(child,"type",type);
-      IFEM::cout <<"\tSource function" << (isC ? " (concentration):" : ":");
-      std::unique_ptr<RealFunc> src;
-      const char* input = isC ? utl::getValue(child, "source_c")
-                              : utl::getValue(child, "source");
-      if (type == "expression") {
-        if (input)
-          IFEM::cout << " " << input << std::endl;
-        src.reset(new EvalFunction(input));
-      }
-      else if (type == "diracsum") {
-        double tol = 1e-2;
-        utl::getAttribute(child, "pointTol", tol);
-        if (input) {
-          IFEM::cout << " DiracSum";
-          DiracSum* f = new DiracSum(tol, Dim::dimension);
-          if (f->parse(input))
-            src.reset(f);
-          else
-            delete f;
-        }
-      }
-      else if (type == "elementsum") {
-        if (input) {
-          if (!this->createFEMmodel())
-            continue;
-          IFEM::cout << " ElementSum";
-          ElementSum* f = new ElementSum(Dim::dimension);
-
-          if (f->parse(input, *this))
-            src.reset(f);
-          else
-            delete f;
-        }
-      } else
-        IFEM::cout <<"(none)"<< std::endl;
-
-      if (src) {
-        if (isC)
-          drc.setCSource(std::move(src));
-        else
-          drc.setSource(std::move(src));
-      }
     }
     else if (!strcasecmp(child->Value(),"anasol")) {
       std::string type;
@@ -164,8 +113,6 @@ bool SIMDarcy<Dim>::parse (const tinyxml2::XMLElement* elem)
         }
       }
     }
-    else if (!strcasecmp(child->Value(),"reactions"))
-      drc.extEner = 'R';
     else if (!strcasecmp(child->Value(),"subiterations")) {
       IFEM::cout << "\tUsing sub-iterations";
       utl::getAttribute(child,"tol",cycleTol);
@@ -174,9 +121,8 @@ bool SIMDarcy<Dim>::parse (const tinyxml2::XMLElement* elem)
       IFEM::cout <<"\n\t\tmax = "<< maxCycle;
       IFEM::cout << std::endl;
     }
-    else
+    else if (!Dim::myProblem->parse(child))
       this->Dim::parse(child);
-  }
 
   return true;
 }

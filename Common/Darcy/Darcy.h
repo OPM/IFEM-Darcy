@@ -47,16 +47,17 @@ public:
   //! \brief Empty destructor.
   virtual ~Darcy();
 
-  //! \brief Defines the body force vector.
-  void setBodyForce(VecFunc* b) { bodyforce = b; }
+  //! \brief Assigns the owner simulator (used by parse()).
+  void setOwnerSim(SIMbase* sim) { ownerSim = sim; }
+
+  //! \brief Parses a data section from an XML element.
+  bool parse(const tinyxml2::XMLElement* elem) override;
+
   //! \brief Returns the body force vector at a given point.
   Vec3 getBodyForce(const Vec3& X) const;
 
-  //! \brief Defines the source function.
-  void setSource(std::unique_ptr<RealFunc> s) { source = std::move(s); }
-
   //! \brief Defines the concentration source function.
-  virtual void setCSource(std::unique_ptr<RealFunc>) {}
+  virtual void setCSource(RealFunc*) {}
 
   //! \brief Defines a scalar flux function.
   void setFlux(RealFunc* f) { flux = f; }
@@ -166,9 +167,6 @@ public:
   //! \brief Returns order of time integration.
   int getOrder() const { return bdf.getActualOrder(); }
 
-  //! \brief Set gravitational acceleration.
-  void setGravity(double ga) { gacc = ga; }
-
   //! \brief Obtain integrand-type dependent solution norms
   virtual void getSolutionNorms(const SIMbase& sim, const Vector& solution,
                                 double& dNorm,
@@ -213,6 +211,7 @@ public:
   bool lCache() { return useLCache; }
 
 protected:
+  SIMbase*  ownerSim;     //!< The simulator that owns this integrand
   VecFunc*  bodyforce;    //!< Body force function
   VecFunc*  vflux;        //!< Flux function
   RealFunc* flux;         //!< Flux function
