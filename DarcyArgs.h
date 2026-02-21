@@ -33,7 +33,7 @@ public:
   TimeIntegration::Method timeMethod = TimeIntegration::NONE; //!< Time integration method
   bool tracer = false; //!< Include a tracer field
   bool scheduled = false; //!< If true, update pressure on a schedule, separate ad step.
-  bool mixed = false; //!< If true, use a mixed formulation (correction)
+  unsigned char mixed = 0; //!< If > 0, use a mixed formulation (correction)
   DCY::AdaptationNorm adNorm = DCY::NO_ADAP; //!< Norm to adapt based on
 
   //! \brief Default constructor.

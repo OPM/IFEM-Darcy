@@ -22,15 +22,20 @@
 
 bool DarcyArgs::parseArg (const char* argv)
 {
-  TimeIntegration::Method tmp;
   if (argv[0] != '-')
     return false;
   else if (strcasecmp(argv, "-tracer") == 0)
     tracer = true;
-  else if (strcasecmp(argv, "-mixed") == 0)
-    mixed = true;
-  else if ((tmp = TimeIntegration::get(argv+1)) > TimeIntegration::NONE)
-    timeMethod = tmp;
+  else if (strcmp(argv, "-mixed1") == 0)
+    mixed = 1;
+  else if (strcmp(argv, "-mixed") == 0)
+    mixed = 2;
+  else if (strcmp(argv, "-Mixed1") == 0)
+    mixed = 11;
+  else if (strcmp(argv, "-Mixed") == 0)
+    mixed = 12;
+  else if ((timeMethod = TimeIntegration::get(argv+1)) > TimeIntegration::NONE)
+    ;
   else
     return this->SIMargsBase::parseArg(argv);
 
@@ -40,29 +45,27 @@ bool DarcyArgs::parseArg (const char* argv)
 
 bool DarcyArgs::parseArgComplex (int argc, char** argv, int& i)
 {
-  if (!strcmp(argv[i],"-adap")) {
-    adNorm = DCY::PRESSURE_H1;
-    adap = true;
-    if (i+1 < argc && argv[i+1][0] != '-' &&
-        strcasecmp(argv[i+1], "pressure") == 0)
-      adNorm = DCY::PRESSURE_H1, ++i;
-    else if (i+1 < argc && argv[i+1][0] != '-' &&
-             strcasecmp(argv[i+1], "recovery_press") == 0)
-      adNorm = DCY::RECOVERY_PRESSURE, ++i;
-    else if (i+1 < argc && argv[i+1][0] != '-' &&
-             strcasecmp(argv[i+1], "concentration") == 0)
-      adNorm = DCY::CONCENTRATION_H1, ++i;
-    else if (i+1 < argc && argv[i+1][0] != '-' &&
-             strcasecmp(argv[i+1], "recovery_conc") == 0)
-      adNorm = DCY::RECOVERY_CONCENTRATION, ++i;
-    else if (i+1 < argc && argv[i+1][0] != '-' &&
-             strcasecmp(argv[i+1], "total") == 0)
-      adNorm = DCY::TOTAL_H1, ++i;
-    else if (i+1 < argc && argv[i+1][0] != '-' &&
-             strcasecmp(argv[i+1], "recovery") == 0)
-      adNorm = DCY::RECOVERY, ++i;
-  } else
+  if (strcasecmp(argv[i],"-adap"))
     return false;
+
+  adap = true;
+  int j = i+1;
+  if (j >= argc || argv[j][0] == '-')
+    adNorm = DCY::PRESSURE_H1;
+  else if (strcasecmp(argv[j], "pressure") == 0)
+    adNorm = DCY::PRESSURE_H1, ++i;
+  else if (strcasecmp(argv[j], "recovery_press") == 0)
+    adNorm = DCY::RECOVERY_PRESSURE, ++i;
+  else if (strcasecmp(argv[j], "concentration") == 0)
+    adNorm = DCY::CONCENTRATION_H1, ++i;
+  else if (strcasecmp(argv[j], "recovery_conc") == 0)
+    adNorm = DCY::RECOVERY_CONCENTRATION, ++i;
+  else if (strcasecmp(argv[j], "total") == 0)
+    adNorm = DCY::TOTAL_H1, ++i;
+  else if (strcasecmp(argv[j], "recovery") == 0)
+    adNorm = DCY::RECOVERY, ++i;
+  else
+    adNorm = DCY::PRESSURE_H1;
 
   return true;
 }
@@ -75,11 +78,10 @@ bool DarcyArgs::parse (const tinyxml2::XMLElement* elem)
     if (utl::getAttribute(elem,"type",type))
       timeMethod = TimeIntegration::get(type);
   }
-  if (!strcasecmp(elem->Value(),"darcy")) {
+  else if (!strcasecmp(elem->Value(),"darcy")) {
     utl::getAttribute(elem,"tracer",tracer);
     ASMmxBase::Type = ASMmxBase::NONE;
-    const char* ad = elem->Attribute("adap");
-    if (ad) {
+    if (const char* ad = elem->Attribute("adap"); ad) {
       if (strcasecmp(ad,"pressure") == 0)
         adNorm = DCY::PRESSURE_H1;
       else if (strcasecmp(ad,"recovery_press") == 0)
@@ -94,8 +96,7 @@ bool DarcyArgs::parse (const tinyxml2::XMLElement* elem)
         adNorm = DCY::RECOVERY;
     }
 
-    const tinyxml2::XMLElement* child = elem->FirstChildElement("schedule");
-    if (child)
+    if (elem->FirstChildElement("schedule"))
       scheduled = true;
   }
 
