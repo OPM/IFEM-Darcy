@@ -29,28 +29,8 @@ class Tensor;
 class DarcyTransportCorr : public IntegrandBase
 {
 public:
-  //! \brief Enum for element level right-hand-side vectors
-  enum ResidualVectors
-  {
-    Fq = 1, Fl = 2, Fm = 3, NVEC = 4
-  };
-
-  //! \brief Enum for element level left-hand-side matrices.
-  //!
-  //! \details The matrix layout for 3x3 blocks is as follows:
-  //! \code
-  //!     1 4 5
-  //!     6 2 8
-  //!     7 9 3
-  //! \endcode
-
-  enum TangentMatrices
-  {
-    qq = 1, ql = 4, qm = 5, NMAT = 10
-  };
-
   //! \brief Default constructor.
-  explicit DarcyTransportCorr(unsigned short int n = 3);
+  explicit DarcyTransportCorr(unsigned short int n = 3, unsigned char n2 = 0);
   //! \brief Default destructor.
   ~DarcyTransportCorr() override;
 
@@ -81,6 +61,7 @@ public:
   //! \brief Evaluates the integrand at an interior point.
   //! \param elmInt The local integral object to receive the contributions
   //! \param[in] fe Finite element data of current integration point
+  //! \param[in] time Time stepping parameters
   //! \param[in] X Cartesian coordinates of current integration point
   bool evalIntMx(LocalIntegral& elmInt, const MxFiniteElement& fe,
                  const TimeDomain& time, const Vec3& X) const override;
@@ -102,10 +83,7 @@ public:
 
   //! \brief Returns the number of primary/secondary solution field components.
   //! \param[in] fld which field set to consider (1=primary, 2=secondary)
-  size_t getNoFields(int fld) const override { return fld > 1 ? 5+nsd : nsd; }
-
-  //! \brief Filters a result components for output.
-  bool suppressOutput(size_t i, ASM::ResultClass type) const override;
+  size_t getNoFields(int fld) const override { return nsd+(fld > 1 ? 5 : nf2); }
 
   //! \brief Returns the name of the primary solution field.
   //! \param[in] i Field index
@@ -122,6 +100,7 @@ public:
   //! returned pointer value.
   NormBase* getNormIntegrand(AnaSol*) const override;
 
+  using IntegrandBase::evalSol;
   //! \brief Evaluates the FE solution.
   Vec3 evalSol(const Vector& eV, const Vector& N) const;
   //! \brief Evaluates the FE solution gradient.
@@ -148,6 +127,12 @@ private:
   std::unique_ptr<VecFunc>  input_q;      //!< Input Darcy velocity
   std::unique_ptr<RealFunc> input_source; //!< Input source
   std::unique_ptr<RealFunc> observed_C;   //!< Observed tracer concentration
+
+  //! \cond Block_matrix_indices
+  size_t nM, nV, nf2;
+  size_t qq, ql, qm;
+  size_t Fq, Fl, Fm;
+  //! \endcond
 };
 
 
@@ -165,9 +150,19 @@ public:
   //! \brief Evaluates the integrand at an interior point.
   //! \param elmInt The local integral object to receive the contributions
   //! \param[in] fe Finite element data of current integration point
+  //! \param[in] time Time stepping parameters
   //! \param[in] X Cartesian coordinates of current integration point
   bool evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
-               const Vec3& X) const override;
+               const TimeDomain& time, const Vec3& X) const override;
+
+  using NormBase::evalIntMx;
+  //! \brief Evaluates the integrand at an interior point (mixed).
+  //! \param elmInt The local integral object to receive the contributions
+  //! \param[in] fe Finite element data of current integration point
+  //! \param[in] time Time stepping parameters
+  //! \param[in] X Cartesian coordinates of current integration point
+  bool evalIntMx(LocalIntegral& elmInt, const MxFiniteElement& fe,
+                 const TimeDomain& time, const Vec3& X) const override;
 
   //! \brief Returns the number of norm groups or size of a specified group.
   //! \param[in] group The norm group to return the size of

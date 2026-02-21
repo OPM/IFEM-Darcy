@@ -33,10 +33,21 @@
 #include <cstring>
 
 
-DarcyTransportCorr::DarcyTransportCorr (unsigned short int n) : IntegrandBase(n)
+DarcyTransportCorr::DarcyTransportCorr (unsigned short int n, unsigned char n2)
+  : IntegrandBase(n)
 {
   npv = n;
-  primsol.resize(1);
+  nf2 = n2;
+
+  qq = 1;
+  ql = n2 > 1 ? 4 : (n2 > 0 ? 3 : 0);
+  qm = n2 > 1 ? 5 : 0;
+  nM = n2 > 1 ? 10 : (n2 > 0 ? 5 : 3);
+
+  Fq = 1;
+  Fl = n2 > 0 ? 2 : 0;
+  Fm = n2 > 1 ? 3 : 0;
+  nV = n2 > 0 ? 2+n2 : 3;
 }
 
 
@@ -94,7 +105,7 @@ LocalIntegral* DarcyTransportCorr::getLocalIntegral (size_t nen,
 {
   ElmMats* result = new ElmMats();
 
-  result->resize(3,3);
+  result->resize(nM, nV);
   result->redim(nen*nsd);
 
   return result;
@@ -105,14 +116,16 @@ LocalIntegral*
 DarcyTransportCorr::getLocalIntegral (const std::vector<size_t>& nen,
                                       size_t, bool) const
 {
-  BlockElmMats* result = new BlockElmMats(3,2);
+  BlockElmMats* result = new BlockElmMats(1+nf2,2);
 
-  result->resize(NMAT, NVEC);
+  result->resize(nM, nV);
   result->redim(1, nen[0], nsd);
-  result->redim(2, nen[1], 1, -2);
-  result->redim(3, nen[1], 1, -2);
-  result->redimOffDiag(ql, -1);
-  result->redimOffDiag(qm, -1);
+  for (size_t i = 0; i < nf2; i++)
+    result->redim(2+i, nen[1], 1, -2);
+  if (ql > 0)
+    result->redimOffDiag(ql, -1);
+  if (qm > 0)
+    result->redimOffDiag(qm, -1);
   result->finalize();
 
   return result;
@@ -175,18 +188,26 @@ bool DarcyTransportCorr::evalIntMx (LocalIntegral& elmInt,
 
   const double scale = 1.0;
 
-  EqualOrderOperators::Weak::Mass(elMat.A[qq], fe, scale);
+  if (qq > 0)
+    EqualOrderOperators::Weak::Mass(elMat.A[qq], fe, scale);
 
-  for (size_t i = 1; i <= fe.basis(2).size(); ++i)
-    for (size_t j = 1; j <= fe.basis(1).size(); ++j)
-      for (unsigned short int d = 1; d <= nsd; ++d)
-      {
-        elMat.A[ql]((j-1)*nsd+d,i) += fe.grad(1)(j,d) * fe.basis(2)(i) * fe.detJxW;
-        elMat.A[qm]((j-1)*nsd+d,i) += (C*fe.grad(1)(j,d) + dC(d)*fe.basis(1)(j)) * fe.basis(2)(i) * fe.detJxW;
-      }
+  if (ql > 0)
+    for (size_t i = 1; i <= fe.basis(2).size(); ++i)
+      for (size_t j = 1; j <= fe.basis(1).size(); ++j)
+        for (unsigned short int d = 1; d <= nsd; ++d)
+          elMat.A[ql]((j-1)*nsd+d,i) += fe.grad(1)(j,d) * fe.basis(2)(i) * fe.detJxW;
 
-  EqualOrderOperators::Weak::Source(elMat.b[Fq], fe, q);
-  EqualOrderOperators::Weak::Source(elMat.b[Fm], fe, R-dCdt, 1, 2);
+  if (qm > 0)
+    for (size_t i = 1; i <= fe.basis(2).size(); ++i)
+      for (size_t j = 1; j <= fe.basis(1).size(); ++j)
+        for (unsigned short int d = 1; d <= nsd; ++d)
+          elMat.A[qm]((j-1)*nsd+d,i) += (C*fe.grad(1)(j,d) + dC(d)*fe.basis(1)(j)) * fe.basis(2)(i) * fe.detJxW;
+
+  if (Fq > 0)
+    EqualOrderOperators::Weak::Source(elMat.b[Fq], fe, q);
+
+  if (Fm > 0)
+    EqualOrderOperators::Weak::Source(elMat.b[Fm], fe, R-dCdt, 1, 2);
 
   return true;
 }
@@ -194,7 +215,7 @@ bool DarcyTransportCorr::evalIntMx (LocalIntegral& elmInt,
 
 bool DarcyTransportCorr::finalizeElement (LocalIntegral& A)
 {
-  if (alpha > 0.0 && beta > 0.0)
+  if (alpha > 0.0 && beta > 0.0 && ql == 0)
   {
     ElmMats& E = static_cast<ElmMats&>(A);
 
@@ -225,22 +246,29 @@ bool DarcyTransportCorr::evalSol2 (Vector& s, const Vectors& eV,
 }
 
 
-bool DarcyTransportCorr::suppressOutput (size_t i, ASM::ResultClass type) const
-{
-  return (i == 2 && type == ASM::PRIMARY);
-}
-
-
 std::string DarcyTransportCorr::getField1Name (size_t i, const char* prefix) const
 {
-  if (i == 11 && nsd == 2)
-    return "q_x&&q_y";
-  if (i == 11 && nsd == 3)
-    return "q_x&&q_y&&q_z";
+  if (i == 11)
+    switch (nsd) {
+    case 1: return "q_x";
+    case 2: return "q_x&&q_y";
+    case 3: return "q_x&&q_y&&q_z";
+    }
+  else if (i == 12)
+    switch (nf2) {
+    case 1: return "lambda";
+    case 2: return "lambda&&mu";
+    }
 
-  const char postfix = 'x' + i;
-  std::string name = "q_";
-  name += postfix;
+  std::string name;
+  if (i < nsd)
+    name = "q_" + std::string(1,'x'+i);
+  else if (i-nsd == 0)
+    name = "lambda";
+  else if (i-nsd == 1)
+    name = "mu";
+  else
+    name = "u" + std::to_string(i);
 
   return prefix ? prefix + std::string(" ") + name : name;
 }
@@ -335,7 +363,7 @@ NormBase* DarcyTransportCorr::getNormIntegrand (AnaSol* asol) const
 
 
 bool DarcyTCNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
-                           const Vec3& X) const
+                           const TimeDomain& time, const Vec3& X) const
 {
   DarcyTransportCorr& problem = static_cast<DarcyTransportCorr&>(myProblem);
   ElmNorm& pnorm = static_cast<ElmNorm&>(elmInt);
@@ -358,6 +386,13 @@ bool DarcyTCNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   pnorm[6] += divQ*divQ * fe.detJxW;
 
   return true;
+}
+
+
+bool DarcyTCNorm::evalIntMx (LocalIntegral& elmInt, const MxFiniteElement& fe,
+                             const TimeDomain& time, const Vec3& X) const
+{
+  return this->evalInt(elmInt,fe,time,X);
 }
 
 

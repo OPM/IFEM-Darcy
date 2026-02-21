@@ -11,23 +11,18 @@
 //!
 //==============================================================================
 
-#include "ASMmxBase.h"
 #include "DarcyTransportCorr.h"
 #include "DarcyArgs.h"
 #include "SIMDarcyTransportCorr.h"
 
 #include "ASMenums.h"
+#include "ASMmxBase.h"
 #include "IFEM.h"
-#include "LogStream.h"
 #include "Profiler.h"
 #include "SIM1D.h"
 #include "SIM2D.h"
 #include "SIM3D.h"
-#include "SIMoptions.h"
 #include "SIMSolver.h"
-
-#include <iostream>
-#include <string>
 
 
 /*!
@@ -39,11 +34,16 @@
 template<class Dim>
 int runSimulator(char* infile, const DarcyArgs& args)
 {
-  ASMmxBase::Type = ASMmxBase::FULL_CONT_RAISE_BASIS2;
-  DarcyTransportCorr itg(Dim::dimension);
-  const auto fields = args.mixed ? SIMinput::CharVec{Dim::dimension,2}
-                                 : SIMinput::CharVec{Dim::dimension};
-  SIMDarcyTransportCorr<Dim> darcy(itg, fields);
+  if (args.mixed > 10)
+    ASMmxBase::Type = ASMmxBase::FULL_CONT_RAISE_BASIS1;
+  else if (args.mixed > 0)
+    ASMmxBase::Type = ASMmxBase::REDUCED_CONT_RAISE_BASIS1;
+
+  SIMinput::CharVec fields = { Dim::dimension };
+  if (args.mixed) fields.push_back(args.mixed%10);
+
+  DarcyTransportCorr itg(Dim::dimension,args.mixed%10);
+  SIMDarcyTransportCorr<Dim> darcy(itg,fields);
   SIMSolverStat solver(darcy);
 
   utl::profiler->start("Model input");
@@ -56,16 +56,15 @@ int runSimulator(char* infile, const DarcyArgs& args)
   if (!darcy.preprocess())
     return 2;
 
-  darcy.init();
+  if (!darcy.initSystem(darcy.opt.solver))
+    return 3;
+
+  darcy.setQuadratureRule(darcy.opt.nGauss[0],true);
 
   if (darcy.opt.dumpHDF5(infile))
     solver.handleDataOutput(darcy.opt.hdf5,darcy.getProcessAdm());
 
-  int res = solver.solveProblem(infile,"Solving Darcy transport correction problem");
-  // if (!res)
-  //   darcy.printFinalNorms(TimeStep());
-
-  return res;
+  return solver.solveProblem(infile,"Solving Darcy transport correction problem");
 }
 
 
@@ -105,9 +104,7 @@ int main (int argc, char** argv)
 
   IFEM::Init(argc,argv,"Darcy transport correction solver");
   for (int i = 1; i < argc; i++)
-    if (args.parseArgComplex(argc,argv,i))
-      ;
-    else if (argv[i] == infile || args.parseArg(argv[i]))
+    if (argv[i] == infile || args.parseArg(argv[i]))
       ; // ignore the input file on the second pass
     else if (SIMoptions::ignoreOldOptions(argc,argv,i))
       ; // ignore the obsolete option
