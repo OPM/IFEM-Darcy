@@ -15,10 +15,9 @@
 #define _SIM_DARCY_TRANSPORT_CORR_H_
 
 #include "MatVec.h"
-#include "SIMconfigure.h"
 
-class DarcyTransportCorr;
 class DataExporter;
+class IntegrandBase;
 class TimeStep;
 namespace tinyxml2 { class XMLElement; }
 
@@ -31,27 +30,11 @@ template<class Dim>
 class SIMDarcyTransportCorr : public Dim
 {
 public:
-  //! \brief Setup properties.
-  struct SetupProps {
-    DarcyTransportCorr* itg = nullptr; //!< Pointer to integrand
-  };
-
-  //! \brief Default constructor.
-  //! \param itg Integrand to use
-  explicit SIMDarcyTransportCorr(DarcyTransportCorr& itg);
-
-  //! \brief Mixed constructor.
+  //! \brief Constructor.
   //! \param itg Integrand to use
   //! \param nf Fields on each basis
-  explicit SIMDarcyTransportCorr(DarcyTransportCorr& itg,
-                                 const std::vector<unsigned char>& nf);
-
-  //! \brief Construct from setup properties.
-  //! \param props Setup properties
-  explicit SIMDarcyTransportCorr(const SetupProps& props)
-    : SIMDarcyTransportCorr(*props.itg)
-  {}
-
+  SIMDarcyTransportCorr(IntegrandBase& itg,
+                        const std::vector<unsigned char>& nf);
   //! \brief Destructor.
   ~SIMDarcyTransportCorr() override;
 
@@ -76,9 +59,6 @@ public:
   //! \param[in] nBlock Running VTF block counter
   bool saveStep(const TimeStep& tp, int& nBlock);
 
-  //! \brief Initialize simulator.
-  bool init();
-
   //! \brief Computes the solution for the current time step.
   bool solveStep(const TimeStep& tp);
 
@@ -101,19 +81,6 @@ protected:
   Vector qSol; //!< Solution vector
   Matrix eNorm; //!< Element norms
   int vCode = 0; //!< Velocity anasol code
-};
-
-
-//! \brief Partial specialization for configurator.
-template<class Dim>
-struct SolverConfigurator<SIMDarcyTransportCorr<Dim>> {
-  //! \brief Configure a SIMDarcyAdvection instance.
-  //! \param ad The SIMDarcy instance to configure
-  //! \param[in] props Configuration properties
-  //! \param[in] infile The input file to read
-  int setup(SIMDarcyTransportCorr<Dim>& ad,
-            const typename SIMDarcyTransportCorr<Dim>::SetupProps& props,
-            char* infile);
 };
 
 #endif

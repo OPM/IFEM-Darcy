@@ -137,6 +137,14 @@ foreach(adap pressure concentration total recovery recovery_press recovery_conc)
   )
 endforeach()
 
+ifem_add_regression_test(
+  TARGET
+    DarcyCorrection
+  TEST_FILES
+    SquareCorr-p1.reg
+    SquareCorr-p2.reg
+)
+
 if(IFEM_COMMON_APP_BUILD)
   set(TEST_APPS ${TEST_APPS} PARENT_SCOPE)
 else()

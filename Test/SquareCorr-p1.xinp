@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
+<simulation>
+
+  <geometry dim="2" sets="true">
+    <refine patch="1" u="31" v="31"/>
+  </geometry>
+
+  <darcycorrection>
+    <boundaryconditions>
+      <dirichlet set="Boundary" comp="12"/>
+    </boundaryconditions>
+    <input_velocity type="expression">4*pow(x-x*x,2)*8*(y-1)*y*(2*y-1) | -8*(x-1)*x*(2*x-1)*4*pow(y-y*y,2)</input_velocity>
+    <observed_concentration type="expression">x*(x-1)*y*(y-1)</observed_concentration>
+    <input_source type="expression">
+       c=x*(x-1)*y*(y-1);
+       cx=(2*x-1)*y*(y-1);
+       cy=x*(x-1)*(2*y-1);
+       f   = 4*pow(x-x*x,2);
+       fp  = 8*(x-1)*x*(2*x-1);
+       f2p = 8*(6*x*x-6*x+1);
+       g   = 4*pow(y-y*y,2);
+       gp  = 8*(y-1)*y*(2*y-1);
+       g2p = 8*(6*y*y-6*y+1);
+       px=f*gp;
+       py=-fp*g;
+       p2x=fp*gp;
+       p2y=-fp*gp;
+      -(cx*px + c*p2x + cy*py + c*p2y)
+    </input_source>
+  </darcycorrection>
+
+</simulation>

@@ -11,14 +11,13 @@
 //!
 //==============================================================================
 
-#include "AnaSol.h"
 #include "SIMDarcyTransportCorr.h"
 
-#include "DarcyTransportCorr.h"
-
+#include "AnaSol.h"
 #include "ASMbase.h"
 #include "DataExporter.h"
 #include "IFEM.h"
+#include "IntegrandBase.h"
 #include "Profiler.h"
 #include "SIM1D.h"
 #include "SIM2D.h"
@@ -44,17 +43,8 @@ namespace
 
 
 template<class Dim>
-SIMDarcyTransportCorr<Dim>::SIMDarcyTransportCorr (DarcyTransportCorr& itg) :
-  Dim(Dim::dimension)
-{
-  Dim::myProblem = &itg;
-  Dim::myHeading = "Darcy transport correction solver";
-}
-
-
-template<class Dim>
 SIMDarcyTransportCorr<Dim>::
-SIMDarcyTransportCorr (DarcyTransportCorr& itg,
+SIMDarcyTransportCorr (IntegrandBase& itg,
                        const std::vector<unsigned char>& nf) : Dim(nf)
 {
   Dim::myProblem = &itg;
@@ -112,7 +102,7 @@ bool SIMDarcyTransportCorr<Dim>::preprocessBeforeAsmInit (int& nnod)
 template<class Dim>
 void SIMDarcyTransportCorr<Dim>::preprocessA ()
 {
-  Dim::myInts.insert(std::make_pair(0,Dim::myProblem));
+  Dim::myInts.emplace(0,Dim::myProblem);
 
   for (Property& p : Dim::myProps)
     if (p.pcode == Property::DIRICHLET_ANASOL) {
@@ -168,15 +158,6 @@ bool SIMDarcyTransportCorr<Dim>::saveStep (const TimeStep& tp, int& nBlock)
       return false;
 
   return this->writeGlvStep(1, 0.0, 1);
-}
-
-
-template<class Dim>
-bool SIMDarcyTransportCorr<Dim>::init ()
-{
-  this->initSystem(Dim::opt.solver,1,1);
-  this->setQuadratureRule(Dim::opt.nGauss[0],true);
-  return true;
 }
 
 
@@ -241,34 +222,8 @@ printSolutionSummary (const Vector&, int, const char*, std::streamsize outPrec)
   IFEM::cout << str.str() << std::endl;
 }
 
+// Instantiations for different dimensions.
 
-template<class Dim>
-int SolverConfigurator<SIMDarcyTransportCorr<Dim>>::
-setup (SIMDarcyTransportCorr<Dim>& darcy,
-       const typename SIMDarcyTransportCorr<Dim>::SetupProps& props,
-       char* infile)
-{
-  utl::profiler->start("Model input");
-
-  if (!darcy.read(infile))
-    return 1;
-
-  utl::profiler->stop("Model input");
-
-  if (!darcy.preprocess())
-    return 2;
-
-  darcy.init();
-
-  return 0;
-}
-
-
-//! \brief Instantiation macro.
-#define INSTANTIATE(T) \
-  template class SIMDarcyTransportCorr<T>; \
-  template struct SolverConfigurator<SIMDarcyTransportCorr<T>>;
-
-INSTANTIATE(SIM1D)
-INSTANTIATE(SIM2D)
-INSTANTIATE(SIM3D)
+template class SIMDarcyTransportCorr<SIM1D>;
+template class SIMDarcyTransportCorr<SIM2D>;
+template class SIMDarcyTransportCorr<SIM3D>;
