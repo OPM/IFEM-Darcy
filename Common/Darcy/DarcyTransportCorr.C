@@ -39,6 +39,9 @@ DarcyTransportCorr::DarcyTransportCorr (unsigned short int n, unsigned char n2)
   npv = n;
   nf2 = n2;
 
+  alpha = beta = 1.0e6;
+  eps   = 1.0e-6;
+
   qq = 1;
   ql = n2 > 1 ? 4 : (n2 > 0 ? 3 : 0);
   qm = n2 > 1 ? 5 : 0;
@@ -242,6 +245,7 @@ bool DarcyTransportCorr::evalSol2 (Vector& s, const Vectors& eV,
   s[4] = (qh - this->evalSol(eV.front(),fe.N)).length();
   for (size_t i = 0; i < nsd; ++i)
     s[5+i] = qh[i];
+
   return true;
 }
 
@@ -296,10 +300,11 @@ double DarcyTransportCorr::residual (const Vec3& X) const
   const double C = (*observed_C)(X);
   const Vec3 q = (*input_q)(X);
   const Vec3 grad_C = observed_C->gradient(X);
+  const double dCdt = observed_C->timeDerivative(X);
   const Tensor grad_q = input_q->gradient(X);
   const double f = (*input_source)(X);
 
-  return f - (grad_q.trace()*C + q*grad_C);
+  return f - (dCdt + grad_q.trace()*C + q*grad_C);
 }
 
 
@@ -310,10 +315,11 @@ double DarcyTransportCorr::residual (const Vector& eV,
   const double  f   = (*input_source)(X);
   const double  C   = (*observed_C)(X);
   const Vec3   dCdX = observed_C->gradient(X);
+  const double dCdt = observed_C->timeDerivative(X);
   const Vec3    q   = this->evalSol(eV,N);
   const Tensor dqdX = this->evalGrd(eV,dNdX);
 
-  return f - (dqdX.trace()*C + q*dCdX);
+  return f - (dCdt + dqdX.trace()*C + q*dCdX);
 }
 
 
