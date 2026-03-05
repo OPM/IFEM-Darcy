@@ -60,9 +60,13 @@ public:
   bool saveStep(const TimeStep& tp, int& nBlock);
 
   //! \brief Computes the solution for the current time step.
+  //! \param[in] tp Time stepping parameters
   bool solveStep(const TimeStep& tp);
 
-  //! \brief Prints a summary of the calculated solution to std::cout.
+  //! \brief Advances the time stepping.
+  bool advanceStep(TimeStep&);
+
+  //! \brief Prints out a summary of the calculated solution.
   //! \param[in] outPrec Number of digits after the decimal point in norm print
   void printSolutionSummary(const Vector&, int, const char*,
                             std::streamsize outPrec) override;

@@ -39,6 +39,11 @@ DarcyTransportCorr::DarcyTransportCorr (unsigned short int n, unsigned char n2)
   npv = n;
   nf2 = n2;
 
+  alpha = beta = 1.0e6;
+  epsil = 1.0e-6;
+
+  myEvalTime = 0.0;
+
   qq = 1;
   ql = n2 > 1 ? 4 : (n2 > 0 ? 3 : 0);
   qm = n2 > 1 ? 5 : 0;
@@ -91,7 +96,7 @@ bool DarcyTransportCorr::parse (const tinyxml2::XMLElement* elem)
   {
     utl::getAttribute(elem, "alpha", alpha);
     utl::getAttribute(elem, "beta", beta);
-    utl::getAttribute(elem, "eps", eps);
+    utl::getAttribute(elem, "eps", epsil);
   }
   else
     return false;
@@ -145,7 +150,7 @@ bool DarcyTransportCorr::evalInt (LocalIntegral& elmInt,
   const Vec3   q = (*input_q)(X);
   const double f = (*input_source)(X);
 
-  const double scale = eps > 0.0 ? 1.0 / (eps + q.length2()) : 1.0;
+  const double scale = epsil > 0.0 ? 1.0 / (epsil + q.length2()) : 1.0;
 
   EqualOrderOperators::Weak::Mass(elMat.A[0], fe, scale);
   EqualOrderOperators::Weak::Source(elMat.b[0], fe, q, scale);
@@ -233,6 +238,10 @@ bool DarcyTransportCorr::finalizeElement (LocalIntegral& A)
 bool DarcyTransportCorr::evalSol2 (Vector& s, const Vectors& eV,
                                    const FiniteElement& fe, const Vec3& X) const
 {
+  // Insert current simulation time in the function argument
+  if (const Vec4* Xt = dynamic_cast<const Vec4*>(&X); Xt)
+    const_cast<Vec4*>(Xt)->t = myEvalTime;
+
   s.resize(this->getNoFields(2));
   s[0] = (*observed_C)(X);
   s[1] = this->residual(X);
@@ -242,6 +251,7 @@ bool DarcyTransportCorr::evalSol2 (Vector& s, const Vectors& eV,
   s[4] = (qh - this->evalSol(eV.front(),fe.N)).length();
   for (size_t i = 0; i < nsd; ++i)
     s[5+i] = qh[i];
+
   return true;
 }
 
