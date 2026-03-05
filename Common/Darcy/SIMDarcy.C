@@ -213,21 +213,20 @@ bool SIMDarcy<Dim>::saveStep (const TimeStep& tp, int& nBlock, bool newData)
   if (Dim::opt.format < 0 || (tp.step % Dim::opt.saveInc) > 0)
     return true;
 
-  int iDump = tp.step/Dim::opt.saveInc + (drc.getOrder() == 0 ? 1 : 0);
-  double param2 = drc.getOrder() == 0 ? iDump : tp.time.t;
+  const int iType = tp.multiSteps() ? 0 : 1;
+  const int iDump = iType == 0 ? tp.step/Dim::opt.saveInc : 1;
 
-  if (!newData)
-      return this->writeGlvStep(iDump,param2,drc.getOrder() == 0 ? 1 : 0);
+  if (newData)
+  {
+    // Write solution fields
+    if (!this->writeGlvS(*solVec,iDump,nBlock,tp.time.t))
+      return false;
 
-  // Write solution fields
-  if (!this->writeGlvS(*solVec,iDump,nBlock,tp.time.t))
-    return false;
+    if (!this->doProjection())
+      return false;
 
-  if (!this->doProjection())
-    return false;
-
-  if (!solVec->empty())  {
-    if (!Dim::opt.pSolOnly) {
+    if (!solVec->empty() && !Dim::opt.pSolOnly)
+    {
       Matrix tmp;
       if (!this->project(tmp,*solVec))
         return false;
@@ -240,14 +239,14 @@ bool SIMDarcy<Dim>::saveStep (const TimeStep& tp, int& nBlock, bool newData)
         if (!this->writeGlvP(proj[i++],iDump,nBlock,100,pit.second.c_str()))
           return false;
     }
+
+    // Write element norms
+    if (Dim::opt.saveNorms)
+      if (!this->writeGlvN(eNorm,iDump,nBlock))
+        return false;
   }
 
-  // Write element norms
-  if (Dim::opt.saveNorms)
-    if (!this->writeGlvN(eNorm,iDump,nBlock))
-      return false;
-
-  return this->writeGlvStep(iDump,param2,drc.getOrder() == 0 ? 1 : 0);
+  return this->writeGlvStep(iDump, iType == 1 ? iDump : tp.time.t, iType);
 }
 
 
@@ -444,8 +443,8 @@ void SIMDarcy<Dim>::printFinalNorms (const TimeStep& tp)
 
   // Print global norm summary to console
   this->printNorms(gNorm, 36);
-
 }
+
 
 template<class Dim>
 void SIMDarcy<Dim>::printNorms (const Vectors& gNorm, size_t w) const

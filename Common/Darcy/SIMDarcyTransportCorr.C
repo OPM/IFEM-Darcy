@@ -148,22 +148,29 @@ bool SIMDarcyTransportCorr<Dim>::saveStep (const TimeStep& tp, int& nBlock)
   if (Dim::opt.format < 0 || (tp.step % Dim::opt.saveInc) > 0)
     return true;
 
+  const int iType = tp.multiSteps() ? 0 : 1;
+  const int iStep = iType == 0 ? tp.step/Dim::opt.saveInc : 1;
+
   // Write solution fields
-  if (!this->writeGlvS(qSol,1,nBlock,0.0,"Darcy velocity"))
+  if (!this->writeGlvS(qSol,iStep,nBlock,tp.time.t,"Darcy velocity"))
     return false;
 
   // Write element norms
   if (Dim::opt.saveNorms)
-    if (!this->writeGlvN(eNorm,1,nBlock))
+    if (!this->writeGlvN(eNorm,iStep,nBlock))
       return false;
 
-  return this->writeGlvStep(1, 0.0, 1);
+  return this->writeGlvStep(iStep, iType == 1 ? iStep : tp.time.t, iType);
 }
 
 
 template<class Dim>
-bool SIMDarcyTransportCorr<Dim>::solveStep (const TimeStep&)
+bool SIMDarcyTransportCorr<Dim>::solveStep (const TimeStep& tp)
 {
+  if (Dim::msgLevel >= 0 && tp.multiSteps())
+    IFEM::cout <<"\n  step = "<< tp.step
+               <<"  time = "<< tp.time.t << std::endl;
+
   if (!this->setMode(SIM::DYNAMIC))
     return false;
   if (!this->initDirichlet())
@@ -171,7 +178,14 @@ bool SIMDarcyTransportCorr<Dim>::solveStep (const TimeStep&)
   if (!this->assembleSystem())
     return false;
 
-  return this->solveSystem(qSol,Dim::msgLevel-1,"darcy velocity");
+  return this->solveSystem(qSol,Dim::msgLevel,"velocity");
+}
+
+
+template<class Dim>
+bool SIMDarcyTransportCorr<Dim>::advanceStep (TimeStep&)
+{
+  return true;
 }
 
 
@@ -195,8 +209,8 @@ printSolutionSummary (const Vector&, int, const char*, std::streamsize outPrec)
     char D = 'X';
     for (size_t d = 0; d < nsd; d++, D++)
       if (utl::trunc(dMax[d]) != 0.0)
-        str <<"\n               Max "<< char('X'+d)
-            <<"-Darcy velocity : "<< dMax[d] <<" node "<< iMax[d];
+        str <<"\n"<< std::string(20,' ') <<" Max "<< char('X'+d)
+            <<"-velocity : "<< dMax[d] <<" node "<< iMax[d];
   }
 
   this->setQuadratureRule(Dim::opt.nGauss[1]);
@@ -212,10 +226,10 @@ printSolutionSummary (const Vector&, int, const char*, std::streamsize outPrec)
     double divq = 100.0*gNorm.front()[6]/gNorm.front()[5];
 
     if (Dim::adm.getProcId() == 0)
-      str <<"\nL2(q - q^) / L2(q^) = "<< diff
-          <<"%\nL2(div q^) / L2(q^) = "<< divQ
-          <<"%\nL2(res q^) / L2(c*q^) = "<< resQ
-          <<"%\nL2(div q) / L2(q) = "<< divq
+      str << "\n  L2(q - q^) / L2(q^) = "<< diff
+          <<"%\n  L2(div q^) / L2(q^) = "<< divQ
+          <<"%\n  L2(res q^) / L2(c*q^) = "<< resQ
+          <<"%\n  L2(div q) / L2(q) = "<< divq
           <<"% "<< gNorm.front()[6] <<" "<< gNorm.front()[5];
   }
 
