@@ -44,13 +44,20 @@ DarcyTransportCorr::DarcyTransportCorr (unsigned short int n, unsigned char n2)
 
   myEvalTime = 0.0;
 
+  // A 3x3 non-symmetric block matrix has the following storage convention:
+  //     q l g
+  // q : 1 4 5
+  // l : 6 2 7
+  // g : 8 9 3
+
   qq = 1;
-  ql = n2 > 0 ? 3 : 0;
-  nM = n2 > 0 ? 5 : 3;
+  ql = n2 > 0 ?  4 : 0;
+  lg = n2 > 0 ?  7 : 0;
+  nM = n2 > 0 ? 10 : 3;
 
   Fq = 1;
-  Fl = n2 > 0 ? 2 : 0;
-  nV = 3;
+  Fl = n2 > 0 ?  2 : 0;
+  nV = n2 > 0 ?  4 : 3;
 }
 
 
@@ -119,13 +126,16 @@ LocalIntegral*
 DarcyTransportCorr::getLocalIntegral (const std::vector<size_t>& nen,
                                       size_t, bool) const
 {
-  BlockElmMats* result = new BlockElmMats(2,2);
+  BlockElmMats* result = new BlockElmMats(3,3);
 
   result->resize(nM, nV);
   result->redim(1, nen[0], nsd,  1);
   result->redim(2, nen[1], nf2, -2);
+  result->redim(3, 1,      nf2, -3);
   if (ql > 0)
     result->redimOffDiag(ql, -1);
+  if (lg > 0)
+    result->redimOffDiag(lg, 1);
   result->finalize();
 
   return result;
@@ -206,6 +216,9 @@ bool DarcyTransportCorr::evalIntMx (LocalIntegral& elmInt,
           elMat.A[ql](k,m) += (C*fe.grad(1)(j,d) + dC(d)*fe.basis(1)(j)) * N2dJ;
       }
   }
+
+  if (lg > 0)
+    EqualOrderOperators::Weak::ItgConstraint(elMat.A[lg], fe, 1.0, 2);
 
   EqualOrderOperators::Weak::Source(elMat.b[Fq], fe, q);
 
