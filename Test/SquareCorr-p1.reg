@@ -26,11 +26,12 @@ Resolving Dirichlet boundary conditions
 	Constraining P1 E4 in direction(s) 12
  >>> SAM model summary <<<
 Number of elements    1024
-Number of nodes       5314
-Number of dofs        10628
+Number of nodes       5315
+Number of dofs        10630
 Number of D-dofs      8450
+Number of L-dofs      2
 Number of P-dofs      2178
-Number of unknowns    10116
+Number of unknowns    10118
 Solving Darcy transport correction problem
 Processing integrand associated with code 0
 Assembling interior matrix terms for P1
