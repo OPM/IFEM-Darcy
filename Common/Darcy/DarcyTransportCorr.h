@@ -131,8 +131,8 @@ private:
 
   //! \cond Block_matrix_indices
   size_t nM, nV, nf2;
-  size_t qq, ql, qm;
-  size_t Fq, Fl, Fm;
+  size_t qq, ql;
+  size_t Fq, Fl;
   //! \endcond
 };
 
