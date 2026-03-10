@@ -15,11 +15,9 @@
 #include "DarcyArgs.h"
 #include "SIMDarcyTransportCorr.h"
 
-#include "ASMenums.h"
 #include "ASMmxBase.h"
 #include "IFEM.h"
 #include "Profiler.h"
-#include "SIM1D.h"
 #include "SIM2D.h"
 #include "SIM3D.h"
 #include "SIMSolver.h"
@@ -31,7 +29,7 @@
   \param args Darcy arguments
 */
 
-template<class Dim>
+template<class Dim, template<class T> class Solver>
 int runSimulator(char* infile, const DarcyArgs& args)
 {
   if (args.mixed > 10)
@@ -44,7 +42,7 @@ int runSimulator(char* infile, const DarcyArgs& args)
 
   DarcyTransportCorr itg(Dim::dimension,args.mixed%10);
   SIMDarcyTransportCorr<Dim> darcy(itg,fields);
-  SIMSolverStat solver(darcy);
+  Solver solver(darcy);
 
   utl::profiler->start("Model input");
 
@@ -65,6 +63,23 @@ int runSimulator(char* infile, const DarcyArgs& args)
     solver.handleDataOutput(darcy.opt.hdf5,darcy.getProcessAdm());
 
   return solver.solveProblem(infile,"Solving Darcy transport correction problem");
+}
+
+
+/*!
+  \brief Choose a solver template and then launch a simulator.
+  \param infile The input file to parse
+  \param args Simulator arguments
+*/
+
+template<class Dim>
+int runSimulator1(char* infile, const DarcyArgs& args)
+{
+  if (args.timeMethod == TimeIntegration::NONE)
+    return runSimulator<Dim,SIMSolverStat>(infile,args);
+
+  Dim::msgLevel = 1;
+  return runSimulator<Dim,SIMSolver>(infile,args);
 }
 
 
@@ -91,7 +106,6 @@ int runSimulator(char* infile, const DarcyArgs& args)
   \arg -nw \a nw : Number of visualization points per knot-span in w-direction
   \arg -hdf5 : Write primary and projected secondary solution to HDF5 file
   \arg -2D : Use two-parametric simulation driver
-  \arg -adap : Use adaptive simulation driver with LR-splines discretization
 */
 
 int main (int argc, char** argv)
@@ -121,14 +135,11 @@ int main (int argc, char** argv)
   {
     std::cout <<"usage: "<< argv[0]
               <<" <inputfile> [-dense|-spr|-superlu[<nt>]|-samg|-petsc]\n"
-              <<"       [-lag|-spec|-LR] [-1D|-2D] [-nGauss <n>] [-hdf5]\n"
+              <<"       [-lag|-spec|-LR] [-2D] [-nGauss <n>] [-hdf5]\n"
               <<"       [-vtf <format> [-nviz <nviz>] [-nu <nu>] [-nv <nv>]"
               <<" [-nw <nw>]]\n";
     return 0;
   }
-
-  if (args.adap)
-    IFEM::getOptions().discretization = ASM::LRSpline;
 
   IFEM::cout <<"\nInput file: "<< infile;
   IFEM::getOptions().print(IFEM::cout) << std::endl;
@@ -136,9 +147,10 @@ int main (int argc, char** argv)
   utl::profiler->stop("Initialization");
 
   if (args.dim == 3)
-    return runSimulator<SIM3D>(infile,args);
+    return runSimulator1<SIM3D>(infile,args);
   else if (args.dim == 2)
-    return runSimulator<SIM2D>(infile,args);
-  else
-    return runSimulator<SIM1D>(infile,args);
+    return runSimulator1<SIM2D>(infile,args);
+
+  std::cerr <<" *** Sorry, no 1D implementation."<< std::endl;
+  return 1;
 }
