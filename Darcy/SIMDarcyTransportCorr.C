@@ -43,19 +43,22 @@ namespace
 
 template<class Dim>
 SIMDarcyTransportCorr<Dim>::SIMDarcyTransportCorr (IntegrandBase& itg,
-                                                   const CharVec& nf) : Dim(nf)
+                                                   const CharVec& nf,
+                                                   bool AL) : Dim(nf)
 {
   Dim::myProblem = &itg;
   Dim::myHeading = "Darcy transport correction solver";
   Dim::lagMTOK = true; // can do multithreading with global Lagrange multipliers
+  useAL = AL;
+  vCode = 0;
+  nSclr = AL ? 3 : 0;
 }
 
 
 template<class Dim>
 SIMDarcyTransportCorr<Dim>::~SIMDarcyTransportCorr ()
 {
-  if (vCode > 0)
-    Dim::myVectors.erase(vCode);
+  Dim::myVectors.erase(vCode);
   Dim::myProblem = nullptr;
   Dim::myInts.clear();
 }

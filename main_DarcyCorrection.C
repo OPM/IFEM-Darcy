@@ -37,30 +37,40 @@ int runSimulator(char* infile, const DarcyArgs& args)
   else if (args.mixed > 0)
     ASMmxBase::Type = ASMmxBase::REDUCED_CONT_RAISE_BASIS1;
 
-  SIMinput::CharVec fields = { Dim::dimension };
-  if (args.mixed) fields.push_back(args.mixed%10);
+  // With the Augmented Lagrange formulation (args.useAL=true)
+  // a mixed field interpolation is used, but with zero nodal components
+  // for the second basis, such that the Lagrange multiplier fields only
+  // exist on the element level. The code 99 is used to flag this.
+  DarcyTransportCorr dtc(Dim::dimension,
+                         args.useAL ? 99 : args.mixed%10);
 
-  DarcyTransportCorr itg(Dim::dimension,args.mixed%10);
-  SIMDarcyTransportCorr<Dim> darcy(itg,fields);
-  Solver solver(darcy);
+  SIMinput::CharVec fields = { Dim::dimension };
+  if (args.mixed)
+    fields.push_back(args.useAL ? 0 : args.mixed%10);
+  SIMDarcyTransportCorr<Dim> model(dtc, fields, args.useAL);
+
+  Solver solver(model);
 
   utl::profiler->start("Model input");
 
-  if (!darcy.read(infile) || !solver.read(infile))
+  if (!model.read(infile) || !solver.read(infile))
     return 1;
 
   utl::profiler->stop("Model input");
 
-  if (!darcy.preprocess())
+  if (!model.preprocess())
     return 2;
 
-  if (!darcy.initSystem(darcy.opt.solver))
+  if (!model.initSystem(model.opt.solver, 1, 1, model.getNoScalars()))
     return 3;
 
-  darcy.setQuadratureRule(darcy.opt.nGauss[0],true);
+  if (args.useAL)
+    model.initLHSbuffers();
 
-  if (darcy.opt.dumpHDF5(infile))
-    solver.handleDataOutput(darcy.opt.hdf5,darcy.getProcessAdm());
+  model.setQuadratureRule(model.opt.nGauss[0],true);
+
+  if (model.opt.dumpHDF5(infile))
+    solver.handleDataOutput(model.opt.hdf5,model.getProcessAdm());
 
   return solver.solveProblem(infile,"Solving Darcy transport correction problem");
 }
@@ -143,6 +153,15 @@ int main (int argc, char** argv)
 
   IFEM::cout <<"\nInput file: "<< infile;
   IFEM::getOptions().print(IFEM::cout) << std::endl;
+  if (args.useAL)
+  {
+    IFEM::cout <<"The Augmented Lagrange formulation is used."<< std::endl;
+    if (!args.mixed) args.mixed = 2;
+  }
+  else if (args.mixed)
+    IFEM::cout <<"The Lagrange Multipliers formulation is used."<< std::endl;
+  else
+    IFEM::cout <<"The Penalty formulation is used."<< std::endl;
 
   utl::profiler->stop("Initialization");
 

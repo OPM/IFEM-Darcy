@@ -32,7 +32,8 @@ class DarcyArgs : public SIMargsBase
 public:
   TimeIntegration::Method timeMethod = TimeIntegration::NONE; //!< Time integration method
   bool tracer = false; //!< Include a tracer field
-  bool scheduled = false; //!< If true, update pressure on a schedule, separate ad step.
+  bool scheduled = false; //!< If \e true, update pressure on a schedule, separate ad step
+  bool useAL = false; //!< If \e true, use the Augmented Lagrange approach
   unsigned char mixed = 0; //!< If > 0, use a mixed formulation (correction)
   DCY::AdaptationNorm adNorm = DCY::NO_ADAP; //!< Norm to adapt based on
 
@@ -43,7 +44,7 @@ public:
   bool parseArg(const char* argv) override;
 
   //! \brief Parses a command-line argument with parameters.
-  bool parseArgComplex(int argc, char **argv, int &i);
+  bool parseArgComplex(int argc, char** argv, int& i);
 
 protected:
   //! \brief Parse an element from the input file

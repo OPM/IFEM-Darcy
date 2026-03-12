@@ -34,6 +34,8 @@ bool DarcyArgs::parseArg (const char* argv)
     mixed = 11;
   else if (strcmp(argv, "-Mixed") == 0)
     mixed = 12;
+  else if (strcmp(argv, "-AL") == 0)
+    useAL = true;
   else if (TimeIntegration::Method tm = TimeIntegration::get(argv+1);
            tm > TimeIntegration::NONE)
     timeMethod = tm;
@@ -47,7 +49,7 @@ bool DarcyArgs::parseArg (const char* argv)
 bool DarcyArgs::parseArgComplex (int argc, char** argv, int& i)
 {
   if (strcasecmp(argv[i],"-adap"))
-    return false;
+    return this->parseArg(argv[i]);
 
   adap = true;
   int j = i+1;
