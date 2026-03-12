@@ -1,17 +1,15 @@
-SquareCorr-p2.xinp
+SquareCorr-p1.xinp -AL
 
-Input file: SquareCorr-p2.xinp
+Input file: SquareCorr-p1.xinp
 Equation solver: 2
 Number of Gauss points: 4
 Basis function values are precalculated but not cached
+The Augmented Lagrange formulation is used.
 1. Darcy transport correction solver
-Parsing input file SquareCorr-p2.xinp
+Parsing input file SquareCorr-p1.xinp
 Parsing <geometry>
   Generating linear geometry on unit parameter domain \[0,1]^2
-  Parsing <raiseorder>
   Parsing <refine>
-  Parsing <raiseorder>
-	Raising order of P1 1 1
   Parsing <refine>
 	Refining P1 31 31
 Parsing <darcycorrection>
@@ -29,18 +27,15 @@ Resolving Dirichlet boundary conditions
 	Constraining P1 E4 in direction(s) 12
  >>> SAM model summary <<<
 Number of elements    1024
-Number of nodes       1156
-Number of dofs        2312
-Number of unknowns    2048
+Number of nodes       5314
+Number of dofs        8450
+Number of D-dofs      8450
+Number of unknowns    7938
 Solving Darcy transport correction problem
-Processing integrand associated with code 0
-Assembling interior matrix terms for P1
-Done.
-Solving the equation system ...
-  Primary solution summary: L2-norm : 0.0833513
-                     Max X-velocity : 0.193085
-                     Max Y-velocity : 0.193085
-  L2(q - q^) / L2(q^)   = 0.004690[0-9]*% of 0.124419
-  L2(div q^) / L2(q^)   = 0.6434[0-9]*% of 0.124419
-  L2(res q^) / L2(c\*q^) = 0.06801[0-9]*% of 0.0242149
-  L2(div q ) / L2(q )   = [1-9].*e-1[0-9]% of 0.124419
+  Primary solution summary: L2-norm : 0.0867752
+                     Max X-velocity : 0.192767
+                     Max Y-velocity : 0.192767
+  L2(q - q^) / L2(q^)   = 0.1783[0-9]*% of 0.124418
+  L2(div q^) / L2(q^)   = 0.06875[0-9]*% of 0.124418
+  L2(res q^) / L2(c\*q^) = 0.02667[0-9]*% of 0.024215
+  L2(div q ) / L2(q )   = [1-9].[0-9]*e-1[0-9]% of 0.124419
