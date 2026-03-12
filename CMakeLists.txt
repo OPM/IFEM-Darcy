@@ -143,6 +143,7 @@ ifem_add_regression_test(
   TEST_FILES
     SquareCorr-p1.reg
     SquareCorr-p2.reg
+    SquareCorr-p1-AL.reg
 )
 
 if(IFEM_COMMON_APP_BUILD)
