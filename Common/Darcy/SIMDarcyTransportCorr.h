@@ -35,7 +35,8 @@ public:
   //! \brief Constructor.
   //! \param itg The integrand to use
   //! \param[in] nf Number of fields on each basis
-  SIMDarcyTransportCorr(IntegrandBase& itg, const CharVec& nf);
+  //! \param[in] AL If \e true, use the Augmented Lagrange formulation
+  SIMDarcyTransportCorr(IntegrandBase& itg, const CharVec& nf, bool AL = false);
   //! \brief Destructor.
   ~SIMDarcyTransportCorr() override;
 
@@ -45,6 +46,9 @@ public:
 
   //! \brief Returns the name of this simulator (for use in the HDF5 export).
   std::string getName() const override { return "DarcyTransportCorr"; }
+
+  //! \brief Returns the total number of scalar quantities to integrate.
+  int getNoScalars() const { return nSclr; }
 
   //! \brief Register fields for data export.
   void registerFields(DataExporter& exporter);
@@ -80,9 +84,11 @@ public:
   void preprocessA() override;
 
 protected:
-  Vector qSol; //!< Solution vector
+  Vector qSol;  //!< Solution vector
   Matrix eNorm; //!< Element norms
-  int vCode = 0; //!< Velocity anasol code
+  bool   useAL; //!< If \e true, use the Augmented Lagrange formulation
+  int    vCode; //!< Index for analytical velocity field (for destructor)
+  int    nSclr; //!< Number of scalar quantities to integrate
 };
 
 #endif
