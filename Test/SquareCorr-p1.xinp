@@ -6,7 +6,7 @@
     <refine patch="1" u="31" v="31"/>
   </geometry>
 
-  <darcycorrection>
+  <darcycorrection eps0="1.0e-3" eps1="1.0e-6" eps2="1.0e-5">
     <boundaryconditions>
       <dirichlet set="Boundary" comp="12"/>
     </boundaryconditions>
@@ -28,6 +28,7 @@
        p2y=-fp*gp;
       -(cx*px + c*p2x + cy*py + c*p2y)
     </input_source>
+    <penalty alpha="1.0e5" beta="1.0e5" eps="1.0e-8"/>
   </darcycorrection>
 
 </simulation>

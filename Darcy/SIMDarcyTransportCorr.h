@@ -65,17 +65,19 @@ public:
   bool saveStep(const TimeStep& tp, int& nBlock);
 
   //! \brief Computes the solution for the current time step.
-  //! \param[in] tp Time stepping parameters
-  bool solveStep(const TimeStep& tp);
+  //! \param tp Time stepping parameters
+  bool solveStep(TimeStep& tp);
 
   //! \brief Advances the time stepping.
   bool advanceStep(TimeStep&);
 
   //! \brief Prints out a summary of the calculated solution.
+  //! \param[in] compName Solution name to be used in norm output
   //! \param[in] outPrec Number of digits after the decimal point in norm print
-  void printSolutionSummary(const Vector&, int, const char*,
-                            std::streamsize outPrec) override;
+  void printSolutionSummary(const Vector&, int, const char* compName,
+                            std::streamsize outPrec = 0) override;
 
+protected:
   //! \brief Adds two global multipliers for the constraints.
   //! \param nnod Number of nodes in the model (updated)
   bool preprocessBeforeAsmInit(int& nnod) override;
@@ -83,12 +85,22 @@ public:
   //! \brief Performs some pre-processing tasks on the FE model.
   void preprocessA() override;
 
-protected:
+  //! \brief Solves the current time step by Augmented Lagrange.
+  //! \param tp Time stepping parameters
+  bool solveALStep(TimeStep& tp);
+
+  //! \brief Checks if the Augmented Lagrange iterations have converged.
+  //! \param tp Time stepping parameters
+  bool checkConvergence(TimeStep& tp);
+
+private:
   Vector qSol;  //!< Solution vector
   Matrix eNorm; //!< Element norms
   bool   useAL; //!< If \e true, use the Augmented Lagrange formulation
   int    vCode; //!< Index for analytical velocity field (for destructor)
   int    nSclr; //!< Number of scalar quantities to integrate
+  int    maxit; //!< Maximum number of AL-iterations
+  double eps[3]; //!< Convergence tolerances
 };
 
 #endif
