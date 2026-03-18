@@ -57,7 +57,7 @@ int runSimulator(char* infile, const DarcyArgs& args)
 
   SIMDarcy<Dim> darcy(*itg,nf);
   darcy.setAdaptiveNorm(args.adNorm);
-  Solver<SIMDarcy<Dim>> solver(darcy);
+  Solver solver(darcy);
 
   utl::profiler->start("Model input");
 
@@ -101,7 +101,7 @@ int runSimulatorTransient(char* infile, const DarcyArgs& args)
   }
 
   SIMDarcy<Dim> darcy(*itg,nf);
-  SIMSolver<SIMDarcy<Dim>> solver(darcy);
+  SIMSolver solver(darcy);
 
   utl::profiler->start("Model input");
 
@@ -136,10 +136,10 @@ int runSimulatorScheduled(char* infile, const DarcyArgs& args)
 {
   Darcy dcy(Dim::dimension);
   DarcyAdvection dcya(Dim::dimension,dcy,TimeIntegration::Order(args.timeMethod));
-  SIMDarcy<Dim> darcy(dcy);
+  SIMDarcy<Dim>          darcy(dcy);
   SIMDarcyAdvection<Dim> darcya(dcya);
-  SIMDarcySchedule<Dim> schedule(darcy, darcya);
-  SIMSolver<SIMDarcySchedule<Dim>> solver(schedule);
+  SIMDarcySchedule<Dim>  schedule(darcy, darcya);
+  SIMSolver solver(schedule);
 
   utl::profiler->start("Model input");
 
@@ -182,7 +182,7 @@ int runSimulator1(char* infile, const DarcyArgs& args)
   if (args.adap)
     return runSimulator<Dim,SIMDarcyAdap>(infile,args);
   else if (args.scheduled)
-      return runSimulatorScheduled<Dim>(infile,args);
+    return runSimulatorScheduled<Dim>(infile,args);
   else if (args.timeMethod != TimeIntegration::NONE)
     return runSimulatorTransient<Dim>(infile,args);
   else
@@ -225,9 +225,7 @@ int main (int argc, char** argv)
 
   IFEM::Init(argc,argv,"Darcy solver");
   for (int i = 1; i < argc; i++)
-    if (args.parseArgComplex(argc,argv,i))
-      ;
-    else if (argv[i] == infile || args.parseArg(argv[i]))
+    if (argv[i] == infile || args.parseArgComplex(argc,argv,i))
       ; // ignore the input file on the second pass
     else if (SIMoptions::ignoreOldOptions(argc,argv,i))
       ; // ignore the obsolete option
