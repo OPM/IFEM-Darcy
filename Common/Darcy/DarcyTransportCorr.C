@@ -39,15 +39,30 @@ DarcyTransportCorr::DarcyTransportCorr (unsigned short int n, unsigned char n2)
   npv = n;
   nf2 = n2;
 
-  qq = 1;
-  ql = n2 > 1 ? 4 : (n2 > 0 ? 3 : 0);
-  qm = n2 > 1 ? 5 : 0;
-  nM = n2 > 1 ? 10 : (n2 > 0 ? 5 : 3);
+  alpha = beta = 1.0e6;
+  epsil = 1.0e-6;
 
+  myEvalTime = 0.0;
+  newMats = true;
+
+  qq = ql = lg = Fq = Fl = 0;
+
+  if (n2 == 0 || n2 > 2)
+    return;
+
+  // Lagrange multiplier method (mixed formulation).
+  // Use a 3x3 non-symmetric block matrix with storage convention as follows:
+  //
+  //     q l g
+  // q : 1 4 5
+  // l : 6 2 7
+  // g : 8 9 3
+
+  qq = 1;
+  ql = 4;
+  lg = 7;
   Fq = 1;
-  Fl = n2 > 0 ? 2 : 0;
-  Fm = n2 > 1 ? 3 : 0;
-  nV = n2 > 0 ? 2+n2 : 3;
+  Fl = 2;
 }
 
 
@@ -91,7 +106,7 @@ bool DarcyTransportCorr::parse (const tinyxml2::XMLElement* elem)
   {
     utl::getAttribute(elem, "alpha", alpha);
     utl::getAttribute(elem, "beta", beta);
-    utl::getAttribute(elem, "eps", eps);
+    utl::getAttribute(elem, "eps", epsil);
   }
   else
     return false;
@@ -100,12 +115,76 @@ bool DarcyTransportCorr::parse (const tinyxml2::XMLElement* elem)
 }
 
 
+void DarcyTransportCorr::setMode (SIM::SolutionMode mode)
+{
+  m_mode = mode;
+  if (mode >= SIM::RECOVERY)
+    primsol.resize(1);
+  else if (mode == SIM::DYNAMIC || mode == SIM::RHS_ONLY)
+    primsol.resize(1);
+  else
+    primsol.clear();
+}
+
+
+void DarcyTransportCorr::initLHSbuffers (size_t nEl)
+{
+  if (nEl > 1)
+    myCache.resize(nEl);
+  else if (!myCache.empty())
+    newMats = nEl == 1;
+
+#ifdef INT_DEBUG
+  std::cout <<"\nDarcyTransportCorr::initLHSbuffers(): "<< nEl
+            <<" newMats="<< std::boolalpha << newMats << std::endl;
+#endif
+}
+
+
+bool DarcyTransportCorr::initElement (const std::vector<int>& MNPC,
+                                      const MxFiniteElement& fe,
+                                      const std::vector<size_t>& elem_sizes,
+                                      const std::vector<size_t>& basis_sizes,
+                                      LocalIntegral& elmInt)
+{
+  if (!this->initElement(MNPC, elem_sizes, basis_sizes, elmInt))
+    return false;
+  else if (alpha <= 0.0 || beta <= 0.0 || ql > 0 || fe.iel <= 0)
+    return true;
+
+  if (size_t iel = fe.iel-1; iel < myCache.size())
+    if (Cache& elmC = myCache[iel]; !elmC.B.empty())
+    {
+      // Update the element-level Lagrange multipliers
+      const Vector& q = elmInt.vec.front();
+      // lambda += alpha*B^t*q - alpha*fm
+      if (!elmC.B.multiply(q,elmC.lambda.add(elmC.fm,-alpha),alpha,1.0,true))
+        return false;
+      // mu += beta*C^t*q - beta*ft
+      if (!elmC.C.multiply(q,elmC.mu.add(elmC.ft,-beta),beta,1.0,true))
+        return false;
+#if INT_DEBUG > 2
+      std::cout <<"\nDarcyTransportCorr::initElement("<< fe.iel <<"):\n\tq =";
+      for (double v : q) std::cout <<" "<< v;
+      std::cout <<"\n\tlambda =";
+      for (double v : elmC.lambda) std::cout <<" "<< v;
+      std::cout <<"\n\tmu =";
+      for (double v : elmC.mu) std::cout <<" "<< v;
+      std::cout << std::endl;
+#endif
+    }
+
+  return true;
+}
+
+
 LocalIntegral* DarcyTransportCorr::getLocalIntegral (size_t nen,
                                                      size_t, bool) const
 {
+  // Element matrices for Penalty method
   ElmMats* result = new ElmMats();
 
-  result->resize(nM, nV);
+  result->resize(3,3);
   result->redim(nen*nsd);
 
   return result;
@@ -116,19 +195,100 @@ LocalIntegral*
 DarcyTransportCorr::getLocalIntegral (const std::vector<size_t>& nen,
                                       size_t, bool) const
 {
-  BlockElmMats* result = new BlockElmMats(1+nf2,2);
+  if (nf2 > 2)
+  {
+    // Element matrices for Augmented Lagrange method
+    ElmMats* result = new ElmMats();
 
-  result->resize(nM, nV);
-  result->redim(1, nen[0], nsd);
-  for (size_t i = 0; i < nf2; i++)
-    result->redim(2+i, nen[1], 1, -2);
+    result->resize(5,5,3);
+
+    const size_t n1 = nen[0]*nsd;
+    for (size_t i = 0; i < 5; i++)
+    {
+      const size_t n2 = i < 3 ? n1 : nen[1];
+      result->A[i].resize(n1,n2);
+      result->b[i].resize(n2);
+    }
+
+    return result;
+  }
+
+  // Element matrices for Lagrange multiplier method
+  BlockElmMats* result = new BlockElmMats(3,3);
+
+  result->resize(10,4);
+  result->redim(1, nen[0], nsd,  1);
+  result->redim(2, nen[1], nf2, -2);
+  result->redim(3, 1,      nf2, -3);
   if (ql > 0)
     result->redimOffDiag(ql, -1);
-  if (qm > 0)
-    result->redimOffDiag(qm, -1);
+  if (lg > 0)
+    result->redimOffDiag(lg, 1);
   result->finalize();
 
   return result;
+}
+
+
+void DarcyTransportCorr::evalDandT (Matrix& Dmat, Matrix& Tmat,
+                                    double C, const Vec3& dC,
+                                    const FiniteElement& fe) const
+{
+  for (size_t i = 1; i <= fe.N.size(); ++i)
+    for (size_t j = 1; j <= fe.N.size(); ++j)
+      for (unsigned short int k = 1; k <= nsd; ++k)
+        for (unsigned short int l = 1; l <= nsd; ++l)
+        {
+          const double mass_term = fe.dNdX(i,k) * fe.dNdX(j,l);
+          const double transport_term = ((dC(k)*fe.N(i) + C*fe.dNdX(i,k)) *
+                                         (dC(l)*fe.N(j) + C*fe.dNdX(j,l)));
+          Dmat((i-1)*nsd+k, (j-1)*nsd+l) += mass_term * fe.detJxW;
+          Tmat((i-1)*nsd+k, (j-1)*nsd+l) += transport_term * fe.detJxW;
+        }
+}
+
+
+/*!
+  If \a Bmat and \a Cmat are the same matrix, it is assumed to be of dimension
+  nsd*nbf1&times;2*nbf2 where nbf1 and nbf2 denote the number of basis functions
+  in the first and second basis, respectively.
+  Otherwise, two matrices are assumed the dimension nsd*nbf1&times;nbf2.
+*/
+
+void DarcyTransportCorr::evalBandC (Matrix& Bmat, Matrix& Cmat,
+                                    double C, const Vec3& dC,
+                                    const MxFiniteElement& fe) const
+{
+  const size_t n2 = nf2 > 2 ? 2 : nf2;
+  const bool same = &Bmat == &Cmat;
+
+  for (size_t i = 1; i <= fe.basis(2).size(); ++i)
+  {
+    const double N2dJw = fe.basis(2)(i) * fe.detJxW;
+
+    size_t k = 1;
+    size_t l = same ? (i-1)*n2 + 1 : i;
+    size_t m = same ? l + 1 : i;
+    for (size_t j = 1; j <= fe.basis(1).size(); ++j)
+      for (unsigned short int d = 1; d <= nsd; ++d, ++k)
+      {
+        if (n2 > 0)
+          Bmat(k,l) += fe.grad(1)(j,d) * N2dJw;
+        if (n2 > 1)
+          Cmat(k,m) += (C*fe.grad(1)(j,d) + dC(d)*fe.basis(1)(j)) * N2dJw;
+      }
+  }
+}
+
+
+void DarcyTransportCorr::evalFt (Vector& Ft,
+                                 double f_dCdt, double C, const Vec3& dCdX,
+                                 const FiniteElement& fe) const
+{
+  size_t k = 0;
+  for (size_t i = 1; i <= fe.N.size(); ++i)
+    for (unsigned short int d = 1; d <= nsd; ++d)
+      Ft(++k) += f_dCdt * (dCdX(d)*fe.N(i) + C*fe.dNdX(i,d)) * fe.detJxW;
 }
 
 
@@ -139,35 +299,29 @@ bool DarcyTransportCorr::evalInt (LocalIntegral& elmInt,
   ElmMats& elMat = static_cast<ElmMats&>(elmInt);
 
   const double  C   = (*observed_C)(X);
-  const Vec3   dC   = observed_C->gradient(X);
+  const Vec3   dCdX = observed_C->gradient(X);
   const double dCdt = observed_C->timeDerivative(X);
 
   const Vec3   q = (*input_q)(X);
   const double f = (*input_source)(X);
 
-  const double scale = eps > 0.0 ? 1.0 / (eps + q.length2()) : 1.0;
+  const double scale = epsil > 0.0 ? 1.0 / (epsil + q.length2()) : 1.0;
 
-  EqualOrderOperators::Weak::Mass(elMat.A[0], fe, scale);
+#if INT_DEBUG > 3
+  std::cout <<"\nDarcyTransportCorr::evalInt("<< fe.iel <<", "<< fe.iGP <<", "
+            << X <<"):\n\tC = "<< C <<" dCdt = "<< dCdt <<" dCdX = "<< dCdX
+            <<"\n\tq = "<< q <<" f = "<< f
+            <<"\n\tdetJxW = "<< fe.detJxW <<" scale = "<< scale << std::endl;
+#endif
+
+  if (newMats)
+  {
+    EqualOrderOperators::Weak::Mass(elMat.A[0], fe, scale);
+    this->evalDandT(elMat.A[1], elMat.A[2], C, dCdX, fe);
+  }
+
   EqualOrderOperators::Weak::Source(elMat.b[0], fe, q, scale);
-
-  for (size_t i = 1; i <= fe.N.size(); ++i)
-    for (size_t j = 1; j <= fe.N.size(); ++j)
-      for (unsigned short int k = 1; k <= nsd; ++k)
-        for (unsigned short int l = 1; l <= nsd; ++l)
-        {
-          const double mass_term = fe.dNdX(i,k) * fe.dNdX(j,l);
-          const double transport_term = ((dC(k)*fe.N(i) + C*fe.dNdX(i,k)) *
-                                         (dC(l)*fe.N(j) + C*fe.dNdX(j,l)));
-          elMat.A[1]((i-1)*nsd+k, (j-1)*nsd+l) += mass_term * fe.detJxW;
-          elMat.A[2]((i-1)*nsd+k, (j-1)*nsd+l) += transport_term * fe.detJxW;
-        }
-
-  for (size_t i = 1; i <= fe.N.size(); ++i)
-    for (unsigned short int d = 1; d <= nsd; ++d)
-    {
-      const double transport_term = (f-dCdt) * (dC(d)*fe.N(i) + C*fe.dNdX(i,d));
-      elMat.b[2]((i-1)*nsd + d) += transport_term * fe.detJxW;
-    }
+  this->evalFt(elMat.b[2], f-dCdt, C, dCdX, fe);
 
   return true;
 }
@@ -180,50 +334,115 @@ bool DarcyTransportCorr::evalIntMx (LocalIntegral& elmInt,
   ElmMats& elMat = static_cast<ElmMats&>(elmInt);
 
   const double  C   = (*observed_C)(X);
-  const Vec3   dC   = observed_C->gradient(X);
+  const Vec3   dCdX = observed_C->gradient(X);
   const double dCdt = observed_C->timeDerivative(X);
 
   const Vec3   q = (*input_q)(X);
-  const double R = (*input_source)(X);//this->residual(X);
+  const double f = (*input_source)(X);
 
   const double scale = 1.0;
 
-  if (qq > 0)
+#if INT_DEBUG > 3
+  std::cout <<"\nDarcyTransportCorr::evalIntMx("<< fe.iel <<", "<< fe.iGP <<", "
+            << X <<"):\n\tC = "<< C <<" dCdt = "<< dCdt <<" dCdX = "<< dCdX
+            <<"\n\tq = "<< q <<" f = "<< f
+            <<"\n\tdetJxW = "<< fe.detJxW <<" scale = "<< scale << std::endl;
+#endif
+
+  if (newMats)
     EqualOrderOperators::Weak::Mass(elMat.A[qq], fe, scale);
 
-  if (ql > 0)
-    for (size_t i = 1; i <= fe.basis(2).size(); ++i)
-      for (size_t j = 1; j <= fe.basis(1).size(); ++j)
-        for (unsigned short int d = 1; d <= nsd; ++d)
-          elMat.A[ql]((j-1)*nsd+d,i) += fe.grad(1)(j,d) * fe.basis(2)(i) * fe.detJxW;
+  EqualOrderOperators::Weak::Source(elMat.b[Fq], fe, q, scale);
 
-  if (qm > 0)
-    for (size_t i = 1; i <= fe.basis(2).size(); ++i)
-      for (size_t j = 1; j <= fe.basis(1).size(); ++j)
-        for (unsigned short int d = 1; d <= nsd; ++d)
-          elMat.A[qm]((j-1)*nsd+d,i) += (C*fe.grad(1)(j,d) + dC(d)*fe.basis(1)(j)) * fe.basis(2)(i) * fe.detJxW;
+  if (nf2 > 2) // Augmented Lagrange method
+  {
+    if (newMats)
+    {
+      this->evalDandT(elMat.A[1], elMat.A[2], C, dCdX, fe);
+      this->evalBandC(elMat.A[3], elMat.A[4], C, dCdX, fe);
+    }
 
-  if (Fq > 0)
-    EqualOrderOperators::Weak::Source(elMat.b[Fq], fe, q);
+    this->evalFt(elMat.b[2], f-dCdt, C, dCdX, fe);
+    elMat.b[4].add(fe.basis(2), (f-dCdt)*fe.detJxW);
 
-  if (Fm > 0)
-    EqualOrderOperators::Weak::Source(elMat.b[Fm], fe, R-dCdt, 1, 2);
+    // Integrate the residuals
+    const Vec3   qhat = this->evalSol(elmInt.vec.front(),fe.basis(1));
+    const Tensor dqdX = this->evalGrd(elmInt.vec.front(),fe.grad(1));
+    const double res1 = dqdX.trace();
+    const double res2 = dCdt + res1*C + qhat*dCdX - f;
+    elMat.c[0] += (qhat-q).length2() * fe.detJxW;
+    elMat.c[1] += res1*res1 * fe.detJxW;
+    elMat.c[2] += res2*res2 * fe.detJxW;
+  }
+  else // Lagrange multiplier method
+  {
+    if (newMats && ql > 0)
+      this->evalBandC(elMat.A[ql], elMat.A[ql], C, dCdX, fe);
+
+    if (newMats && lg > 0)
+      EqualOrderOperators::Weak::ItgConstraint(elMat.A[lg], fe, 1.0, 2);
+
+    if (nf2 > 1)
+      EqualOrderOperators::Weak::Source(elMat.b[Fl], fe, f-dCdt, 2, 2);
+  }
 
   return true;
 }
 
 
-bool DarcyTransportCorr::finalizeElement (LocalIntegral& A)
+bool DarcyTransportCorr::finalizeElement (LocalIntegral& elmInt,
+                                          const FiniteElement& fe,
+                                          const TimeDomain&, size_t)
 {
   if (alpha > 0.0 && beta > 0.0 && ql == 0)
   {
-    ElmMats& E = static_cast<ElmMats&>(A);
+    ElmMats& E = static_cast<ElmMats&>(elmInt);
 
-    E.A.front().add(E.A[1], alpha);
-    E.A.front().add(E.A[2], beta);
+#if INT_DEBUG > 1
+    std::cout <<"\nDarcyTransportCorr::finalizeElement("<< fe.iel
+              <<"):"<< std::endl;
+#endif
+    if (newMats)
+    {
+#if INT_DEBUG > 1
+      for (size_t idx = 0; idx < E.A.size(); idx++)
+        E.printMat(std::cout,idx);
+#endif
+      E.A.front().add(E.A[1], alpha);
+      E.A.front().add(E.A[2], beta);
+    }
 
+#if INT_DEBUG > 1
+    for (size_t idx = 0; idx < E.b.size(); idx++)
+      E.printVec(std::cout,idx);
+#endif
     E.b.front().add(E.b[1], alpha);
     E.b.front().add(E.b[2], beta);
+
+    if (fe.iel > 0)
+      if (size_t iel = fe.iel-1; iel < myCache.size())
+      {
+        Cache& elmC = myCache[iel];
+        if (newMats)
+        {
+          // Update the cached element matrices
+          elmC.M  = E.A[0];
+          elmC.B  = E.A[3];
+          elmC.C  = E.A[4];
+          elmC.fm = E.b[3];
+          elmC.ft = E.b[4];
+        }
+        else
+          E.A.front() = elmC.M;
+
+        // Add force terms from the Lagrange multipliers
+        if (!elmC.lambda.empty()) // b -= B*lambda
+          if (!elmC.B.multiply(elmC.lambda,E.b.front(),-1.0,1.0))
+            return false;
+        if (!elmC.mu.empty()) // b -= C*mu
+          if (!elmC.C.multiply(elmC.mu,E.b.front(),-1.0,1.0))
+            return false;
+      }
   }
 
   return true;
@@ -233,6 +452,10 @@ bool DarcyTransportCorr::finalizeElement (LocalIntegral& A)
 bool DarcyTransportCorr::evalSol2 (Vector& s, const Vectors& eV,
                                    const FiniteElement& fe, const Vec3& X) const
 {
+  // Insert current simulation time in the function argument
+  if (const Vec4* Xt = dynamic_cast<const Vec4*>(&X); Xt)
+    const_cast<Vec4*>(Xt)->t = myEvalTime;
+
   s.resize(this->getNoFields(2));
   s[0] = (*observed_C)(X);
   s[1] = this->residual(X);
@@ -242,11 +465,13 @@ bool DarcyTransportCorr::evalSol2 (Vector& s, const Vectors& eV,
   s[4] = (qh - this->evalSol(eV.front(),fe.N)).length();
   for (size_t i = 0; i < nsd; ++i)
     s[5+i] = qh[i];
+
   return true;
 }
 
 
-std::string DarcyTransportCorr::getField1Name (size_t i, const char* prefix) const
+std::string DarcyTransportCorr::getField1Name (size_t i,
+                                               const char* prefix) const
 {
   if (i == 11)
     switch (nsd) {
@@ -274,7 +499,8 @@ std::string DarcyTransportCorr::getField1Name (size_t i, const char* prefix) con
 }
 
 
-std::string DarcyTransportCorr::getField2Name (size_t i, const char* prefix) const
+std::string DarcyTransportCorr::getField2Name (size_t i,
+                                               const char* prefix) const
 {
   const auto names3 = std::array {
     "observed_C",
@@ -310,10 +536,11 @@ double DarcyTransportCorr::residual (const Vector& eV,
   const double  f   = (*input_source)(X);
   const double  C   = (*observed_C)(X);
   const Vec3   dCdX = observed_C->gradient(X);
+  const double dCdt = observed_C->timeDerivative(X);
   const Vec3    q   = this->evalSol(eV,N);
   const Tensor dqdX = this->evalGrd(eV,dNdX);
 
-  return f - (dqdX.trace()*C + q*dCdX);
+  return f - (dCdt + dqdX.trace()*C + q*dCdX);
 }
 
 

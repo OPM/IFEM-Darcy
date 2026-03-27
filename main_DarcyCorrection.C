@@ -15,11 +15,9 @@
 #include "DarcyArgs.h"
 #include "SIMDarcyTransportCorr.h"
 
-#include "ASMenums.h"
 #include "ASMmxBase.h"
 #include "IFEM.h"
 #include "Profiler.h"
-#include "SIM1D.h"
 #include "SIM2D.h"
 #include "SIM3D.h"
 #include "SIMSolver.h"
@@ -31,7 +29,7 @@
   \param args Darcy arguments
 */
 
-template<class Dim>
+template<class Dim, template<class T> class Solver>
 int runSimulator(char* infile, const DarcyArgs& args)
 {
   if (args.mixed > 10)
@@ -39,32 +37,59 @@ int runSimulator(char* infile, const DarcyArgs& args)
   else if (args.mixed > 0)
     ASMmxBase::Type = ASMmxBase::REDUCED_CONT_RAISE_BASIS1;
 
-  SIMinput::CharVec fields = { Dim::dimension };
-  if (args.mixed) fields.push_back(args.mixed%10);
+  // With the Augmented Lagrange formulation (args.useAL=true)
+  // a mixed field interpolation is used, but with zero nodal components
+  // for the second basis, such that the Lagrange multiplier fields only
+  // exist on the element level. The code 99 is used to flag this.
+  DarcyTransportCorr dtc(Dim::dimension,
+                         args.useAL ? 99 : args.mixed%10);
 
-  DarcyTransportCorr itg(Dim::dimension,args.mixed%10);
-  SIMDarcyTransportCorr<Dim> darcy(itg,fields);
-  SIMSolverStat solver(darcy);
+  SIMinput::CharVec fields = { Dim::dimension };
+  if (args.mixed)
+    fields.push_back(args.useAL ? 0 : args.mixed%10);
+  SIMDarcyTransportCorr<Dim> model(dtc, fields, args.useAL);
+
+  Solver solver(model);
 
   utl::profiler->start("Model input");
 
-  if (!darcy.read(infile) || !solver.read(infile))
+  if (!model.read(infile) || !solver.read(infile))
     return 1;
 
   utl::profiler->stop("Model input");
 
-  if (!darcy.preprocess())
+  if (!model.preprocess())
     return 2;
 
-  if (!darcy.initSystem(darcy.opt.solver))
+  if (!model.initSystem(model.opt.solver, 1, 1, model.getNoScalars()))
     return 3;
 
-  darcy.setQuadratureRule(darcy.opt.nGauss[0],true);
+  if (args.useAL)
+    model.initLHSbuffers();
 
-  if (darcy.opt.dumpHDF5(infile))
-    solver.handleDataOutput(darcy.opt.hdf5,darcy.getProcessAdm());
+  model.setQuadratureRule(model.opt.nGauss[0],true);
+
+  if (model.opt.dumpHDF5(infile))
+    solver.handleDataOutput(model.opt.hdf5,model.getProcessAdm());
 
   return solver.solveProblem(infile,"Solving Darcy transport correction problem");
+}
+
+
+/*!
+  \brief Choose a solver template and then launch a simulator.
+  \param infile The input file to parse
+  \param args Simulator arguments
+*/
+
+template<class Dim>
+int runSimulator1(char* infile, const DarcyArgs& args)
+{
+  if (args.timeMethod == TimeIntegration::NONE)
+    return runSimulator<Dim,SIMSolverStat>(infile,args);
+
+  Dim::msgLevel = 1;
+  return runSimulator<Dim,SIMSolver>(infile,args);
 }
 
 
@@ -91,7 +116,6 @@ int runSimulator(char* infile, const DarcyArgs& args)
   \arg -nw \a nw : Number of visualization points per knot-span in w-direction
   \arg -hdf5 : Write primary and projected secondary solution to HDF5 file
   \arg -2D : Use two-parametric simulation driver
-  \arg -adap : Use adaptive simulation driver with LR-splines discretization
 */
 
 int main (int argc, char** argv)
@@ -121,24 +145,31 @@ int main (int argc, char** argv)
   {
     std::cout <<"usage: "<< argv[0]
               <<" <inputfile> [-dense|-spr|-superlu[<nt>]|-samg|-petsc]\n"
-              <<"       [-lag|-spec|-LR] [-1D|-2D] [-nGauss <n>] [-hdf5]\n"
+              <<"       [-lag|-spec|-LR] [-2D] [-nGauss <n>] [-hdf5]\n"
               <<"       [-vtf <format> [-nviz <nviz>] [-nu <nu>] [-nv <nv>]"
               <<" [-nw <nw>]]\n";
     return 0;
   }
 
-  if (args.adap)
-    IFEM::getOptions().discretization = ASM::LRSpline;
-
   IFEM::cout <<"\nInput file: "<< infile;
   IFEM::getOptions().print(IFEM::cout) << std::endl;
+  if (args.useAL)
+  {
+    IFEM::cout <<"The Augmented Lagrange formulation is used."<< std::endl;
+    if (!args.mixed) args.mixed = 2;
+  }
+  else if (args.mixed)
+    IFEM::cout <<"The Lagrange Multipliers formulation is used."<< std::endl;
+  else
+    IFEM::cout <<"The Penalty formulation is used."<< std::endl;
 
   utl::profiler->stop("Initialization");
 
   if (args.dim == 3)
-    return runSimulator<SIM3D>(infile,args);
+    return runSimulator1<SIM3D>(infile,args);
   else if (args.dim == 2)
-    return runSimulator<SIM2D>(infile,args);
-  else
-    return runSimulator<SIM1D>(infile,args);
+    return runSimulator1<SIM2D>(infile,args);
+
+  std::cerr <<" *** Sorry, no 1D implementation."<< std::endl;
+  return 1;
 }
