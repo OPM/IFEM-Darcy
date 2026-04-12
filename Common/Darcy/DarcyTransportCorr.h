@@ -37,6 +37,29 @@ public:
   //! \brief Parses a data section from an XML element.
   bool parse(const tinyxml2::XMLElement* elem) override;
 
+  //! \brief Defines the solution mode before the element assembly is started.
+  void setMode(SIM::SolutionMode mode) override;
+
+  //! \brief Initializes and toggles the use of element matrix cache.
+  //! \param[in] nEl Number of elements in the model/toggle.
+  //!   - If larger than 1, element matrix buffers are allocated to given size.
+  //!   - If equal to 1, element matrices are recomputed.
+  //!   - If equal to 0, reuse buffered element matrices.
+  void initLHSbuffers(size_t nEl) override;
+
+  using IntegrandBase::initElement;
+  //! \brief Initializes current element for numerical integration (mixed).
+  //! \param[in] MNPC Matrix of nodal point correspondance for current element
+  //! \param[in] fe Nodal and integration point data for current element
+  //! \param[in] elem_sizes Size of each basis on the element
+  //! \param[in] basis_sizes Size of each basis on the patch
+  //! \param elmInt Local integral for element
+  bool initElement(const std::vector<int>& MNPC,
+                   const MxFiniteElement& fe,
+                   const std::vector<size_t>& elem_sizes,
+                   const std::vector<size_t>& basis_sizes,
+                   LocalIntegral& elmInt) override;
+
   using IntegrandBase::getLocalIntegral;
   //! \brief Returns a local integral container for the given element.
   //! \param[in] nen Number of nodes on element
@@ -71,7 +94,8 @@ public:
   //! \details This method is invoked once for each element, after the numerical
   //! integration loop over interior points is finished and before the resulting
   //! element quantities are assembled into their system level equivalents.
-  bool finalizeElement(LocalIntegral& elmInt) override;
+  bool finalizeElement(LocalIntegral& elmInt, const FiniteElement& fe,
+                       const TimeDomain&, size_t) override;
 
   //! \brief Evaluates the secondary solution at a result point.
   //! \param[out] s Array of solution field values at current point
@@ -120,19 +144,46 @@ public:
   double residual(const Vector& eV,
                   const Vector& N, const Matrix& dNdX, const Vec3& X) const;
 
+protected:
+  //! \brief Integrates the D and T element matrices.
+  void evalDandT(Matrix& Dmat, Matrix& Tmat, double C, const Vec3& dC,
+                 const FiniteElement& fe) const;
+  //! \brief Integrates the B and C element matrices.
+  void evalBandC(Matrix& Bmat, Matrix& Cmat, double C, const Vec3& dC,
+                 const MxFiniteElement& fe) const;
+  //! \brief Integrates transport correction force terms for the velocity DOFs.
+  void evalFt(Vector& Ft, double f_dCdT, double C, const Vec3& dCdX,
+              const FiniteElement& fe) const;
+
 private:
-  double alpha = 1.0e6;  //!< Mass penalty parameter
-  double beta  = 1.0e6;  //!< Transport penalty parameter
-  double eps   = 1.0e-6; //!< Division by zero tolerance in mass-term scaling
-  std::unique_ptr<VecFunc>  input_q;      //!< Input Darcy velocity
+  double alpha; //!< Mass penalty parameter
+  double beta;  //!< Transport penalty parameter
+  double eps;   //!< Division by zero tolerance in mass-term scaling
+  size_t nf2;   //!< Number of fields on second basis, or AL if &gt; 2
+
+  std::unique_ptr<VecFunc>  input_q;      //!< Input velocity
   std::unique_ptr<RealFunc> input_source; //!< Input source
   std::unique_ptr<RealFunc> observed_C;   //!< Observed tracer concentration
 
   //! \cond Block_matrix_indices
-  size_t nM, nV, nf2;
-  size_t qq, ql, qm;
-  size_t Fq, Fl, Fm;
+  size_t qq, ql, lg;
+  size_t Fq, Fl;
   //! \endcond
+
+  //! \brief Struct containing cached element matrices.
+  struct Cache
+  {
+    Matrix M;      //!< Effective mass matrix
+    Matrix B;      //!< Mass conservation coupling matrix
+    Matrix C;      //!< Transport correction coupling matrix
+    Vector fm;     //!< Mass conservation forces
+    Vector ft;     //!< Transport correction forces
+    Vector lambda; //!< Lagrange multipliers for mass conservation constraint
+    Vector mu;     //!< Lagrange multipliers for transport correction constraint
+  };
+
+  std::vector<Cache> myCache; //!< Element matrix cache
+  bool               newMats; //!< If \e true, the LHS-matrices are recalculated
 };
 
 
