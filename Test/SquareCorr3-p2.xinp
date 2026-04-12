@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
+<simulation>
+
+  <geometry dim="2" X0="-0.5 -0.5">
+    <raiseorder patch="1" u="1" v="1"/>
+    <refine patch="1" u="31" v="31"/>
+    <topologysets>
+      <set name="vertical" type="edge">
+        <item patch="1">1 2</item>
+      </set>
+      <set name="horizontal" type="edge">
+        <item patch="1">3 4</item>
+      </set>
+    </topologysets>
+  </geometry>
+
+  <darcycorrection>
+    <boundaryconditions>
+      <dirichlet set="vertical"   comp="1" type="expression">1-y-4*y^3</dirichlet>
+      <dirichlet set="horizontal" comp="2" type="expression">x+4*x^3</dirichlet>
+    </boundaryconditions>
+    <input_velocity type="expression">1-4*y*(x^2+y^2)|4*x*(x^2+y^2)</input_velocity>
+    <observed_concentration type="expression">1-(x-t)^2</observed_concentration>
+    <input_source type="expression">8*y*(x^2+y^2)*(x-t)</input_source>
+    <penalty alpha="1.0e6" beta="1.0e6" eps="1.0e-8"/>
+  </darcycorrection>
+
+  <timestepping start="0" end="1" dt="0.1" type="be"/>
+
+</simulation>
