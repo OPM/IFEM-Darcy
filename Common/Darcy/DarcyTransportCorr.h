@@ -121,17 +121,18 @@ public:
                   const Vector& N, const Matrix& dNdX, const Vec3& X) const;
 
 private:
-  double alpha = 1.0e6;  //!< Mass penalty parameter
-  double beta  = 1.0e6;  //!< Transport penalty parameter
-  double eps   = 1.0e-6; //!< Division by zero tolerance in mass-term scaling
-  std::unique_ptr<VecFunc>  input_q;      //!< Input Darcy velocity
+  double alpha; //!< Mass penalty parameter
+  double beta;  //!< Transport penalty parameter
+  double eps;   //!< Division by zero tolerance in mass-term scaling
+
+  std::unique_ptr<VecFunc>  input_q;      //!< Input velocity
   std::unique_ptr<RealFunc> input_source; //!< Input source
   std::unique_ptr<RealFunc> observed_C;   //!< Observed tracer concentration
 
   //! \cond Block_matrix_indices
   size_t nM, nV, nf2;
-  size_t qq, ql, qm;
-  size_t Fq, Fl, Fm;
+  size_t qq, ql, lg;
+  size_t Fq, Fl;
   //! \endcond
 };
 

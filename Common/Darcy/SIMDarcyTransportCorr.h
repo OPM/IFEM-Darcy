@@ -29,12 +29,13 @@ namespace tinyxml2 { class XMLElement; }
 template<class Dim>
 class SIMDarcyTransportCorr : public Dim
 {
+  using CharVec = std::vector<unsigned char>; //!< Convenience type alias
+
 public:
   //! \brief Constructor.
-  //! \param itg Integrand to use
-  //! \param nf Fields on each basis
-  SIMDarcyTransportCorr(IntegrandBase& itg,
-                        const std::vector<unsigned char>& nf);
+  //! \param itg The integrand to use
+  //! \param[in] nf Number of fields on each basis
+  SIMDarcyTransportCorr(IntegrandBase& itg, const CharVec& nf);
   //! \brief Destructor.
   ~SIMDarcyTransportCorr() override;
 
@@ -56,28 +57,29 @@ public:
 
   //! \brief Saves the converged results to VTF file of a given time step.
   //! \param[in] tp Time stepping parameters
-  //! \param[in] nBlock Running VTF block counter
+  //! \param nBlock Running VTF block counter (updated)
   bool saveStep(const TimeStep& tp, int& nBlock);
 
   //! \brief Computes the solution for the current time step.
+  //! \param[in] tp Time stepping parameters
   bool solveStep(const TimeStep& tp);
 
-  //! \brief Prints a summary of the calculated solution to std::cout.
+  //! \brief Advances the time stepping.
+  bool advanceStep(TimeStep&);
+
+  //! \brief Prints out a summary of the calculated solution.
   //! \param[in] outPrec Number of digits after the decimal point in norm print
   void printSolutionSummary(const Vector&, int, const char*,
                             std::streamsize outPrec) override;
 
-  //! \brief Adds a global multiplier for the constraint.
-  //! \param nnod Number of nodes in model
+  //! \brief Adds two global multipliers for the constraints.
+  //! \param nnod Number of nodes in the model (updated)
   bool preprocessBeforeAsmInit(int& nnod) override;
 
   //! \brief Performs some pre-processing tasks on the FE model.
-  //! \details This method is reimplemented to couple the weak Dirichlet
-  //! integrand to the generic Neumann property codes.
   void preprocessA() override;
 
 protected:
-  bool constrainIntegratedLag = false; //!< Constrain integrated multiplier
   Vector qSol; //!< Solution vector
   Matrix eNorm; //!< Element norms
   int vCode = 0; //!< Velocity anasol code

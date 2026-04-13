@@ -39,15 +39,23 @@ DarcyTransportCorr::DarcyTransportCorr (unsigned short int n, unsigned char n2)
   npv = n;
   nf2 = n2;
 
+  alpha = beta = 1.0e6;
+  eps   = 1.0e-6;
+
+  // A 3x3 non-symmetric block matrix has the following storage convention:
+  //     q l g
+  // q : 1 4 5
+  // l : 6 2 7
+  // g : 8 9 3
+
   qq = 1;
-  ql = n2 > 1 ? 4 : (n2 > 0 ? 3 : 0);
-  qm = n2 > 1 ? 5 : 0;
-  nM = n2 > 1 ? 10 : (n2 > 0 ? 5 : 3);
+  ql = n2 > 0 ?  4 : 0;
+  lg = n2 > 0 ?  7 : 0;
+  nM = n2 > 0 ? 10 : 3;
 
   Fq = 1;
-  Fl = n2 > 0 ? 2 : 0;
-  Fm = n2 > 1 ? 3 : 0;
-  nV = n2 > 0 ? 2+n2 : 3;
+  Fl = n2 > 0 ?  2 : 0;
+  nV = n2 > 0 ?  4 : 3;
 }
 
 
@@ -116,16 +124,16 @@ LocalIntegral*
 DarcyTransportCorr::getLocalIntegral (const std::vector<size_t>& nen,
                                       size_t, bool) const
 {
-  BlockElmMats* result = new BlockElmMats(1+nf2,2);
+  BlockElmMats* result = new BlockElmMats(3,3);
 
   result->resize(nM, nV);
-  result->redim(1, nen[0], nsd);
-  for (size_t i = 0; i < nf2; i++)
-    result->redim(2+i, nen[1], 1, -2);
+  result->redim(1, nen[0], nsd,  1);
+  result->redim(2, nen[1], nf2, -2);
+  result->redim(3, 1,      nf2, -3);
   if (ql > 0)
     result->redimOffDiag(ql, -1);
-  if (qm > 0)
-    result->redimOffDiag(qm, -1);
+  if (lg > 0)
+    result->redimOffDiag(lg, 1);
   result->finalize();
 
   return result;
@@ -188,26 +196,32 @@ bool DarcyTransportCorr::evalIntMx (LocalIntegral& elmInt,
 
   const double scale = 1.0;
 
-  if (qq > 0)
-    EqualOrderOperators::Weak::Mass(elMat.A[qq], fe, scale);
+  EqualOrderOperators::Weak::Mass(elMat.A[qq], fe, scale);
 
-  if (ql > 0)
-    for (size_t i = 1; i <= fe.basis(2).size(); ++i)
-      for (size_t j = 1; j <= fe.basis(1).size(); ++j)
-        for (unsigned short int d = 1; d <= nsd; ++d)
-          elMat.A[ql]((j-1)*nsd+d,i) += fe.grad(1)(j,d) * fe.basis(2)(i) * fe.detJxW;
+  for (size_t i = 1; i <= fe.basis(2).size(); ++i)
+  {
+    const double N2dJ = fe.basis(2)(i) * fe.detJxW;
 
-  if (qm > 0)
-    for (size_t i = 1; i <= fe.basis(2).size(); ++i)
-      for (size_t j = 1; j <= fe.basis(1).size(); ++j)
-        for (unsigned short int d = 1; d <= nsd; ++d)
-          elMat.A[qm]((j-1)*nsd+d,i) += (C*fe.grad(1)(j,d) + dC(d)*fe.basis(1)(j)) * fe.basis(2)(i) * fe.detJxW;
+    size_t k = 1;
+    size_t l = (i-1)*nf2 + 1;
+    size_t m = l + 1;
+    for (size_t j = 1; j <= fe.basis(1).size(); ++j)
+      for (unsigned short int d = 1; d <= nsd; ++d, ++k)
+      {
+        if (nf2 > 0)
+          elMat.A[ql](k,l) += fe.grad(1)(j,d) * N2dJ;
+        if (nf2 > 1)
+          elMat.A[ql](k,m) += (C*fe.grad(1)(j,d) + dC(d)*fe.basis(1)(j)) * N2dJ;
+      }
+  }
 
-  if (Fq > 0)
-    EqualOrderOperators::Weak::Source(elMat.b[Fq], fe, q);
+  if (lg > 0)
+    EqualOrderOperators::Weak::ItgConstraint(elMat.A[lg], fe, 1.0, 2);
 
-  if (Fm > 0)
-    EqualOrderOperators::Weak::Source(elMat.b[Fm], fe, R-dCdt, 1, 2);
+  EqualOrderOperators::Weak::Source(elMat.b[Fq], fe, q);
+
+  if (nf2 > 1)
+    EqualOrderOperators::Weak::Source(elMat.b[Fl], fe, R-dCdt, 2, 2);
 
   return true;
 }
@@ -242,11 +256,13 @@ bool DarcyTransportCorr::evalSol2 (Vector& s, const Vectors& eV,
   s[4] = (qh - this->evalSol(eV.front(),fe.N)).length();
   for (size_t i = 0; i < nsd; ++i)
     s[5+i] = qh[i];
+
   return true;
 }
 
 
-std::string DarcyTransportCorr::getField1Name (size_t i, const char* prefix) const
+std::string DarcyTransportCorr::getField1Name (size_t i,
+                                               const char* prefix) const
 {
   if (i == 11)
     switch (nsd) {
@@ -274,7 +290,8 @@ std::string DarcyTransportCorr::getField1Name (size_t i, const char* prefix) con
 }
 
 
-std::string DarcyTransportCorr::getField2Name (size_t i, const char* prefix) const
+std::string DarcyTransportCorr::getField2Name (size_t i,
+                                               const char* prefix) const
 {
   const auto names3 = std::array {
     "observed_C",
@@ -296,10 +313,11 @@ double DarcyTransportCorr::residual (const Vec3& X) const
   const double C = (*observed_C)(X);
   const Vec3 q = (*input_q)(X);
   const Vec3 grad_C = observed_C->gradient(X);
+  const double dCdt = observed_C->timeDerivative(X);
   const Tensor grad_q = input_q->gradient(X);
   const double f = (*input_source)(X);
 
-  return f - (grad_q.trace()*C + q*grad_C);
+  return f - (dCdt + grad_q.trace()*C + q*grad_C);
 }
 
 
@@ -310,10 +328,11 @@ double DarcyTransportCorr::residual (const Vector& eV,
   const double  f   = (*input_source)(X);
   const double  C   = (*observed_C)(X);
   const Vec3   dCdX = observed_C->gradient(X);
+  const double dCdt = observed_C->timeDerivative(X);
   const Vec3    q   = this->evalSol(eV,N);
   const Tensor dqdX = this->evalGrd(eV,dNdX);
 
-  return f - (dqdX.trace()*C + q*dCdX);
+  return f - (dCdt + dqdX.trace()*C + q*dCdX);
 }
 
 

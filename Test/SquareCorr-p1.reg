@@ -26,20 +26,21 @@ Resolving Dirichlet boundary conditions
 	Constraining P1 E4 in direction(s) 12
  >>> SAM model summary <<<
 Number of elements    1024
-Number of nodes       5314
-Number of dofs        10628
+Number of nodes       5315
+Number of dofs        10630
 Number of D-dofs      8450
+Number of L-dofs      2
 Number of P-dofs      2178
-Number of unknowns    10116
+Number of unknowns    10118
 Solving Darcy transport correction problem
 Processing integrand associated with code 0
 Assembling interior matrix terms for P1
 Done.
 Solving the equation system ...
   Primary solution summary: L2-norm : 0.0869103
-               Max X-Darcy velocity : 0.193085
-               Max Y-Darcy velocity : 0.193085
-L2(q - q^) / L2(q^) = 0.0050893
-L2(div q^) / L2(q^) = 0.77639
-L2(res q^) / L2(c\*q^) = 0.073384
-L2(div q) / L2(q) = [1-9].*e-1.% [1-9].*e-1. 0.124419
+                     Max X-velocity : 0.193085
+                     Max Y-velocity : 0.193085
+  L2(q - q^) / L2(q^) = 0.0050893
+  L2(div q^) / L2(q^) = 0.77639
+  L2(res q^) / L2(c\*q^) = 0.073384
+  L2(div q) / L2(q) = [1-9].*e-1.% [1-9].*e-1. 0.124419
