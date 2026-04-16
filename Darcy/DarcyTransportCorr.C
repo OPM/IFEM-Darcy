@@ -131,7 +131,13 @@ void DarcyTransportCorr::initLHSbuffers (size_t nEl)
   if (nEl > 1)
     myCache.resize(nEl);
   else if (!myCache.empty())
-    newMats = nEl == 1;
+    if ((newMats = nEl == 1))
+      for (Cache& elmC : myCache)
+      {
+        // Initialize the element-level lagrange mulitpliers
+        elmC.lambda.clear();
+        elmC.mu.clear();
+      }
 
 #ifdef INT_DEBUG
   std::cout <<"\nDarcyTransportCorr::initLHSbuffers(): "<< nEl
@@ -339,7 +345,7 @@ bool DarcyTransportCorr::evalIntMx (LocalIntegral& elmInt,
   const Vec3   q = (*input_q)(X);
   const double f = (*input_source)(X);
 
-  const double scale = 1.0;
+  const double scale = eps > 0.0 ? 1.0 / (eps + q.length2()) : 1.0;
 
 #if INT_DEBUG > 3
   std::cout <<"\nDarcyTransportCorr::evalIntMx("<< fe.iel <<", "<< fe.iGP <<", "

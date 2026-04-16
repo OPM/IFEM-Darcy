@@ -28,7 +28,7 @@
        p2y=-fp*gp;
       -(cx*px + c*p2x + cy*py + c*p2y)
     </input_source>
-    <penalty alpha="1.0e5" beta="1.0e5" eps="1.0e-8"/>
+    <penalty alpha="1.0e5" beta="1.0e5" eps="0.0"/>
   </darcycorrection>
 
 </simulation>
