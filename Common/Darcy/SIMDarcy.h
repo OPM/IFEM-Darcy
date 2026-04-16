@@ -17,21 +17,13 @@
 #include "DarcyEnums.h"
 #include "DarcyMaterial.h"
 
-#include "MatVec.h"
 #include "SIMconfigure.h"
-#include "SIMenums.h"
 #include "SIMMultiPatchModelGen.h"
 #include "SIMsolution.h"
-
-#include <cstddef>
-#include <iosfwd>
-#include <string>
-
 
 class Darcy;
 class DataExporter;
 class TimeStep;
-class VTF;
 
 
 /*!
@@ -49,17 +41,12 @@ public:
 
   //! \brief Default constructor.
   //! \param itg Integrand to use
-  //! \param nf Number of primary fields
+  //! \param[in] nf Number of primary fields
   explicit SIMDarcy(Darcy& itg, unsigned char nf = 1);
 
-  //! \brief Default constructor.
-  //! \param itg Integrand to use
-  //! \param nf Number of primary fields
-  SIMDarcy(Darcy& itg, const std::vector<unsigned char>& nf);
-
   //! \brief Construct from setup properties.
-  //! \param props Setup properties
-  explicit SIMDarcy(const SetupProps& props) : SIMDarcy(*props.itg) {}
+  //! \param[in] p Setup properties
+  explicit SIMDarcy(const SetupProps& p) : SIMDarcy(*p.itg) {}
 
   //! \brief Destructor.
   virtual ~SIMDarcy();
@@ -83,13 +70,13 @@ public:
   //! \brief Returns the name of this simulator (for use in the HDF5 export).
   std::string getName() const override { return "DarcyFlow"; }
 
-  //! \brief Set solution vector used.
-  //! \details Used to supply an external solution vector for adaptive simulations.
+  //! \brief Sets solution vector used.
+  //! \details To supply an external solution vector in adaptive simulations.
   //! \param sol Pointer to vector to use.
   void setSol(const Vector* sol) { solVec = sol; }
 
   //! \brief Return solution vector.
-  const Vector& getSolution(int = 0) const override { return *solVec; }
+  const Vector& getSolution(int) const override { return *solVec; }
 
   //! \brief Register fields for data export.
   void registerFields(DataExporter& exporter);
@@ -117,12 +104,6 @@ public:
 
   //! \brief Post-process solution.
   void postSolve(const TimeStep&) {}
-
-  //! \brief Solves the linearized system of current iteration.
-  //! \param[in] tp Time stepping parameters
-  //!
-  //! \details Since this solver is linear, this is just a normal solve.
-  SIM::ConvStatus solveIteration(TimeStep& tp);
 
   //! \brief Advance time stepping
   bool advanceStep(TimeStep&);
@@ -165,10 +146,7 @@ public:
   //! \param[in] data Container for serialized data
   bool deSerialize(const SerializeMap& data) override
   {
-    if (!this->restoreSolution(data,this->getName()))
-      return false;
-
-    return true;
+    return this->restoreSolution(data,this->getName());
   }
 
   //! \brief Print final solution norms to terminal.
@@ -179,10 +157,10 @@ public:
   void printSolNorms(const Vector& gNorm, size_t w) const;
 
   //! \brief Print norms to screen during adaptive simulations.
-  void printExactNorms (const Vector& gNorm, size_t w = 36) const;
+  void printExactNorms(const Vector& gNorm, size_t w = 36) const;
 
   //! \brief Print norms to screen during adaptive simulations.
-  void printNorms (const Vectors& gNorm, size_t w = 36) const override;
+  void printNorms(const Vectors& gNorm, size_t w = 36) const override;
 
   //! \brief Prints a norm group to the log stream.
   void printNormGroup(const Vector& rNorm, const Vector& fNorm,
@@ -199,16 +177,10 @@ public:
 
   //! \brief Set norm to adapt based on.
   //! \param norm Norm to use
-  void setAdaptiveNorm(DCY::AdaptationNorm norm)
-  {
-    adNorm = norm;
-  }
+  void setAdaptiveNorm(DCY::AdaptationNorm norm) { adNorm = norm; }
 
   //! \brief Returns norm to adapt based on.
-  DCY::AdaptationNorm getAdaptiveNorm() const
-  {
-    return adNorm;
-  }
+  DCY::AdaptationNorm getAdaptiveNorm() const { return adNorm; }
 
   //! \brief Returns the reference norm to base mesh adaptation upon.
   //! \param[in] gNorm The calculated global norms
@@ -220,8 +192,7 @@ public:
   //! \param[in] adaptor 0-based norm group index
   //! \param[in] inorm 1-based norm index within the specified norm group
   double getEffectivityIndex(const Vectors& gNorm,
-                             size_t adaptor,
-                             size_t inorm) const override;
+                             size_t adaptor, size_t inorm) const override;
 
 protected:
   //! \brief Performs some pre-processing tasks on the FE model.
@@ -232,12 +203,9 @@ protected:
   //! \brief Performs some pre-processing tasks on the FE model.
   bool preprocessB() override;
 
-  //! \brief Perform solution projection.
-  bool doProjection();
-
-  Darcy& drc;           //!< Darcy integrand
-
 private:
+  Darcy& drc; //!< Reference to the Darcy integrand
+
   DCY::AdaptationNorm adNorm = DCY::NO_ADAP; //!< Norm to adapt based on
   const Vector* solVec; //!< Pointer to solution vector
   RealArray myReact;    //!< Nodal reaction forces

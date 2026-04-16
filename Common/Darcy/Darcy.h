@@ -167,11 +167,6 @@ public:
   //! \brief Returns order of time integration.
   int getOrder() const { return bdf.getActualOrder(); }
 
-  //! \brief Obtain integrand-type dependent solution norms
-  virtual void getSolutionNorms(const SIMbase& sim, const Vector& solution,
-                                double& dNorm,
-                                double* dMax, size_t* iMax) const;
-
   //! \brief Returns pressure in a point.
   //! \param eV Element vectors
   //! \param fe Finite element data at current point

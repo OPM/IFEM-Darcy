@@ -372,15 +372,6 @@ Vec3 Darcy::getBodyForce (const Vec3& X) const
 }
 
 
-void Darcy::getSolutionNorms (const SIMbase& sim,
-                              const Vector& solution,
-                              double& dNorm,
-                              double* dMax, size_t* iMax) const
-{
-  dNorm = sim.solutionNorms(solution, dMax, iMax);
-}
-
-
 Vec3 Darcy::pressureGradient (const Vectors& eV,
                               const FiniteElement& fe,
                               size_t level) const

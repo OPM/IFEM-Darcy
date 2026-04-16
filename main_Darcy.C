@@ -46,16 +46,12 @@ template<class Dim, template<class T> class Solver>
 int runSimulator(char* infile, const DarcyArgs& args)
 {
   std::unique_ptr<Darcy> itg;
-  std::vector<unsigned char> nf;
-  if (args.tracer) {
-    nf = {2};
+  if (args.tracer)
     itg = std::make_unique<DarcyTransport>(Dim::dimension,0);
-  } else {
-    nf = {1};
+  else
     itg = std::make_unique<Darcy>(Dim::dimension,0);
-  }
 
-  SIMDarcy<Dim> darcy(*itg,nf);
+  SIMDarcy<Dim> darcy(*itg, args.tracer ? 2 : 1);
   darcy.setAdaptiveNorm(args.adNorm);
   Solver<SIMDarcy<Dim>> solver(darcy);
 
@@ -90,18 +86,15 @@ int runSimulator(char* infile, const DarcyArgs& args)
 template<class Dim>
 int runSimulatorTransient(char* infile, const DarcyArgs& args)
 {
+  const int torder = TimeIntegration::Order(args.timeMethod);
   std::unique_ptr<Darcy> itg;
-  std::vector<unsigned char> nf;
-  if (args.tracer) {
-    nf = {2};
-    itg = std::make_unique<DarcyTransport>(Dim::dimension, TimeIntegration::Order(args.timeMethod));
-  } else {
-    nf = {1};
-    itg = std::make_unique<Darcy>(Dim::dimension, TimeIntegration::Order(args.timeMethod));
-  }
+  if (args.tracer)
+    itg = std::make_unique<DarcyTransport>(Dim::dimension,torder);
+  else
+    itg = std::make_unique<Darcy>(Dim::dimension,torder);
 
-  SIMDarcy<Dim> darcy(*itg,nf);
-  SIMSolver<SIMDarcy<Dim>> solver(darcy);
+  SIMDarcy<Dim> darcy(*itg, args.tracer ? 2 : 1);
+  SIMSolver solver(darcy);
 
   utl::profiler->start("Model input");
 
@@ -134,9 +127,11 @@ int runSimulatorTransient(char* infile, const DarcyArgs& args)
 template<class Dim>
 int runSimulatorScheduled(char* infile, const DarcyArgs& args)
 {
-  Darcy dcy(Dim::dimension);
-  DarcyAdvection dcya(Dim::dimension,dcy,TimeIntegration::Order(args.timeMethod));
-  SIMDarcy<Dim> darcy(dcy);
+  const int torder = TimeIntegration::Order(args.timeMethod);
+
+  Darcy          dcy(Dim::dimension);
+  DarcyAdvection dcya(Dim::dimension,dcy,torder);
+  SIMDarcy<Dim>          darcy(dcy);
   SIMDarcyAdvection<Dim> darcya(dcya);
   SIMDarcySchedule<Dim> schedule(darcy, darcya);
   SIMSolver<SIMDarcySchedule<Dim>> solver(schedule);

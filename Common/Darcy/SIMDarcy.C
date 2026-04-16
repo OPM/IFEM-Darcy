@@ -19,32 +19,21 @@
 #include "AnaSol.h"
 #include "DataExporter.h"
 #include "IFEM.h"
-#include "LogStream.h"
 #include "Profiler.h"
-#include "Property.h"
 #include "SIM1D.h"
 #include "SIM2D.h"
 #include "SIM3D.h"
 #include "SIMenums.h"
-#include "TimeDomain.h"
 #include "TimeStep.h"
 #include "Utilities.h"
 
 #include <cmath>
-#include <cstdlib>
 #include <strings.h>
 #include "tinyxml2.h"
 
 
 template<class Dim>
 SIMDarcy<Dim>::SIMDarcy (Darcy& itg, unsigned char nf) :
-  SIMDarcy<Dim>(itg, std::vector<unsigned char>{nf})
-{
-}
-
-
-template<class Dim>
-SIMDarcy<Dim>::SIMDarcy (Darcy& itg, const std::vector<unsigned char>& nf) :
   SIMMultiPatchModelGen<Dim>(nf), drc(itg), solVec(nullptr)
 {
   drc.setOwnerSim(this);
@@ -104,6 +93,7 @@ bool SIMDarcy<Dim>::parse (const tinyxml2::XMLElement* elem)
         Dim::mySol = new AnaSol(child);
         IFEM::cout <<"\tAnalytical solution: expression"<< std::endl;
       }
+
       // Define the analytical boundary traction field
       if (int code = 0; utl::getAttribute(child,"code",code))
         if (code > 0 && Dim::mySol->getScalarSecSol())
@@ -222,22 +212,23 @@ bool SIMDarcy<Dim>::saveStep (const TimeStep& tp, int& nBlock, bool newData)
     if (!this->writeGlvS(*solVec,iDump,nBlock,tp.time.t))
       return false;
 
-    if (!this->doProjection())
-      return false;
-
     if (!solVec->empty() && !Dim::opt.pSolOnly)
     {
-      Matrix tmp;
-      if (!this->project(tmp,*solVec))
+      if (Matrix tmp; !this->project(tmp,*solVec))
+        return false;
+      else if (!this->writeGlvV(tmp,"velocity",iDump,nBlock,110,Dim::nsd))
         return false;
 
-      if (!this->writeGlvV(tmp,"velocity",iDump,nBlock,110,Dim::nsd))
-        return false;
-
-      size_t i = 0;
-      for (auto& pit : Dim::opt.project)
-        if (!this->writeGlvP(proj[i++],iDump,nBlock,100,pit.second.c_str()))
+      // Project the secondary solution onto the splines basis
+      Vectors::iterator sit = proj.begin();
+      for (const SIMoptions::ProjectionMap::value_type& pit : Dim::opt.project)
+        if (solVec != &solution.front() &&
+            !this->project(*sit,*solVec,pit.first))
           return false;
+        else if (!this->writeGlvP(*sit,iDump,nBlock,100,pit.second.c_str()))
+          return false;
+        else
+          ++sit;
     }
 
     // Write element norms
@@ -254,8 +245,7 @@ template<class Dim>
 bool SIMDarcy<Dim>::init ()
 {
   this->initSolution(this->getNoDOFs(), 1 + drc.getOrder());
-  if (!this->solVec)
-    this->solVec = &this->solution.front();
+  if (!solVec) solVec = &solution.front();
   this->registerField("pressure", *solVec);
 
   this->initSystem(Dim::opt.solver);
@@ -330,8 +320,14 @@ bool SIMDarcy<Dim>::solveStep (const TimeStep& tp)
     Dim::msgLevel = oldLevel; // in case it is used by other SIM's
   }
 
-  if (!tp.multiSteps() && adNorm == DCY::NO_ADAP && !this->doProjection())
-    return false;
+  if (solVec == &solution.front()) // Not for adaptive simulations
+  {
+    // Project the secondary solution onto the splines basis
+    Vectors::iterator sit = proj.begin();
+    for (const SIMoptions::ProjectionMap::value_type& pit : Dim::opt.project)
+      if (!this->project(*sit,*solVec,pit.first))
+        return false;
+  }
 
   return newSolution;
 }
@@ -396,15 +392,7 @@ bool SIMDarcy<Dim>::solveSystem (Vector& solution, int printSol,
 
 
 template<class Dim>
-SIM::ConvStatus SIMDarcy<Dim>::solveIteration (TimeStep& tp)
-{
-  return this->solveStep(tp) ? SIM::CONVERGED : SIM::FAILURE;
-}
-
-
-template<class Dim>
-void SIMDarcy<Dim>::printSolNorms (const Vector& gNorm,
-                                   size_t w) const
+void SIMDarcy<Dim>::printSolNorms (const Vector& gNorm, size_t w) const
 {
   IFEM::cout << "\n  H1 norm |p^h| = a(p^h,p^h)^0.5"
              << utl::adjustRight(w-32,"") << gNorm[DarcyNorm::H1_Ph];
@@ -427,24 +415,10 @@ void SIMDarcy<Dim>::printFinalNorms (const TimeStep& tp)
   if (!this->setMode(SIM::RECOVERY))
     return;
 
-  if (!this->doProjection()) {
-    std::cerr << "*** Error during solution projection." << std::endl;
-    return;
-  }
-
-  if (!Dim::opt.project.empty())
-  {
-    // Project the secondary solution onto the splines basis
-    size_t j = 0;
-    for (auto& pit : Dim::opt.project)
-      if (!this->project(proj[j++],solution.front(),pit.first))
-        return;
-  }
-
   // Evaluate solution norms
   Vectors gNorm;
   this->setQuadratureRule(Dim::opt.nGauss[1]);
-  if (!this->solutionNorms(tp.time,Vectors(1, solution.front()),proj,gNorm))
+  if (!this->solutionNorms(tp.time,{solution.front()},proj,gNorm))
     return;
 
   // Print global norm summary to console
@@ -463,17 +437,16 @@ void SIMDarcy<Dim>::printNorms (const Vectors& gNorm, size_t w) const
   if (Dim::mySol)
     this->printExactNorms(gNorm.front(),w);
 
-  size_t j = 0;
-  for (const auto& prj : this->opt.project)
-    if (++j < gNorm.size())
-      this->printNormGroup(gNorm[j],gNorm[0],prj.second);
+  Vectors::const_iterator git = gNorm.begin();
+  for (const SIMoptions::ProjectionMap::value_type& pit : Dim::opt.project)
+    if (++git != gNorm.end())
+      this->printNormGroup(*git,gNorm.front(),pit.second);
 
   IFEM::cout << std::endl;
 }
 
 template<class Dim>
-void SIMDarcy<Dim>::printExactNorms (const Vector& gNorm,
-                                     size_t w) const
+void SIMDarcy<Dim>::printExactNorms (const Vector& gNorm, size_t w) const
 {
   if (!Dim::mySol)
     return;
@@ -581,22 +554,6 @@ bool SIMDarcy<Dim>::preprocessB ()
 {
   if (this->getNoConstraints() == 0 && !drc.extEner)
     drc.extEner = 'y';
-  return true;
-}
-
-
-template<class Dim>
-bool SIMDarcy<Dim>::doProjection()
-{
-  if (!Dim::opt.project.empty() && proj.front().empty())
-  {
-    // Project the secondary solution onto the splines basis
-    size_t j = 0;
-    for (auto& pit : Dim::opt.project)
-      if (!this->project(proj[j++],solution.front(),pit.first))
-        return false;
-  }
-
   return true;
 }
 
