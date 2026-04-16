@@ -1,0 +1,69 @@
+SquareCorr2-p2.xinp
+
+Input file: SquareCorr2-p2.xinp
+Equation solver: 2
+Number of Gauss points: 4
+Basis function values are precalculated but not cached
+The Penalty formulation is used.
+1. Darcy transport correction solver
+Parsing input file SquareCorr2-p2.xinp
+Parsing <geometry>
+  Generating linear geometry on unit parameter domain \[0,1]^2
+	Corner = -0.5 -0.5 0
+  Parsing <raiseorder>
+  Parsing <refine>
+  Parsing <topologysets>
+	Topology sets: horizontal (1,3,1D) (1,4,1D)
+	               vertical (1,1,1D) (1,2,1D)
+  Parsing <raiseorder>
+	Raising order of P1 1 1
+  Parsing <refine>
+	Refining P1 31 31
+  Parsing <topologysets>
+Parsing <darcycorrection>
+  Parsing <dirichlet>
+	Dirichlet code 1 (expression): 1-2\*y
+  Parsing <dirichlet>
+	Dirichlet code 2 (expression): 2\*x
+	Input velocity function: 1-2\*y|2\*x
+	Observed concentration function: 1-(x-t)^2
+	Input source: 4\*y\*(x-t)
+Parsing <timestepping>
+Parsing input file succeeded.
+2. Time integration driver
+Parsing input file SquareCorr2-p2.xinp
+Parsing <geometry>
+Parsing <darcycorrection>
+Parsing <timestepping>
+Parsing input file succeeded.
+11. Darcy transport correction solver
+Resolving Dirichlet boundary conditions
+	Constraining P1 E1 in direction(s) 1 code = 1
+	Constraining P1 E2 in direction(s) 1 code = 1
+	Constraining P1 E3 in direction(s) 2 code = 2
+	Constraining P1 E4 in direction(s) 2 code = 2
+ >>> SAM model summary <<<
+Number of elements    1024
+Number of nodes       1156
+Number of dofs        2312
+Number of constraints 136
+Number of unknowns    2176
+Solving Darcy transport correction problem
+  Primary solution summary: L2-norm : 0.933939
+                     Max X-velocity : 2
+                     Max Y-velocity : 1
+  L2(q - q^) / L2(q^)   = [1-9]\.[0-9]*e-1[0-9]% of 1.29099
+  L2(div q^) / L2(q^)   = [1-9]\.[0-9]*e-1[0-9]% of 1.29099
+  L2(res q^) / L2(c\*q^) = [1-9]\.[0-9]*e-1[0-9]% of 1.22701
+  L2(div q ) / L2(q )   = 0% of 1.29099
+  step = 1  time = 0.1
+  step = 2  time = 0.2
+  step = 3  time = 0.3
+  step = 4  time = 0.4
+  step = 5  time = 0.5
+  step = 6  time = 0.6
+  step = 7  time = 0.7
+  step = 8  time = 0.8
+  step = 9  time = 0.9
+  step = 10  time = 1
+  Time integration completed.
