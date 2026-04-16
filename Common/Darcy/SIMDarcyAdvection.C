@@ -40,6 +40,7 @@ SIMDarcyAdvection<Dim>::SIMDarcyAdvection (DarcyAdvection& itg) :
 {
   Dim::myProblem = &drc;
   Dim::myHeading = "Darcy advection solver";
+  Dim::msgLevel  = 1;
 }
 
 
@@ -57,15 +58,14 @@ bool SIMDarcyAdvection<Dim>::parse (const tinyxml2::XMLElement* elem)
   if (strcasecmp(elem->Value(),"darcyadvection"))
     return this->Dim::parse(elem);
 
-  bool useCache;
-  if (utl::getAttribute(elem,"cache",useCache)) {
+  if (bool useCache = false; utl::getAttribute(elem,"cache",useCache)) {
     IFEM::cout << (useCache ? "\tEnabling" : "\tDisabling")
-               << " caching of element matrices.\n";
+               <<" caching of element matrices."<< std::endl;
     drc.lCache(useCache);
   }
 
   const tinyxml2::XMLElement* child = elem->FirstChildElement();
-  for (; child; child = child->NextSiblingElement()) {
+  for (; child; child = child->NextSiblingElement())
     if (!strcasecmp(child->Value(), "materialdata")) {
       int code = this->parseMaterialSet(child,mVec.size());
       mVec.resize(mVec.size()+1);
@@ -80,7 +80,6 @@ bool SIMDarcyAdvection<Dim>::parse (const tinyxml2::XMLElement* elem)
     }
     else if (!Dim::myProblem->parse(child))
       this->Dim::parse(child);
-  }
 
   return true;
 }
@@ -136,7 +135,7 @@ bool SIMDarcyAdvection<Dim>::init ()
   if (mVec.size() == 1)
     drc.setMaterial(mVec.front());
 
-  return true;
+  return drc.getOrder() > 0;
 }
 
 
@@ -155,8 +154,10 @@ bool SIMDarcyAdvection<Dim>::solveStep (const TimeStep& tp)
   if (!this->assembleSystem(tp.time, solution, newTangent))
     return false;
 
-  if (!this->solveSystem(solution.front(),Dim::msgLevel-1,"concentration"))
+  if (!this->solveSystem(solution.front()))
     return false;
+
+  this->printSolutionSummary(solution.front(), 0, "concentration");
 
   newTangent = tp.step < drc.getOrder() || !drc.lCache();
 
@@ -167,10 +168,9 @@ bool SIMDarcyAdvection<Dim>::solveStep (const TimeStep& tp)
 template<class Dim>
 bool SIMDarcyAdvection<Dim>::advanceStep (TimeStep&)
 {
-  if (drc.getOrder() > 0) {
-    drc.advanceStep();
-    this->pushSolution();
-  }
+  drc.advanceStep();
+  this->pushSolution();
+
   return true;
 }
 
@@ -185,8 +185,6 @@ bool SIMDarcyAdvection<Dim>::initMaterial (size_t propInd)
 
   return true;
 }
-
-
 
 
 template<class Dim>

@@ -51,6 +51,9 @@ SIMDarcy<Dim>::SIMDarcy (Darcy& itg, const std::vector<unsigned char>& nf) :
   Dim::myProblem = &drc;
   Dim::myHeading = "Darcy solver";
   aCode[0] = aCode[1] = 0;
+
+  if (drc.getOrder() > 0) // transient problem
+    Dim::msgLevel = 1; // prints primary solution summary only
 }
 
 
@@ -71,10 +74,9 @@ bool SIMDarcy<Dim>::parse (const tinyxml2::XMLElement* elem)
   if (strcasecmp(elem->Value(),"darcy"))
     return this->Dim::parse(elem);
 
-  bool useCache;
-  if (utl::getAttribute(elem,"cache",useCache)) {
+  if (bool useCache = false; utl::getAttribute(elem,"cache",useCache)) {
     IFEM::cout << (useCache ? "\tEnabling" : "\tDisabling")
-               << " caching of element matrices.\n";
+               <<" caching of element matrices."<< std::endl;
     drc.lCache(useCache);
   }
 
@@ -103,23 +105,19 @@ bool SIMDarcy<Dim>::parse (const tinyxml2::XMLElement* elem)
         IFEM::cout <<"\tAnalytical solution: expression"<< std::endl;
       }
       // Define the analytical boundary traction field
-      int code = 0;
-      if (utl::getAttribute(child,"code",code) && code > 0) {
+      if (int code = 0; utl::getAttribute(child,"code",code))
         if (code > 0 && Dim::mySol->getScalarSecSol())
         {
           this->setPropertyType(code,Property::NEUMANN);
           Dim::myVectors[code] = Dim::mySol->getScalarSecSol();
           aCode[1] = code;
         }
-      }
     }
     else if (!strcasecmp(child->Value(),"subiterations")) {
-      IFEM::cout << "\tUsing sub-iterations";
+      IFEM::cout <<"\tUsing sub-iterations:";
       utl::getAttribute(child,"tol",cycleTol);
       utl::getAttribute(child,"max",maxCycle);
-      IFEM::cout <<"\n\t\ttol = "<< cycleTol;
-      IFEM::cout <<"\n\t\tmax = "<< maxCycle;
-      IFEM::cout << std::endl;
+      IFEM::cout <<" tol = "<< cycleTol <<" max = "<< maxCycle << std::endl;
     }
     else if (!Dim::myProblem->parse(child))
       this->Dim::parse(child);
@@ -131,16 +129,18 @@ bool SIMDarcy<Dim>::parse (const tinyxml2::XMLElement* elem)
 template<class Dim>
 bool SIMDarcy<Dim>::initNeumann (size_t propInd)
 {
-  const auto sit = Dim::myScalars.find(propInd);
-  const auto tit = Dim::myTracs.find(propInd);
-  const auto vit = Dim::myVectors.find(propInd);
-
-  if (sit != Dim::myScalars.end())
+  if (const auto sit = Dim::myScalars.find(propInd);
+      sit != Dim::myScalars.end())
     drc.setFlux(sit->second);
-  else if (tit != Dim::myTracs.end())
+
+  else if (const auto tit = Dim::myTracs.find(propInd);
+           tit != Dim::myTracs.end())
     drc.setFlux(tit->second);
-  else if (vit != Dim::myVectors.end())
+
+  else if (const auto vit = Dim::myVectors.find(propInd);
+           vit != Dim::myVectors.end())
     drc.setFlux(vit->second);
+
   else
     return false;
 
@@ -191,8 +191,8 @@ void SIMDarcy<Dim>::registerFields (DataExporter& exporter)
 
   exporter.registerField("u", "primary", DataExporter::SIM, results);
   exporter.setFieldValue("u", this, solVec,
-                       Dim::opt.project.empty() ? nullptr : &proj,
-                       (results & DataExporter::NORMS) ? &eNorm : nullptr);
+                         Dim::opt.project.empty() ? nullptr : &proj,
+                         Dim::opt.saveNorms ? &eNorm : nullptr);
 }
 
 
@@ -274,16 +274,18 @@ template<class Dim>
 bool SIMDarcy<Dim>::solveStep (const TimeStep& tp)
 {
   if (Dim::msgLevel >= 0 && tp.multiSteps())
-    IFEM::cout <<"\n  step = "<< tp.step
-               <<"  time = "<< tp.time.t << std::endl;
-
-  bool conv = false;
-  tp.iter = 0;
+    this->printStep(tp.step, tp.time);
 
   if (tp.step == drc.getOrder())
     this->initLHSbuffers();
 
-  while (!conv)
+  const int printSol = maxCycle > -1 || tp.multiSteps() ? 0 : Dim::msgLevel;
+  const int oldLevel = Dim::msgLevel;
+  if (maxCycle > -1)
+    Dim::msgLevel = 1; // suppress patch assembly loop log
+
+  bool newSolution = false;
+  for (tp.iter = 0; !newSolution; tp.iter++)
   {
     if (!this->setMode(SIM::DYNAMIC))
       return false;
@@ -293,10 +295,15 @@ bool SIMDarcy<Dim>::solveStep (const TimeStep& tp)
     if (!this->assembleSystem(tp.time, solution, newTangent))
       return false;
 
-    if (!this->solveSystem(solution.front(),maxCycle > -1 ? 0 : Dim::msgLevel-1,"pressure    "))
+    if (!this->solveSystem(solution.front()))
       return false;
 
-    if (maxCycle > -1) {
+    this->printSolutionSummary(solution.front(),printSol,nullptr,0);
+
+    if (maxCycle < 0)
+      newSolution = true;
+    else
+    {
       this->setMode(SIM::RHS_ONLY);
       this->updateDirichlet(tp.time.t,nullptr);
       this->assembleSystem(tp.time, solution);
@@ -304,29 +311,29 @@ bool SIMDarcy<Dim>::solveStep (const TimeStep& tp)
       this->extractLoadVec(linRes);
       double rConv = linRes.norm2();
 
-      IFEM::cout <<"  cycle "<< tp.iter <<": Res = "<< rConv << std::endl;
+      Dim::adm.cout <<"  cycle "<< tp.iter <<": Res = "<< rConv << std::endl;
       if (rConv < cycleTol)
-        conv = true;
-
-      if (tp.iter >= maxCycle) {
+        newSolution = true;
+      else if (tp.iter >= maxCycle) {
         std::cerr <<" *** SIMDarcy::solveStep: Did not converge in "
-                 << maxCycle <<" staggering cycles, bailing.."<< std::endl;
-        return false;
+                  << maxCycle <<" staggering cycles, bailing.."<< std::endl;
+        break;
       }
-    } else
-      conv = true;
+    }
 
     newTangent = tp.step < drc.getOrder() || !drc.lCache();
-    ++tp.iter;
   }
 
   if (maxCycle > -1)
-    this->printSolutionSummary(solution.front(), 0, nullptr, 0);
+  {
+    this->printSolutionSummary(solution.front(),printSol,nullptr,0);
+    Dim::msgLevel = oldLevel; // in case it is used by other SIM's
+  }
 
   if (!tp.multiSteps() && adNorm == DCY::NO_ADAP && !this->doProjection())
     return false;
 
-  return true;
+  return newSolution;
 }
 
 
@@ -346,30 +353,29 @@ void SIMDarcy<Dim>::printSolutionSummary (const Vector& solution,
                                           int printSol, const char*,
                                           std::streamsize outPrec)
 {
-  const size_t nf = this->getNoFields();
-  if (nf > 1) {
+  if (this->getNoFields() == 2)
+  {
     // Compute and print solution norms
-    std::vector<size_t> iMax(nf);
-    std::vector<double> dMax(nf);
-    double dNorm;
-    drc.getSolutionNorms(*this, solution, dNorm, dMax.data(), iMax.data());
+    size_t iMax[2];
+    double dMax[2];
+    double dNorm = this->solutionNorms(solution,dMax,iMax);
 
-    int oldPrec = this->adm.cout.precision();
+    int oldPrec = Dim::adm.cout.precision();
     if (outPrec > 0)
-      this->adm.cout << std::setprecision(outPrec);
+      Dim::adm.cout << std::setprecision(outPrec);
 
-    this->adm.cout <<"  Primary solution summary: L2-norm         : ";
-    this->adm.cout << utl::trunc(dNorm);
-    this->adm.cout <<"\n                               Max pressure : ";
-    this->adm.cout << dMax[0] <<" node "<< iMax[0];
-    this->adm.cout <<"\n                          Max concentration : ";
-    this->adm.cout << dMax[1] <<" node "<< iMax[1] << "\n";
+    Dim::adm.cout <<"  Primary solution summary: L2-norm      : "
+                  << utl::trunc(dNorm)
+                  <<"\n                            Max pressure : "
+                  << utl::trunc(dMax[0]) <<" node "<< iMax[0]
+                  <<"\n                       Max concentration : "
+                  << utl::trunc(dMax[1]) <<" node "<< iMax[1] << std::endl;
 
-    this->adm.cout << std::setprecision(oldPrec);
-  } else {
-    this->SIMbase::printSolutionSummary(solution, printSol,
-                                        "pressure    ", outPrec);
+    if (outPrec > 0)
+      Dim::adm.cout << std::setprecision(oldPrec);
   }
+  else
+    this->SIMbase::printSolutionSummary(solution,printSol,"pressure",outPrec);
 }
 
 
