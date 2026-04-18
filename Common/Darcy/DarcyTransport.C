@@ -66,6 +66,12 @@ LocalIntegral* DarcyTransport::getLocalIntegral (size_t nen, size_t, bool neuman
 }
 
 
+void DarcyTransport::setCSource (RealFunc* s)
+{
+  sourceC.reset(s);
+}
+
+
 bool DarcyTransport::initElement (const std::vector<int>& MNPC,
                                   LocalIntegral& elmInt)
 {

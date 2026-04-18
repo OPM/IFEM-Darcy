@@ -16,8 +16,6 @@
 
 #include "Darcy.h"
 
-#include <memory>
-
 
 /*!
   \brief Class representing the integrand of the Darcy transport problem.
@@ -32,7 +30,7 @@ public:
   ~DarcyTransport() override;
 
   //! \brief Defines the concentration source function.
-  void setCSource(RealFunc* s) override { sourceC.reset(s); }
+  void setCSource(RealFunc* s) override;
 
   using IntegrandBase::getLocalIntegral;
   //! \brief Returns a local integral contribution object for given element.

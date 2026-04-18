@@ -17,13 +17,13 @@
 #include "DarcyMaterial.h"
 
 #include "BDF.h"
-#include "Field.h"
 #include "IntegrandBase.h"
 #include "EqualOrderOperators.h"
 
 #include <memory>
 
 class Darcy;
+class Field;
 class RealFunc;
 class SIMbase;
 
@@ -40,7 +40,7 @@ public:
   //! \brief The constructor initializes all pointers to zero.
   DarcyAdvection(unsigned short int n, const Darcy& drc, int torder = 0);
   //! \brief Empty destructor.
-  virtual ~DarcyAdvection() = default;
+  virtual ~DarcyAdvection();
 
   //! \brief Assigns the owner simulator (used by parse()).
   void setOwnerSim(SIMbase* sim) { ownerSim = sim; }

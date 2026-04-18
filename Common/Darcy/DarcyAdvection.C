@@ -40,6 +40,9 @@ DarcyAdvection::DarcyAdvection (unsigned short int n,
 }
 
 
+DarcyAdvection::~DarcyAdvection() = default;
+
+
 bool DarcyAdvection::parse (const tinyxml2::XMLElement* elem)
 {
   if (const char* input = utl::getValue(elem,"source"); input)
@@ -279,5 +282,3 @@ std::string DarcyAdvectionNorm::getName (size_t, size_t, const char* prefix) con
 
   return prefix ? prefix + std::string(" ") + name : name;
 }
-
-
