@@ -7,7 +7,7 @@
 //!
 //! \author Arne Morten Kvarving / SINTEF
 //!
-//! \brief Simulation driver for Isogeometric FE analysis of scheduled Darcy advection.
+//! \brief Simulation driver for scheduled Darcy advection problems.
 //!
 //==============================================================================
 
@@ -33,33 +33,28 @@ SIMDarcySchedule<Dim>::SIMDarcySchedule(SIMDarcy<Dim>& dcySim,
 template<class Dim>
 bool SIMDarcySchedule<Dim>::solveStep (TimeStep& tp, bool)
 {
-  if (schedule.empty()) {
-    std::cerr << "*** No schedule configured. Bailing\n";
-    return false;
+  bool newTangent = false;
+  bool pressureOk = true;
+  if (tp.step == 1)
+    pressureOk = pressureSolved = this->S1.solveStep(tp);
+  else if (currSchedule < schedule.size() &&
+           tp.time.t >= schedule[currSchedule])
+  {
+    IFEM::cout <<"\n * Scheduled pressure change at time "
+               << schedule[currSchedule]
+               <<", calculating new pressure matrix."<< std::endl;
+    newTangent = pressureOk = pressureSolved = this->S1.solveStep(tp);
+    ++currSchedule;
+  }
+  else
+  {
+    pressureSolved = false;
+    this->S1.printStep(tp.step, tp.time);
   }
 
-  pressureSolved = false;
-
-  if (tp.step == 1) {
-    if (!this->S1.solveStep(tp))
-      return false;
-    pressureSolved = true;
-  } else if (currSchedule < schedule.size() &&
-      tp.time.t >= schedule[currSchedule]) {
-    IFEM::cout << "\n* Scheduled pressure change at time "
-               << schedule[currSchedule]
-                  <<", calculating new pressure matrix." << std::endl;
-    if (!this->S1.solveStep(tp))
-      return false;
-
-    ++currSchedule;
-    this->S2.newTangent = true;
-    pressureSolved = true;
-  } else
-    this->S1.printStep(tp.step, tp.time);
-
-  return this->S2.solveStep(tp);
+  return pressureOk && this->S2.solveStep(tp,newTangent);
 }
+
 
 template<class Dim>
 bool SIMDarcySchedule<Dim>::saveStep(const TimeStep& tp, int& nBlock)
@@ -82,20 +77,16 @@ bool SIMDarcySchedule<Dim>::parse (const tinyxml2::XMLElement* elem)
     return true;
 
   const tinyxml2::XMLElement* child = elem->FirstChildElement();
-  for (; child; child = child->NextSiblingElement()) {
+  for (; child; child = child->NextSiblingElement())
     if (!strcasecmp(child->Value(),"schedule")) {
       const tinyxml2::XMLElement* sched = child->FirstChildElement("update");
-      IFEM::cout << "\n\tScheduled pressure updates:";
-      for (; sched; sched = sched->NextSiblingElement("update")) {
-        double t;
-        if (utl::getAttribute(sched,"time",t)) {
-          IFEM::cout << "\n\t\tUpdate at " << t;
+      for (; sched; sched = sched->NextSiblingElement("update"))
+        if (double t = 0.0; utl::getAttribute(sched,"time",t))
           schedule.push_back(t);
-        }
-      }
+      IFEM::cout <<"\tScheduled pressure updates:";
+      for (double t : schedule) IFEM::cout <<" "<< t;
       IFEM::cout << std::endl;
     }
-  }
 
   return true;
 }

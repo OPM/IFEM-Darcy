@@ -16,22 +16,12 @@
 
 #include "DarcyMaterial.h"
 
-#include "MatVec.h"
 #include "SIMconfigure.h"
-#include "SIMenums.h"
 #include "SIMsolution.h"
-#include "TextureProperties.h"
-
-#include <cstddef>
-#include <iosfwd>
-#include <string>
-
 
 class DarcyAdvection;
 class DataExporter;
 class TimeStep;
-namespace tinyxml2 { class XMLElement; }
-class VTF;
 
 
 /*!
@@ -52,8 +42,8 @@ public:
   explicit SIMDarcyAdvection(DarcyAdvection& itg);
 
   //! \brief Construct from setup properties.
-  //! \param props Setup properties
-  explicit SIMDarcyAdvection(const SetupProps& props) : SIMDarcyAdvection(*props.itg) {}
+  //! \param[in] p Setup properties
+  explicit SIMDarcyAdvection(const SetupProps& p) : SIMDarcyAdvection(*p.itg) {}
 
   //! \brief Destructor.
   virtual ~SIMDarcyAdvection();
@@ -68,12 +58,6 @@ public:
   //! \brief Register fields for data export.
   void registerFields(DataExporter& exporter);
 
-  //! \brief Opens a new VTF-file and writes the model geometry to it.
-  //! \param[in] fileName File name used to construct the VTF-file name from
-  //! \param[out] geoBlk Running geometry block counter
-  //! \param[out] nBlock Running result block counter
-  bool saveModel(char* fileName, int& geoBlk, int& nBlock);
-
   //! \brief Saves the converged results to VTF file of a given time step.
   //! \param[in] tp Time stepping parameters
   //! \param[in] nBlock Running VTF block counter
@@ -86,10 +70,7 @@ public:
   bool init(const TimeStep&) { return init(); }
 
   //! \brief Computes the solution for the current time step.
-  bool solveStep(const TimeStep& tp);
-
-  //! \brief Post-process solution.
-  void postSolve(const TimeStep&) {}
+  bool solveStep(const TimeStep& tp, bool forceNewTangent = false);
 
   //! \brief Advance time stepping
   bool advanceStep(TimeStep&);
@@ -105,23 +86,18 @@ public:
   //! \param[in] data Container for serialized data
   bool deSerialize(const SerializeMap& data) override
   {
-    if (!this->restoreSolution(data,this->getName()))
-      return false;
-
-    return true;
+    return this->restoreSolution(data,this->getName());
   }
 
   //! \brief Initializes the material parameters for current patch.
   bool initMaterial(size_t propInd) override;
 
-  bool newTangent = true; //!< True to assemble system matrix
-
-protected:
-  DarcyAdvection& drc;           //!< Darcy integrand
-
 private:
+  DarcyAdvection& drc; //!< Reference to the Darcy advection integrand
+
   std::vector<DarcyMaterial> mVec; //!< Vector of patchwise material data
-  TextureProperties props; //!< Textured properties
+
+  bool newTangent = true; //!< True to assemble system matrix
 };
 
 

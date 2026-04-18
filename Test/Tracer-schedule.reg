@@ -5,10 +5,9 @@ Including a tracer field.
 Updating pressure according to a schedule.
 		Permeability: 1.0|1.0
 		Porosity: 1
-		Dispersivity: 1.0
+		Dispersivity: 1
 		Fluid viscosity: 1
-	Scheduled pressure updates:
-		Update at 0.5
+	Scheduled pressure updates: 0.5
 Number of elements    64
 Number of nodes       100
 Number of dofs        100

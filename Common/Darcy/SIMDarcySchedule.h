@@ -7,7 +7,7 @@
 //!
 //! \author Arne Morten Kvarving / SINTEF
 //!
-//! \brief Simulation driver for Isogeometric FE analysis of scheduled Darcy advection.
+//! \brief Simulation driver for scheduled Darcy advection problems.
 //!
 //==============================================================================
 
@@ -18,16 +18,19 @@
 #include "SIMDarcy.h"
 #include "SIMDarcyAdvection.h"
 #include "SIMCoupled.h"
+
+
 /*!
-  \brief Driver class for isogeometric FE analysis of scheduled Darcy advection problems.
+  \brief Driver class for analysis of scheduled Darcy advection problems.
 */
 
 template<class Dim>
 class SIMDarcySchedule : public SIMCoupled<SIMDarcy<Dim>, SIMDarcyAdvection<Dim>>,
                          public SIMadmin
 {
-  using Base = SIMCoupled<SIMDarcy<Dim>, SIMDarcyAdvection<Dim>>; //!< Convenience typedef
-                                                                  //
+  //! Convenience type alias
+  using Base = SIMCoupled<SIMDarcy<Dim>,SIMDarcyAdvection<Dim>>;
+
 public:
   //! \brief Default constructor.
   SIMDarcySchedule(SIMDarcy<Dim>& dcySim, SIMDarcyAdvection<Dim>& advSim);

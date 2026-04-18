@@ -17,19 +17,15 @@
 #include "DarcySolutions.h"
 
 #include "DataExporter.h"
-#include "ExprFunctions.h"
 #include "IFEM.h"
-#include "LogStream.h"
 #include "Profiler.h"
 #include "SIM1D.h"
 #include "SIM2D.h"
 #include "SIM3D.h"
 #include "SIMenums.h"
-#include "TimeDomain.h"
 #include "TimeStep.h"
 #include "Utilities.h"
 
-#include <cstdlib>
 #include <strings.h>
 #include "tinyxml2.h"
 
@@ -97,14 +93,7 @@ void SIMDarcyAdvection<Dim>::registerFields (DataExporter& exporter)
     results |= DataExporter::NORMS;
 
   exporter.registerField("c", "primary", DataExporter::SIM, results);
-  exporter.setFieldValue("c", this, &this->SIMsolution::getSolution(0));
-}
-
-
-template<class Dim>
-bool SIMDarcyAdvection<Dim>::saveModel (char* fileName, int& geoBlk, int& nBlock)
-{
-  return true; //!< Always handled by Darcy integrand
+  exporter.setFieldValue("c", this, &solution.front());
 }
 
 
@@ -116,12 +105,8 @@ bool SIMDarcyAdvection<Dim>::saveStep (const TimeStep& tp, int& nBlock)
 
   int iDump = tp.step/Dim::opt.saveInc;
 
-  // Write solution fields
-  if (!this->writeGlvS(this->SIMsolution::getSolution(0),iDump,nBlock,tp.time.t,"c",79))
-    return false;
-
-  // step info written by SIMDarcy
-  return true;
+  // Write solution fields, step info is written by SIMDarcy
+  return this->writeGlvS(solution.front(),iDump,nBlock,tp.time.t,"c",79);
 }
 
 
@@ -140,7 +125,7 @@ bool SIMDarcyAdvection<Dim>::init ()
 
 
 template<class Dim>
-bool SIMDarcyAdvection<Dim>::solveStep (const TimeStep& tp)
+bool SIMDarcyAdvection<Dim>::solveStep (const TimeStep& tp, bool forceNewTan)
 {
   // Schedule change, reinit buffers
   if (!this->setMode(SIM::DYNAMIC))
@@ -151,7 +136,7 @@ bool SIMDarcyAdvection<Dim>::solveStep (const TimeStep& tp)
 
   Vector dummy;
   this->updateDirichlet(tp.time.t,&dummy);
-  if (!this->assembleSystem(tp.time, solution, newTangent))
+  if (!this->assembleSystem(tp.time, solution, newTangent || forceNewTan))
     return false;
 
   if (!this->solveSystem(solution.front()))
