@@ -89,15 +89,17 @@ public:
 
   //! \brief Saves the converged results to VTF file of a given time step.
   //! \param[in] tp Time stepping parameters
-  //! \param[in] nBlock Running VTF block counter
-  //! \param[in] newData If true we have new pressure data
-  bool saveStep(const TimeStep& tp, int& nBlock, bool newData = true);
+  //! \param nBlock Running VTF block counter
+  bool saveStep(const TimeStep& tp, int& nBlock);
 
   //! \brief Initialize simulator.
   bool init();
 
   //! \brief Initialize time-dependent simulator.
   bool init(const TimeStep&) { return init(); }
+
+  //! \brief Signals that current solution is kept in this time step.
+  void keepStep(const TimeStep& tp);
 
   //! \brief Computes the solution for the current time step.
   bool solveStep(const TimeStep& tp);
@@ -215,10 +217,11 @@ private:
 
   std::vector<DarcyMaterial> mVec; //!< Vector of patchwise material data
 
-  int maxCycle = -1;      //!< Max number of sub-iterations
+  int    maxCycle = -1;   //!< Max number of sub-iterations
   double cycleTol = 1e-6; //!< Convergence tolerance in sub-iterations
 
-  bool newTangent = true; //!< True to assemble element matrices
+  bool newTangent  = true;  //!< True to assemble element matrices
+  bool newSolution = false; //!< True if a new solution has been computed
 };
 
 

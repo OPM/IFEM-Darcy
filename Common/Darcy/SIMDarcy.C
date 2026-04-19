@@ -198,7 +198,7 @@ bool SIMDarcy<Dim>::saveModel (char* fileName, int& geoBlk, int& nBlock)
 
 
 template<class Dim>
-bool SIMDarcy<Dim>::saveStep (const TimeStep& tp, int& nBlock, bool newData)
+bool SIMDarcy<Dim>::saveStep (const TimeStep& tp, int& nBlock)
 {
   if (Dim::opt.format < 0 || (tp.step % Dim::opt.saveInc) > 0)
     return true;
@@ -206,7 +206,7 @@ bool SIMDarcy<Dim>::saveStep (const TimeStep& tp, int& nBlock, bool newData)
   const int iType = tp.multiSteps() ? 0 : 1;
   const int iDump = iType == 0 ? tp.step/Dim::opt.saveInc : 1;
 
-  if (newData)
+  if (newSolution)
   {
     // Write solution fields
     if (!this->writeGlvS(*solVec,iDump,nBlock,tp.time.t))
@@ -261,6 +261,16 @@ bool SIMDarcy<Dim>::init ()
 
 
 template<class Dim>
+void SIMDarcy<Dim>::keepStep (const TimeStep& tp)
+{
+  if (Dim::msgLevel >= 0 && tp.multiSteps())
+    this->printStep(tp.step, tp.time);
+
+  newSolution = false;
+}
+
+
+template<class Dim>
 bool SIMDarcy<Dim>::solveStep (const TimeStep& tp)
 {
   if (Dim::msgLevel >= 0 && tp.multiSteps())
@@ -274,8 +284,7 @@ bool SIMDarcy<Dim>::solveStep (const TimeStep& tp)
   if (maxCycle > -1)
     Dim::msgLevel = 1; // suppress patch assembly loop log
 
-  bool newSolution = false;
-  for (tp.iter = 0; !newSolution; tp.iter++)
+  for (newSolution = false, tp.iter = 0; !newSolution; tp.iter++)
   {
     if (!this->setMode(SIM::DYNAMIC))
       return false;

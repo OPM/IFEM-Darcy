@@ -36,10 +36,7 @@ public:
   SIMDarcySchedule(SIMDarcy<Dim>& dcySim, SIMDarcyAdvection<Dim>& advSim);
 
   //! \brief Computes the solution for the current time step.
-  bool solveStep(TimeStep& tp, bool=false) override;
-
-  //! \brief Saves the converged results to VTF-file of a given time step.
-  bool saveStep(const TimeStep& tp, int& nBlock) override;
+  bool solveStep(TimeStep& tp, bool = true) override;
 
   //! \brief Sets up field dependencies.
   void setupDependencies() override;
@@ -50,7 +47,6 @@ public:
 protected:
   size_t currSchedule = 0; //!< Index for current schedule entry
   std::vector<double> schedule; //!< Scheduled pressure changes
-  bool pressureSolved = false; //!< Pressure was solved for on this step
 };
 
 #endif

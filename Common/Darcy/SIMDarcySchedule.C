@@ -36,37 +36,28 @@ bool SIMDarcySchedule<Dim>::solveStep (TimeStep& tp, bool)
   bool newTangent = false;
   bool pressureOk = true;
   if (tp.step == 1)
-    pressureOk = pressureSolved = this->S1.solveStep(tp);
+    pressureOk = this->S1.solveStep(tp);
   else if (currSchedule < schedule.size() &&
            tp.time.t >= schedule[currSchedule])
   {
     IFEM::cout <<"\n * Scheduled pressure change at time "
                << schedule[currSchedule]
                <<", calculating new pressure matrix."<< std::endl;
-    newTangent = pressureOk = pressureSolved = this->S1.solveStep(tp);
+    newTangent = pressureOk = this->S1.solveStep(tp);
     ++currSchedule;
   }
   else
-  {
-    pressureSolved = false;
-    this->S1.printStep(tp.step, tp.time);
-  }
+    this->S1.keepStep(tp);
 
   return pressureOk && this->S2.solveStep(tp,newTangent);
 }
 
 
 template<class Dim>
-bool SIMDarcySchedule<Dim>::saveStep(const TimeStep& tp, int& nBlock)
-{
-  return this->S2.saveStep(tp,nBlock) && this->S1.saveStep(tp,nBlock,pressureSolved);
-}
-
-
-template<class Dim>
 void SIMDarcySchedule<Dim>::setupDependencies ()
 {
-  this->S2.registerDependency(&this->S1, "pressure", 1, this->S1.getFEModel(), 1);
+  this->S2.registerDependency(&this->S1, "pressure", 1,
+                              this->S1.getFEModel(), 1);
 }
 
 
