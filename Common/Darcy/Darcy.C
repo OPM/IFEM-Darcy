@@ -19,6 +19,7 @@
 #include "ElmNorm.h"
 #include "ExprFunctions.h"
 #include "Fields.h"
+#include "Field.h"
 #include "FiniteElement.h"
 #include "GlobalIntegral.h"
 #include "IFEM.h"
@@ -34,10 +35,10 @@
 
 
 Darcy::Darcy (unsigned short int n, int torder) :
-  IntegrandBase(n),
-  bdf(torder)
+  IntegrandBase(n), bdf(torder)
 {
   primsol.resize(1 + torder);
+  this->registerVector("tracer",&cVec);
 
   tflux = nullptr;
   vflux = bodyforce = nullptr;
@@ -367,7 +368,7 @@ std::string Darcy::getField2Name (size_t i, const char* prefix) const
   if (i >= 2*nsd+2u) return "";
 
   if (nsd == 2 && i > 1)
-   ++i;
+    ++i;
 
   static const char* s[8] = {"v_x","v_y","v_z", "source", "porosity", "perm_x", "perm_y", "perm_z"};
   if (!prefix) return s[i];
@@ -414,7 +415,7 @@ double Darcy::pressure (const Vectors& eV,
 
 double Darcy::getDensity (const FiniteElement& fe) const
 {
-  return mat->getDensity(1.0);
+  return mat->getDensity(cField.get() ? cField->valueFE(fe) : 1.0);
 }
 
 
@@ -430,6 +431,15 @@ void Darcy::initLHSbuffers (size_t nEl)
     this->reuseMats = false;
   else if (nEl == 0 && !this->myKmats.empty())
     this->reuseMats = true;
+}
+
+
+void Darcy::setNamedField (const std::string& name, Field* field)
+{
+  if (name == "tracer")
+    cField.reset(field);
+  else
+    delete field;
 }
 
 
@@ -614,17 +624,16 @@ void DarcyNorm::setProjectedFields (Fields* field, size_t idx)
 }
 
 
-bool DarcyNorm::hasElementContributions(size_t i, size_t j) const
+bool DarcyNorm::hasElementContributions (size_t i, size_t j) const
 {
   if (i == 1) {
     if (j == 2)
       return false;
     if (!anasol && j > 3)
-     return false;
-   } else {
-    if (!anasol && j > 5)
       return false;
   }
+  else if (!anasol && j > 5)
+    return false;
 
   return true;
 }

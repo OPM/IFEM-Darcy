@@ -56,6 +56,8 @@ bool SIMDarcySchedule<Dim>::solveStep (TimeStep& tp, bool)
 template<class Dim>
 void SIMDarcySchedule<Dim>::setupDependencies ()
 {
+  this->S1.registerDependency(&this->S2, "tracer", 1,
+                              this->S2.getFEModel(), 1);
   this->S2.registerDependency(&this->S1, "pressure", 1,
                               this->S1.getFEModel(), 1);
 }

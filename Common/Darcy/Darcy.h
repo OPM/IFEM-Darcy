@@ -22,6 +22,7 @@
 
 #include <memory>
 
+class Field;
 class RealFunc;
 class SIMbase;
 class TractionFunc;
@@ -58,6 +59,9 @@ public:
 
   //! \brief Defines the concentration source function.
   virtual void setCSource(RealFunc*) {}
+
+  //! \brief Sets the concentration field from dependent simulation.
+  void setNamedField(const std::string& name, Field* field) override;
 
   //! \brief Defines a scalar flux function.
   void setFlux(RealFunc* f) { flux = f; }
@@ -216,7 +220,10 @@ protected:
   VecFunc*  vflux;        //!< Flux function
   RealFunc* flux;         //!< Flux function
   TractionFunc* tflux;    //!< Flux traction function
+
   std::unique_ptr<RealFunc> source; //!< Source function
+  std::unique_ptr<Field>    cField; //!< Tracer concentration field
+  Vector                    cVec;   //!< Tracer concentration values
 
   DarcyMaterial* mat = nullptr; //!< Material parameters
 

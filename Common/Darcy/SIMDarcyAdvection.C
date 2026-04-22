@@ -116,6 +116,7 @@ template<class Dim>
 bool SIMDarcyAdvection<Dim>::init ()
 {
   this->initSolution(this->getNoDOFs(), 1 + drc.getOrder());
+  this->registerField("tracer", solution.front());
 
   this->initSystem(Dim::opt.solver);
   this->setQuadratureRule(Dim::opt.nGauss[0],true);
