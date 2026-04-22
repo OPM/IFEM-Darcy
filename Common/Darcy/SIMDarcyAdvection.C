@@ -60,22 +60,24 @@ bool SIMDarcyAdvection<Dim>::parse (const tinyxml2::XMLElement* elem)
     drc.lCache(useCache);
   }
 
+  bool gotMaterialData = false;
+  DarcyMaterial defaultMaterial;
+  if (mVec.empty()) mVec.reserve(1);
+
   const tinyxml2::XMLElement* child = elem->FirstChildElement();
   for (; child; child = child->NextSiblingElement())
-    if (!strcasecmp(child->Value(), "materialdata")) {
-      int code = this->parseMaterialSet(child,mVec.size());
-      mVec.resize(mVec.size()+1);
-      IFEM::cout << "\tMaterial data with code " << code <<":\n";
-      if (!mVec.back().parse(child))
-        mVec.pop_back();
+    if (!strcasecmp(child->Value(),"materialdata")) {
+      IFEM::cout <<"\tMaterial data with code "
+                 << this->parseMaterialSet(child,mVec.size()) <<":\n";
+      mVec.emplace_back(child);
     }
-    else if (DarcyMaterial::handlesTag(child->Value())) {
-      if (mVec.empty())
-        mVec.resize(1);
-      mVec.back().parse(child);
-    }
+    else if (defaultMaterial.parse(child))
+      gotMaterialData = true;
     else if (!Dim::myProblem->parse(child))
       this->Dim::parse(child);
+
+  if (gotMaterialData && mVec.empty())
+    mVec.push_back(std::move(defaultMaterial));
 
   return true;
 }
@@ -117,6 +119,9 @@ bool SIMDarcyAdvection<Dim>::init ()
 
   this->initSystem(Dim::opt.solver);
   this->setQuadratureRule(Dim::opt.nGauss[0],true);
+
+  if (mVec.empty())
+    mVec.emplace_back();
   if (mVec.size() == 1)
     drc.setMaterial(mVec.front());
 

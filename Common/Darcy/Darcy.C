@@ -121,6 +121,18 @@ double Darcy::getPotential (const Vec3& X) const
 }
 
 
+double Darcy::getDispersivity (const Vec3& X) const
+{
+  return mat ? mat->getDispersivity(X) : 0.0;
+}
+
+
+Vec3 Darcy::getPermeability (const Vec3& X) const
+{
+  return mat ? mat->getPermeability(X) : Vec3();
+}
+
+
 double Darcy::getFlux (const Vec3& X, const Vec3& normal) const
 {
   if (flux)
@@ -216,14 +228,19 @@ bool Darcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
     // Evaluate the hydraulic conductivity matrix at this point
     Matrix K;
     this->formKmatrix(K,X);
-    WeakOps::LaplacianCoeff(elMat.A[pp], K, fe, 1.0/(this->getMaterial().rhow*gacc));
+
+    // Evaluate the fluid density
+    double rhog = this->getDensity(fe) * gacc;
+    if (rhog <= 0.0) return false;
+
+    WeakOps::LaplacianCoeff(elMat.A[pp], K, fe, 1.0/rhog);
   }
 
   if (bodyforce)
   {
     // Integrate rhs contribution from body force
     Vec3 eperm = (*bodyforce)(X);
-    Vec3 perm = this->getMaterial().getPermeability(X);
+    Vec3 perm = mat->getPermeability(X);
     for (size_t i = 0; i < nsd; i++)
       eperm[i] *= perm[i] / gacc;
 
@@ -275,8 +292,10 @@ bool Darcy::evalBou (LocalIntegral& elmInt, const FiniteElement& fe,
   }
 
   double qw = -this->getFlux(X,normal);
+  double rho = this->getDensity(fe);
+  if (rho <= 0.0) return false;
 
-  WeakOps::Source(elMat.b[pp], fe, qw / this->getMaterial().rhow);
+  WeakOps::Source(elMat.b[pp], fe, qw/rho);
 
   return true;
 }
@@ -285,7 +304,7 @@ bool Darcy::evalBou (LocalIntegral& elmInt, const FiniteElement& fe,
 bool Darcy::formKmatrix (Matrix& K, const Vec3& X, bool inverse) const
 {
   bool K_ok = true;
-  Vec3 perm = this->getMaterial().getPermeability(X);
+  Vec3 perm = mat->getPermeability(X);
 
   K.resize(nsd,nsd,true);
   for (int i = 1; i <= nsd; i++)
@@ -309,8 +328,8 @@ bool Darcy::evalSol2 (Vector& s, const Vectors& eV,
     return false;
 
   s.push_back(source ? (*source)(X) : 0.0);
-  s.push_back(this->getMaterial().getPorosity(X));
-  Vec3 perm = this->getMaterial().getPermeability(X);
+  s.push_back(mat->getPorosity(X));
+  Vec3 perm = mat->getPermeability(X);
   for (size_t i = 0; i < nsd; ++i)
     s.push_back(perm[i]);
 
@@ -318,18 +337,20 @@ bool Darcy::evalSol2 (Vector& s, const Vectors& eV,
 }
 
 
-bool Darcy::evalDarcyVel (Vector& s, const Vectors& eV,
+bool Darcy::evalDarcyVel (Vector& q, const Vectors& eV,
                           const FiniteElement& fe, const Vec3& X) const
 {
+  double rho = this->getDensity(fe);
+  if (rho <= 0.0) return false;
+
   Vec3 dP = this->pressureGradient(eV, fe, 0);
   if (bodyforce)
-    dP -= this->getMaterial().rhow * (*bodyforce)(X);
+    dP -= rho * (*bodyforce)(X);
 
   Matrix K;
   this->formKmatrix(K,X);
 
-  return K.multiply(Vector(dP.ptr(),nsd), s,
-                    -1.0/(this->getMaterial().rhow*gacc));
+  return K.multiply(Vector(dP.ptr(),nsd), q, -1.0/(rho*gacc));
 }
 
 
@@ -391,6 +412,12 @@ double Darcy::pressure (const Vectors& eV,
 }
 
 
+double Darcy::getDensity (const FiniteElement& fe) const
+{
+  return mat->getDensity(1.0);
+}
+
+
 void Darcy::initLHSbuffers (size_t nEl)
 {
   if (!this->useLCache)
@@ -426,7 +453,8 @@ bool DarcyNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   if (!problem.formKmatrix(Kinv,X,true))
     return false; // Singular constitutive matrix
 
-  double rgw = problem.getMaterial().rhow * problem.getGravity() * fe.detJxW;
+  double rgw = problem.getDensity(fe) * problem.getGravity() * fe.detJxW;
+  if (rgw <= 0.0) return false;
 
   // Evaluate the finite element pressure field
   Vector dPh, dP, error;

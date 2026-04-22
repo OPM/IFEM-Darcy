@@ -17,59 +17,57 @@
 #include <memory>
 
 class RealFunc;
-namespace tinyxml2 { class XMLElement; }
+class ScalarFunc;
 class VecFunc;
 class Vec3;
+namespace tinyxml2 { class XMLElement; }
+
 
 /*!
-  \brief Class representing the integrand of the Darcy problem.
+  \brief Class representing a physical property item for Darcy flow problems.
 */
 
 class DarcyMaterial
 {
 public:
-  const double rhow = 1.0; //!< Density of fluid
+  //! \brief Constructor parsing properties from an XML-element.
+  explicit DarcyMaterial(const tinyxml2::XMLElement* elem);
+  //! \brief Move constructor.
+  DarcyMaterial(DarcyMaterial&& tmp);
+  //! \brief Default constructor.
+  DarcyMaterial();
+  //! \brief Default destructor.
+  virtual ~DarcyMaterial();
 
-  //! \brief Check if a tag is for material data.
-  static bool handlesTag(const char* name);
-
-  //! \brief Parse an XML block.
+  //! \brief Parses an XML-element.
   bool parse(const tinyxml2::XMLElement* elem);
 
-  //! \brief Sets the permeability function.
-  void setPermValues(VecFunc* perm);
-  //! \brief Sets the permeability scalar field function.
-  void setPermField(RealFunc* perm);
   //! \brief Returns the permeability at a given point.
   Vec3 getPermeability(const Vec3& X) const;
-
-  //! \brief Returns the dispersivity at a given point.
-  double getDispersivity(const Vec3& X) const;
-
-  //! \brief Defines a scalar dispersivity function.
-  void setDispersivity(RealFunc* f);
 
   //! \brief Returns the porosity at a given point.
   double getPorosity(const Vec3& X) const;
 
-  //! \brief Defines a scalar porosity function.
-  void setPorosity(RealFunc* f);
+  //! \brief Returns the dispersivity at a given point.
+  double getDispersivity(const Vec3& X) const;
 
-  //! \brief Define fluid viscosity used to calculate mobilities.
-  void setViscosity(double nu) { viscosity = nu; }
+  //! \brief Returns the fluid density.
+  double getDensity(double c) const;
 
-  //! \brief Obtain fluid viscosity.
+  //! \brief Returns the fluid viscosity.
   double getViscosity() const { return viscosity; }
 
   //! \brief Helper for CoSTA.
   void setParam(const std::string& name, double value);
 
-protected:
-  std::unique_ptr<VecFunc>  permvalues;   //!< Permeability function
-  std::unique_ptr<RealFunc> permeability; //!< Permeability field function
-  std::unique_ptr<RealFunc> porosity;     //!< Porosity function
-  std::unique_ptr<RealFunc> dispersivity; //!< Dispersivity function
-  double viscosity{}; //!< Fluid viscosity
+private:
+  std::unique_ptr<VecFunc>    permvalues;   //!< Permeability function
+  std::unique_ptr<RealFunc>   permeability; //!< Permeability field function
+  std::unique_ptr<RealFunc>   porosity;     //!< Porosity function
+  std::unique_ptr<RealFunc>   dispersivity; //!< Dispersivity function
+  std::unique_ptr<ScalarFunc> density;      //!< Fluid density function
+
+  double viscosity = 0.0; //!< Fluid viscosity
 };
 
 #endif

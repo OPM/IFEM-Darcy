@@ -16,102 +16,87 @@
 #include "IFEM.h"
 #include "Utilities.h"
 #include "Vec3.h"
+#include "tinyxml2.h"
 
-#include <tinyxml2.h>
 
-
-bool DarcyMaterial::handlesTag(const char* name)
+DarcyMaterial::DarcyMaterial (const tinyxml2::XMLElement* elem)
 {
-  return !strcasecmp(name, "dispersivity") ||
-         !strcasecmp(name, "permvalues") ||
-         !strcasecmp(name, "permeability") ||
-         !strcasecmp(name, "porosity") ||
-         !strcasecmp(name, "viscosity");
+  const tinyxml2::XMLElement* child = elem->FirstChildElement();
+  for (; child; child = child->NextSiblingElement())
+    this->parse(child);
 }
+
+
+DarcyMaterial::DarcyMaterial (DarcyMaterial&& tmp)
+{
+  if (!permvalues.get())
+    permvalues = std::move(tmp.permvalues);
+
+  if (!permeability.get())
+    permeability = std::move(tmp.permeability);
+
+  if (!porosity.get())
+    porosity = std::move(tmp.porosity);
+
+  if (!dispersivity.get())
+    dispersivity = std::move(tmp.dispersivity);
+
+  if (!density.get())
+    density = std::move(tmp.density);
+
+  if (viscosity == 0.0)
+    viscosity = tmp.viscosity;
+}
+
+
+DarcyMaterial::DarcyMaterial () = default;
+
+
+DarcyMaterial::~DarcyMaterial () = default;
 
 
 bool DarcyMaterial::parse (const tinyxml2::XMLElement* elem)
 {
-  auto doParse = [this](const tinyxml2::XMLElement* child)
+  std::string type;
+  utl::getAttribute(elem,"type",type);
+
+  const char* value = nullptr;
+  if ((value = utl::getValue(elem,"permvalues")))
   {
-    const char* value = nullptr;
-    if ((value = utl::getValue(child,"permvalues"))) {
-      IFEM::cout <<"\t\tPermeability";
-      this->setPermValues(utl::parseVecFunc(value));
-      IFEM::cout << std::endl;
-    } else if ((value = utl::getValue(child,"permeability"))) {
-      std::string type;
-      utl::getAttribute(child,"type",type);
-      IFEM::cout <<"\t\tPermeability";
-      this->setPermField(utl::parseRealFunc(value,type));
-      IFEM::cout << std::endl;
-    } else if ((value = utl::getValue(child,"porosity"))) {
-      std::string type;
-      utl::getAttribute(child,"type",type);
-      IFEM::cout <<"\t\tPorosity";
-      this->setPorosity(utl::parseRealFunc(value,type));
-      IFEM::cout << std::endl;
-    } else if ((value = utl::getValue(child,"dispersivity"))) {
-      std::string type;
-      utl::getAttribute(child,"type",type);
-      IFEM::cout <<"\t\tDispersivity";
-      this->setDispersivity(utl::parseRealFunc(value,"expression"));
-      IFEM::cout << std::endl;
-    } else if ((value = utl::getValue(child,"viscosity"))) {
-      double viscosity = atof(value);
-      IFEM::cout << "\t\tFluid viscosity: " << viscosity << std::endl;
-      this->setViscosity(viscosity);
-    } else
-      return false;
-
-    return true;
-  };
-
-  if (strcasecmp(elem->Value(), "materialdata"))
-    return doParse(elem);
-
-  const tinyxml2::XMLElement* child = elem->FirstChildElement();
-  for (; child; child = child->NextSiblingElement())
-    if (!doParse(child))
-      return false;
+    IFEM::cout <<"\t\tPermeability";
+    permvalues.reset(utl::parseVecFunc(value));
+    IFEM::cout << std::endl;
+  }
+  else if ((value = utl::getValue(elem,"permeability")))
+  {
+    IFEM::cout <<"\t\tPermeability";
+    permeability.reset(utl::parseRealFunc(value,type));
+    IFEM::cout << std::endl;
+  }
+  else if ((value = utl::getValue(elem,"porosity")))
+  {
+    IFEM::cout <<"\t\tPorosity";
+    porosity.reset(utl::parseRealFunc(value,type));
+    IFEM::cout << std::endl;
+  }
+  else if ((value = utl::getValue(elem,"dispersivity")))
+  {
+    IFEM::cout <<"\t\tDispersivity";
+    dispersivity.reset(utl::parseRealFunc(value,type));
+    IFEM::cout << std::endl;
+  }
+  else if ((value = utl::getValue(elem,"density")))
+  {
+    IFEM::cout <<"\t\tFluid density: ";
+    density.reset(utl::parseTimeFunc(value,type));
+  }
+  else if ((value = utl::getValue(elem,"viscosity")))
+    IFEM::cout <<"\t\tFluid viscosity: "
+               << (viscosity = atof(value)) << std::endl;
+  else
+    return false;
 
   return true;
-}
-
-
-void DarcyMaterial::setPermValues (VecFunc* perm)
-{
-  permvalues.reset(perm);
-}
-
-
-void DarcyMaterial::setPermField (RealFunc* perm)
-{
-  permeability.reset(perm);
-}
-
-
-void DarcyMaterial::setDispersivity (RealFunc* f)
-{
-  dispersivity.reset(f);
-}
-
-
-void DarcyMaterial::setPorosity (RealFunc* f)
-{
-  porosity.reset(f);
-}
-
-
-double DarcyMaterial::getDispersivity(const Vec3& X) const
-{
-  return dispersivity ? (*dispersivity)(X) : 0.0;
-}
-
-
-double DarcyMaterial::getPorosity (const Vec3& X) const
-{
-  return porosity ? (*porosity)(X) : 0.0;
 }
 
 
@@ -127,17 +112,40 @@ Vec3 DarcyMaterial::getPermeability (const Vec3& X) const
 }
 
 
+double DarcyMaterial::getPorosity (const Vec3& X) const
+{
+  return porosity ? (*porosity)(X) : 0.0;
+}
+
+
+double DarcyMaterial::getDispersivity (const Vec3& X) const
+{
+  return dispersivity ? (*dispersivity)(X) : 0.0;
+}
+
+
+double DarcyMaterial::getDensity (double c) const
+{
+  double rho = density ? (*density)(c) : 1.0;
+  if (rho > 1.0e-16) return rho;
+
+  std::cerr <<" *** DarcyMaterial::getDensity(): Non-positive fluid density ("
+            << rho <<")"<< std::endl;
+  return -1.0;
+}
+
+
 void DarcyMaterial::setParam (const std::string& name, double value)
 {
   if (permvalues.get())
     permvalues->setParam(name,value);
+
+  if (permeability.get())
+    permeability->setParam(name,value);
 
   if (porosity.get())
     porosity->setParam(name,value);
 
   if (dispersivity.get())
     dispersivity->setParam(name,value);
-
-  if (permeability.get())
-    permeability->setParam(name,value);
 }

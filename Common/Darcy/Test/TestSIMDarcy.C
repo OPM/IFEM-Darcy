@@ -10,10 +10,8 @@
 //!
 //==============================================================================
 
-#include "Function.h"
 #include "Darcy.h"
 #include "SIMDarcy.h"
-
 #include "SIM2D.h"
 #include "Vec3.h"
 
@@ -30,7 +28,7 @@ TEST_CASE("TestSIMDarcy.Parse")
 
   sim.init();
 
-  Vec3 perm = darcy.getMaterial().getPermeability(Vec3());
+  Vec3 perm = darcy.getPermeability(Vec3());
   REQUIRE_THAT(perm[0], WithinRel(98.1));
   REQUIRE_THAT(perm[1], WithinRel(9.81));
   REQUIRE_THAT(perm[2], WithinAbs(0.0, 1e-14));

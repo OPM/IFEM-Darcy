@@ -70,6 +70,10 @@ public:
   double getFlux(const Vec3& X, const Vec3& normal) const;
   //! \brief Evaluates the potential source (if any) at specified point.
   double getPotential(const Vec3& X) const;
+  //! \brief Returns the dispersivity at specified point.
+  double getDispersivity(const Vec3& X) const;
+  //! \brief Returns the permeability at a given point.
+  Vec3 getPermeability(const Vec3& X) const;
 
   //! \brief Defines the solution mode before the element assembly is started.
   //! \param[in] mode The solution mode to use
@@ -183,15 +187,13 @@ public:
                                 const FiniteElement& fe,
                                 size_t level) const;
 
-  //! \brief Set material parameters.
-  void setMaterial(DarcyMaterial& mat1) { mat = &mat1; }
-
-  //! \brief Returns a const ref to material parameters.
-  const DarcyMaterial& getMaterial() const { return *mat; }
-
   //! \brief Evaluates the darcy velocity in a point.
   bool evalDarcyVel(Vector& s, const Vectors& eV,
                     const FiniteElement& fe, const Vec3& X) const;
+
+  //! \brief Returns the fluid mass density in a point.
+  //! \param[in] fe Finite element data at current point
+  double getDensity(const FiniteElement& fe) const;
 
   //! \brief Returns gravitational acceleration.
   double getGravity() const { return gacc; }
@@ -204,6 +206,9 @@ public:
 
   //! \brief Returns whether or not caching of element matrices is enabled.
   bool lCache() { return useLCache; }
+
+  //! \brief Sets pointer to the material parameters object to use.
+  void setMaterial(DarcyMaterial& newMat) { mat = &newMat; }
 
 protected:
   SIMbase*  ownerSim;     //!< The simulator that owns this integrand

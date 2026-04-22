@@ -103,18 +103,15 @@ bool DarcyTransport::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   if (!this->Darcy::evalInt(elmInt, fe, time, X))
     return false;
 
-  if (!this->mat)
-    return false;
-
-  const double D = this->getMaterial().getDispersivity(X);
-  const double phiDt = this->getMaterial().getPorosity(X) / time.dt;
+  const double D = mat->getDispersivity(X);
+  const double phiDt = mat->getPorosity(X) / time.dt;
 
   if (!elMat.A.empty() && !reuseMats) {
     WeakOps::Laplacian(elMat.A[cc], fe, D, false);
 
     double cn = this->concentration(elmInt.vec, fe, 0);
-    Vec3 perm = this->getMaterial().getPermeability(X);
-    elMat.A[cp].multiply(fe.grad(1),fe.grad(1),false,true,true,perm[0]*cn*fe.detJxW);
+    Vec3 perm = mat->getPermeability(X);
+    elMat.A[cp].multiply(fe.dNdX,fe.dNdX,false,true,true,perm[0]*cn*fe.detJxW);
   }
 
   if (sourceC)
@@ -141,12 +138,9 @@ bool DarcyTransport::evalBou (LocalIntegral& elmInt, const FiniteElement& fe,
 
   ElmMats& elMat = static_cast<ElmMats&>(elmInt);
 
-  if (!this->mat)
-    return false;
+  const double D = mat->getDispersivity(X);
 
-  const double D = this->getMaterial().getDispersivity(X);
-
-  Vec3 perm = this->getMaterial().getPermeability(X);
+  Vec3 perm = mat->getPermeability(X);
 
   for (size_t i = 1; i <= fe.N.size(); ++i)
     for (size_t j = 1; j <= fe.N.size(); ++j)
@@ -183,13 +177,13 @@ bool DarcyTransport::evalSol (Vector& s, const FiniteElement& fe,
 
   s.push_back(source ? (*source)(X) : 0.0);
   s.push_back(sourceC ? (*sourceC)(X) : 0.0);
-  s.push_back(this->getMaterial().getPorosity(X));
+  s.push_back(mat->getPorosity(X));
 
   Vec3 dCh = this->concentrationGradient(A.vec,fe,0);
   for (int i = 0; i < nsd; ++i)
     s.push_back(dCh[i]);
 
-  Vec3 perm = this->getMaterial().getPermeability(X);
+  Vec3 perm = mat->getPermeability(X);
   for (int i = 0; i < nsd; ++i)
     s.push_back(perm[i]);
 
@@ -240,7 +234,7 @@ double DarcyTransport::concentration (const Vectors& vec,
                                       const FiniteElement& fe,
                                       size_t level) const
 {
-  return fe.basis(1).dot(vec[level*2+1]);
+  return fe.N.dot(vec[level*2+1]);
 }
 
 
@@ -259,7 +253,7 @@ double DarcyTransport::pressure (const Vectors& eV,
                                  const FiniteElement& fe,
                                  size_t level) const
 {
-  return fe.basis(1).dot(eV[2*level]);
+  return fe.N.dot(eV[2*level]);
 }
 
 
@@ -296,7 +290,7 @@ bool DarcyTransportNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe
 
   ElmNorm& pnorm = static_cast<ElmNorm&>(elmInt);
   const DarcyTransport& problem = static_cast<const DarcyTransport&>(myProblem);
-  const double D = problem.getMaterial().getDispersivity(X);
+  const double D = problem.getDispersivity(X);
 
   // Evaluate the concentration field gradient
   Vec3 dCh = problem.concentrationGradient(elmInt.vec, fe, 0);
