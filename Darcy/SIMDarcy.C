@@ -339,10 +339,9 @@ bool SIMDarcy<Dim>::solveStep (const TimeStep& tp)
 template<class Dim>
 bool SIMDarcy<Dim>::advanceStep (TimeStep&)
 {
-  if (drc.getOrder() > 0) {
-    drc.advanceStep();
+  if (drc.advanceStep())
     this->pushSolution();
-  }
+
   return true;
 }
 

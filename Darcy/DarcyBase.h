@@ -47,7 +47,7 @@ public:
   void setMode(SIM::SolutionMode mode) override;
 
   //! \brief Update time stepping scheme (BE -> BDF2 transition).
-  void advanceStep() { bdf.advanceStep();  }
+  bool advanceStep() override { return bdf.advanceStep();  }
 
   using HasGravityBase::getLocalIntegral;
   //! \brief Returns a local integral contribution object for given element.

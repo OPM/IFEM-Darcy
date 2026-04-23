@@ -165,8 +165,8 @@ bool SIMDarcyAdvection<Dim>::solveStep (const TimeStep& tp, bool forceNewTan)
 template<class Dim>
 bool SIMDarcyAdvection<Dim>::advanceStep (TimeStep&)
 {
-  drc.advanceStep();
-  this->pushSolution();
+  if (drc.advanceStep())
+    this->pushSolution();
 
   return true;
 }
