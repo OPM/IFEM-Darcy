@@ -14,8 +14,6 @@
 #include "DarcyTransport.h"
 
 #include "AnaSol.h"
-#include "ASMbase.h"
-#include "ASMmxBase.h"
 #include "BlockElmMats.h"
 #include "ElmNorm.h"
 #include "Fields.h"
@@ -23,17 +21,12 @@
 #include "Function.h"
 #include "GlobalIntegral.h"
 #include "LocalIntegral.h"
-#include "SIMbase.h"
 #include "TimeDomain.h"
 #include "Utilities.h"
 #include "Vec3.h"
 #include "Vec3Oper.h"
 
-#include <cmath>
 #include <ext/alloc_traits.h>
-#include <iostream>
-#include <memory>
-#include <vector>
 
 
 DarcyTransport::DarcyTransport (unsigned short int n, int torder) :
@@ -54,7 +47,7 @@ LocalIntegral* DarcyTransport::getLocalIntegral (size_t nen, size_t, bool neuman
 {
   BlockElmMats* result = new BlockElmMats(2, 1);
 
-  result->rhsOnly = neumann || this->reuseMats;
+  result->rhsOnly = neumann || !calcMats;
   result->withLHS = !neumann;
   result->resize(5, 3);
   result->redim(pp, nen, 1, 1);
@@ -98,15 +91,15 @@ bool DarcyTransport::initElement (const std::vector<int>& MNPC,
 bool DarcyTransport::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
                               const TimeDomain& time, const Vec3& X) const
 {
-  ElmMats& elMat = static_cast<ElmMats&>(elmInt);
-
   if (!this->Darcy::evalInt(elmInt, fe, time, X))
     return false;
+
+  ElmMats& elMat = static_cast<ElmMats&>(elmInt);
 
   const double D = mat->getDispersivity(X);
   const double phiDt = mat->getPorosity(X) / time.dt;
 
-  if (!elMat.A.empty() && !reuseMats) {
+  if (!elMat.A.empty() && calcMats) {
     WeakOps::Laplacian(elMat.A[cc], fe, D, false);
 
     double cn = this->concentration(elmInt.vec, fe, 0);
@@ -122,7 +115,7 @@ bool DarcyTransport::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
     for (int t = 1; t <= bdf.getOrder(); t++)
       c -= this->concentration(elmInt.vec,fe,t) * phiDt*bdf[t];
     WeakOps::Source(elMat.b[2], fe, c, 1);
-    if (!elMat.A.empty() && !reuseMats)
+    if (!elMat.A.empty() && calcMats)
       WeakOps::Mass(elMat.A[cc], fe, phiDt*bdf[0]);
   }
 

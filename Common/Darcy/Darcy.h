@@ -203,37 +203,46 @@ public:
   double getGravity() const { return gacc; }
 
   //! \brief Initializes and toggles the use of left-hand-side matrix buffers.
-  void initLHSbuffers(size_t) override;
+  //! \param[in] nEl Number of elements in the model/toggle.
+  //! - If larger than 1, element matrix buffers are allocated to given size.
+  //! - If equal to 1, element matrices are recomputed.
+  //! - If equal to 0, reuse cached element matrices.
+  void initLHSbuffers(size_t nEl) override;
 
   //! \brief Enable/disable caching of element matrices.
-  void lCache(bool enable) { useLCache = enable; }
-
+  void lCache(bool enable) { calcMats = enable ? 1 : -1; }
   //! \brief Returns whether or not caching of element matrices is enabled.
-  bool lCache() { return useLCache; }
+  bool lCache() { return calcMats >= 0; }
 
   //! \brief Sets pointer to the material parameters object to use.
   void setMaterial(DarcyMaterial& newMat) { mat = &newMat; }
 
 protected:
-  SIMbase*  ownerSim;     //!< The simulator that owns this integrand
-  VecFunc*  bodyforce;    //!< Body force function
-  VecFunc*  vflux;        //!< Flux function
-  RealFunc* flux;         //!< Flux function
-  TractionFunc* tflux;    //!< Flux traction function
+  SIMbase* ownerSim; //!< The simulator that owns this integrand
+
+  double gacc = 9.81; //!< Gravitation constant
+  DarcyMaterial* mat; //!< Material properties
+
+  VecFunc*      bodyforce; //!< Body force function
+  RealFunc*     flux;      //!< Flux function
+  VecFunc*      vflux;     //!< Flux vector function
+  TractionFunc* tflux;     //!< Flux traction function
 
   std::unique_ptr<RealFunc> source; //!< Source function
   std::unique_ptr<Field>    cField; //!< Tracer concentration field
   Vector                    cVec;   //!< Tracer concentration values
 
-  DarcyMaterial* mat = nullptr; //!< Material parameters
-
   GlobalIntegral* reacInt; //!< Reaction-forces-only integral
-  TimeIntegration::BDF bdf; //!< BDF helper class
 
-  double gacc = 9.81; //!< Gravity acceleration
-  bool useLCache = true; //!< True to enable caching of element matrices
-  bool reuseMats = false; //!< True to reuse matrices
+  TimeIntegration::BDF bdf; //!< Time integration parameters
+
   Matrices myKmats; //!< Cached element matrices
+
+  //! Flag for calculation/caching of element matrices.
+  //! - < 0 : Always recalculate the element matrices
+  //! - = 0 : Use cached element matrices
+  //! - > 1 : Calculate new element matrices
+  char calcMats = -1;
 
 public:
   char extEner; //!< If \e true, external energy is to be computed
@@ -300,9 +309,8 @@ public:
 
   using NormBase::finalizeElement;
   //! \brief Finalizes the element norms after the numerical integration.
-  //! \details This method is used to compute effectivity indices.
   //! \param elmInt The local integral object to receive the contributions
-  bool finalizeElement(LocalIntegral& elmInt, const TimeDomain&, size_t) override;
+  bool finalizeElement(LocalIntegral& elmInt) override;
 
   //! \brief Returns whether this norm has explicit boundary contributions.
   bool hasBoundaryTerms() const override { return true; }
