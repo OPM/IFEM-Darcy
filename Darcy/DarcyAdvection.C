@@ -17,17 +17,15 @@
 #include "ElementSteps.h"
 #include "ElmMats.h"
 #include "ElmNorm.h"
+#include "EqualOrderOperators.h"
 #include "ExprFunctions.h"
 #include "Field.h"
 #include "FiniteElement.h"
-#include "FunctionSum.h"
 #include "IFEM.h"
 #include "SIMbase.h"
 #include "TimeDomain.h"
 #include "Utilities.h"
 #include "Vec3.h"
-
-#include <ext/alloc_traits.h>
 #include "tinyxml2.h"
 
 
@@ -38,6 +36,9 @@ DarcyAdvection::DarcyAdvection (unsigned short int n,
   npv = 1;
   this->registerVector("pressure",&pVec);
   primsol.resize(1+torder);
+
+  ownerSim = nullptr;
+  mat = nullptr;
 }
 
 
@@ -63,7 +64,6 @@ bool DarcyAdvection::parse (const tinyxml2::XMLElement* elem)
       double tol = 1e-2;
       utl::getAttribute(elem,"pointTol",tol);
       src = new DiracSum(input,tol,nsd);
-
     }
     else if (type == "elementsum" && ownerSim->createFEMmodel('y'))
       src = new ElementSteps(input,*ownerSim,nsd);
@@ -82,8 +82,8 @@ LocalIntegral* DarcyAdvection::getLocalIntegral (size_t nen,
                                                  size_t iEl, bool neumann) const
 {
   LocalIntegral* res = this->IntegrandBase::getLocalIntegral(nen,iEl,neumann);
-  if (useLCache)
-    static_cast<ElmMats*>(res)->rhsOnly = reuseMats;
+  if (calcMats >= 0)
+    static_cast<ElmMats*>(res)->rhsOnly = !calcMats;
 
   return res;
 }
@@ -94,7 +94,7 @@ bool DarcyAdvection::initElement (const std::vector<int>& MNPC,
                                   const Vec3& XC,
                                   size_t nPt, LocalIntegral& elmInt)
 {
-  if (fe.iel > 0 && reuseMats)
+  if (fe.iel > 0 && calcMats > 0)
   {
     size_t iel = fe.iel - 1;
     ElmMats* A = dynamic_cast<ElmMats*>(&elmInt);
@@ -109,12 +109,13 @@ bool DarcyAdvection::initElement (const std::vector<int>& MNPC,
 bool DarcyAdvection::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
                               const TimeDomain& time, const Vec3& X) const
 {
+  using WeakOps = EqualOrderOperators::Weak;
+
   ElmMats& elMat = static_cast<ElmMats&>(elmInt);
 
-  const double D = mat->getDispersivity(X);
-  const double phi = mat->getPorosity(X);
-
-  if (!elMat.A.empty() && !reuseMats) {
+  if (!elMat.A.empty() && calcMats)
+  {
+    const double D = mat->getDispersivity(X);
     WeakOps::Laplacian(elMat.A[0], fe, D, false);
 
     RealArray q;
@@ -127,14 +128,16 @@ bool DarcyAdvection::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   if (source)
     WeakOps::Source(elMat.b[0], fe, (*source)(X), 1);
 
-  if (bdf.getActualOrder() > 0) {
+  if (bdf.getActualOrder() > 0)
+  {
+    const double phi = mat->getPorosity(X);
+
     double c = 0.0;
-    for (int t = 1; t <= bdf.getOrder(); t++) {
-      double val = elmInt.vec[t].dot(fe.N);
-      c -= val * phi * bdf[t] / time.dt;
-    }
+    for (int t = 1; t <= bdf.getOrder(); t++)
+      c -= elmInt.vec[t].dot(fe.N) * phi * bdf[t] / time.dt;
+
     WeakOps::Source(elMat.b[0], fe, c, 1);
-    if (!elMat.A.empty() && !reuseMats)
+    if (!elMat.A.empty() && calcMats)
       WeakOps::Mass(elMat.A[0], fe, phi*bdf[0] / time.dt);
   }
 
@@ -146,7 +149,7 @@ bool DarcyAdvection::finalizeElement (LocalIntegral& elmInt,
                                       const FiniteElement& fe,
                                       const TimeDomain& time, size_t iGP)
 {
-  if (fe.iel > 0 && !this->reuseMats)
+  if (fe.iel > 0 && calcMats)
   {
     size_t iel = fe.iel - 1;
     ElmMats* A = dynamic_cast<ElmMats*>(&elmInt);
@@ -221,26 +224,27 @@ void DarcyAdvection::setNamedField (const std::string& name, Field* field)
 
 void DarcyAdvection::initLHSbuffers (size_t nEl)
 {
-  if (!useLCache)
+  if (calcMats < 0)
     return;
 
-  if (nEl > 1) {
-    this->myKmats.resize(nEl);
-    this->reuseMats = false;
-  } else if (nEl == 1)
-    this->reuseMats = false;
+  if (nEl > 1)
+    myKmats.resize(nEl);
+
+  if (nEl > 0)
+    calcMats = true;
   else if (!myKmats.empty())
-    this->reuseMats = true;
+    calcMats = false;
 }
 
 
-NormBase* DarcyAdvection::getNormIntegrand (AnaSol* asol) const
+NormBase* DarcyAdvection::getNormIntegrand (AnaSol*) const
 {
   return new DarcyAdvectionNorm(*const_cast<DarcyAdvection*>(this));
 }
 
 
-bool DarcyAdvectionNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
+bool DarcyAdvectionNorm::evalInt (LocalIntegral& elmInt,
+                                  const FiniteElement& fe,
                                   const TimeDomain& time, const Vec3& X) const
 {
   ElmNorm& pnorm = static_cast<ElmNorm&>(elmInt);

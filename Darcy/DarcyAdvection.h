@@ -7,7 +7,7 @@
 //!
 //! \author Arne Morten Kvarving / SINTEF
 //!
-//! \brief Integrand implementations for tracer advection through Darcy velocity.
+//! \brief Integrand implementations for Darcy advection problems.
 //!
 //==============================================================================
 
@@ -18,7 +18,6 @@
 
 #include "BDF.h"
 #include "IntegrandBase.h"
-#include "EqualOrderOperators.h"
 
 #include <memory>
 
@@ -34,8 +33,6 @@ class SIMbase;
 
 class DarcyAdvection : public IntegrandBase
 {
-  using WeakOps = EqualOrderOperators::Weak; //!< Convenience renaming
-
 public:
   //! \brief The constructor initializes all pointers to zero.
   DarcyAdvection(unsigned short int n, const Darcy& drc, int torder = 0);
@@ -74,8 +71,7 @@ public:
   //! \param[in] time Time stepping parameters
   //! \param[in] X Cartesian coordinates of current integration point
   bool evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
-               const TimeDomain& time,
-               const Vec3& X) const override;
+               const TimeDomain& time, const Vec3& X) const override;
 
   using IntegrandBase::evalSol2;
   //! \brief Evaluates the secondary solution at a result point.
@@ -92,8 +88,7 @@ public:
   //! \param[in] fe Nodal and integration point data for current element
   //! \param[in] time Parameters for nonlinear and time-dependent simulations
   //! \param[in] iGP Global integration point counter of first point in element
-  bool finalizeElement(LocalIntegral& elmInt,
-                       const FiniteElement& fe,
+  bool finalizeElement(LocalIntegral& elmInt, const FiniteElement& fe,
                        const TimeDomain& time, size_t iGP) override;
 
   //! \brief Returns the number of primary/secondary solution field components.
@@ -114,8 +109,7 @@ public:
   //! \note The Integrand object is allocated dynamically and has to be deleted
   //! manually when leaving the scope of the pointer variable receiving the
   //! returned pointer value.
-  //! \param[in] asol Pointer to analytical solution (optional)
-  NormBase* getNormIntegrand(AnaSol* asol) const override;
+  NormBase* getNormIntegrand(AnaSol*) const override;
 
   //! \brief Returns concentration in a point.
   //! \param eV Element vectors
@@ -138,13 +132,16 @@ public:
   void setNamedField(const std::string& name, Field* field) override;
 
   //! \brief Initializes and toggles the use of left-hand-side matrix buffers.
-  void initLHSbuffers(size_t) override;
-
-  //! \brief Returns whether or not to use element matrix cache.
-  bool lCache() const { return useLCache; }
+  //! \param[in] nEl Number of elements in the model/toggle.
+  //! - If larger than 1, element matrix buffers are allocated to given size.
+  //! - If equal to 1, element matrices are recomputed.
+  //! - If equal to 0, reuse cached element matrices.
+  void initLHSbuffers(size_t nEl) override;
 
   //! \brief Enable/disable caching of element matrices.
-  void lCache(bool enable) { useLCache = enable; }
+  void lCache(bool enable) { calcMats = enable ? 1 : -1; }
+  //! \brief Returns whether or not caching of element matrices is enabled.
+  bool lCache() const { return calcMats >= 0; }
 
   //! \brief Set material parameters.
   void setMaterial(DarcyMaterial& mat1) { mat = &mat1; }
@@ -161,17 +158,20 @@ protected:
 
   const DarcyMaterial* mat; //!< Material to use
 
+  std::unique_ptr<RealFunc> source; //!< Tracer source function
+  std::unique_ptr<Field>    pField; //!< Pressure field
+  Vector                    pVec;   //!< Pressure values
+
   TimeIntegration::BDF bdf; //!< BDF time stepping helper
 
-  std::unique_ptr<RealFunc> source; //!< Tracer source function
-
-  std::unique_ptr<Field> pField; //!< Pressure field
-  Vector pVec; //!< Pressure values (unused)
-
   const Darcy& drc; //!< Reference to darcy integrand
-  bool useLCache = true; //!< True to enable caching of element matrices
-  bool reuseMats = false; //!< True to reuse matrices
   Matrices myKmats; //!< Cached element matrices
+
+  //! Flag for calculation/caching of element matrices.
+  //! - < 0 : Always recalculate the element matrices
+  //! - = 0 : Use cached element matrices
+  //! - > 1 : Calculate new element matrices
+  char calcMats = -1;
 
   friend class DarcyAdvectionNorm;
 };
