@@ -236,7 +236,7 @@ Vec3 DarcyTransport::concentrationGradient (const Vectors& vec,
                                             size_t level) const
 {
   RealArray dCh(nsd);
-  fe.grad(1).multiply(vec[2*level+1],dCh,true);
+  fe.dNdX.multiply(vec[2*level+1],dCh,true);
 
   return dCh;
 }
@@ -247,17 +247,6 @@ double DarcyTransport::pressure (const Vectors& eV,
                                  size_t level) const
 {
   return fe.N.dot(eV[2*level]);
-}
-
-
-Vec3 DarcyTransport::pressureGradient (const Vectors& eV,
-                                       const FiniteElement& fe,
-                                       size_t level) const
-{
-  RealArray dPh(nsd);
-  fe.grad(1).multiply(eV[2*level],dPh,true);
-
-  return dPh;
 }
 
 
@@ -303,12 +292,12 @@ bool DarcyTransportNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe
   size_t ip = this->getNoFields(1);
   size_t f = 2;
   for (const Vector& psol : pnorm.psol) {
-    if (!projFields.empty() || !psol.empty())
+    if (!prjFld.empty() || !psol.empty())
     {
       Vec3 dCr;
-      if (!projFields.empty() && projFields[f-2]) {
+      if (!prjFld.empty() && prjFld[f-2]) {
         Vector vals;
-        projFields[f-2]->valueFE(fe, vals);
+        prjFld[f-2]->valueFE(fe, vals);
         for (size_t i = 0; i < fe.dNdX.cols(); ++i)
           dCr[i] = vals[i+3+fe.dNdX.cols()];
       } else {

@@ -115,8 +115,7 @@ public:
   //! \param[in] fe Nodal and integration point data for current element
   //! \param[in] time Parameters for nonlinear and time-dependent simulations
   //! \param[in] iGP Global integration point counter of first point in element
-  bool finalizeElement(LocalIntegral& elmInt,
-                       const FiniteElement& fe,
+  bool finalizeElement(LocalIntegral& elmInt, const FiniteElement& fe,
                        const TimeDomain& time, size_t iGP) override;
 
   using IntegrandBase::evalInt;
@@ -126,8 +125,7 @@ public:
   //! \param[in] time Time stepping parameters
   //! \param[in] X Cartesian coordinates of current integration point
   bool evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
-               const TimeDomain& time,
-               const Vec3& X) const override;
+               const TimeDomain& time, const Vec3& X) const override;
 
   using IntegrandBase::evalBou;
   //! \brief Evaluates the integrand at a boundary point.
@@ -166,33 +164,34 @@ public:
   std::string getField2Name(size_t i, const char* prefix) const override;
 
   //! \brief Returns a pointer to an Integrand for solution norm evaluation.
+  //! \param[in] asol Pointer to analytical solution (optional)
+  //!
   //! \note The Integrand object is allocated dynamically and has to be deleted
   //! manually when leaving the scope of the pointer variable receiving the
   //! returned pointer value.
-  //! \param[in] asol Pointer to analytical solution (optional)
   NormBase* getNormIntegrand(AnaSol* asol) const override;
 
   //! \brief Returns order of time integration.
   int getOrder() const { return bdf.getActualOrder(); }
 
   //! \brief Returns pressure in a point.
-  //! \param eV Element vectors
-  //! \param fe Finite element data at current point
-  //! \param level Time level to evaluate at
-  virtual double pressure(const Vectors& eV,
-                          const FiniteElement& fe,
+  //! \param[out] eV Element solution vectors
+  //! \param[in] fe Finite element data at current point
+  //! \param[in] level Time level to evaluate at
+  virtual double pressure(const Vectors& eV, const FiniteElement& fe,
                           size_t level) const;
 
   //! \brief Returns pressure gradient in a point.
-  //! \param eV Element vectors
-  //! \param fe Finite element data at current point
-  //! \param level Time level to evaluate at
-  virtual Vec3 pressureGradient(const Vectors& eV,
-                                const FiniteElement& fe,
-                                size_t level) const;
+  //! \param[in] eV Element solution vectors
+  //! \param[in] fe Finite element data at current point
+  Vec3 pressureGradient(const Vectors& eV, const FiniteElement& fe) const;
 
-  //! \brief Evaluates the darcy velocity in a point.
-  bool evalDarcyVel(Vector& s, const Vectors& eV,
+  //! \brief Returns the darcy velocity in a point.
+  //! \param[out] q Darcy velocity vector
+  //! \param[in] eV Element solution vectors
+  //! \param[in] fe Finite element data at current point
+  //! \param[in] X Cartesian coordinates of current point
+  bool evalDarcyVel(Vector& q, const Vectors& eV,
                     const FiniteElement& fe, const Vec3& X) const;
 
   //! \brief Returns the fluid mass density in a point.
@@ -284,8 +283,8 @@ public:
   };
 
   //! \brief The only constructor initializes its data members.
-  //! \param[in] p The Poisson problem to evaluate norms for
-  //! \param[in] a The analytical heat flux (optional)
+  //! \param[in] p The Darcy problem to evaluate norms for
+  //! \param[in] a The analytical darcy flux (optional)
   explicit DarcyNorm(Darcy& p, VecFunc* a = nullptr);
   //! \brief Empty destructor.
   virtual ~DarcyNorm();
@@ -326,17 +325,13 @@ public:
   //! \param[in] prefix Common prefix for all norm names
   std::string getName(size_t i, size_t j, const char* prefix) const override;
 
-  //! \brief Projected quantities given as a field (recovery on a separate basis).
-  //! \param field The field
-  //! \param[in] idx The projection index
-  void setProjectedFields(Fields* field, size_t idx) override;
-
   //! \brief Returns whether a norm quantity stores element contributions.
-  bool hasElementContributions(size_t, size_t) const override;
+  //! \param[in] i The norm group (one-based index)
+  //! \param[in] j The norm number (one-based index)
+  bool hasElementContributions(size_t i, size_t j) const override;
 
 protected:
-  VecFunc* anasol; //!< Analytical heat flux
-  std::vector<std::unique_ptr<Fields>> projFields; //!< Projected fields for recovery
+  VecFunc* anasol; //!< Analytical darcy flux field
 };
 
 #endif

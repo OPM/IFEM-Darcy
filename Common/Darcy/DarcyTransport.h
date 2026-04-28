@@ -125,14 +125,6 @@ public:
                              const FiniteElement& fe,
                              size_t level) const;
 
-  //! \brief Returns pressure gradient in a point.
-  //! \param eV Element vectors
-  //! \param fe Finite element data at current point
-  //! \param level Time level to evaluate at
-  Vec3 pressureGradient(const Vectors& eV,
-                        const FiniteElement& fe,
-                        size_t level) const override;
-
 protected:
   std::unique_ptr<RealFunc> sourceC; //!< Concentration source function
 };
@@ -152,9 +144,6 @@ public:
   explicit DarcyTransportNorm(DarcyTransport& p,
                               VecFunc* a = nullptr,
                               VecFunc* c = nullptr);
-
-  //! \brief Empty destructor.
-  virtual ~DarcyTransportNorm() {}
 
   using NormBase::evalInt;
   //! \brief Evaluates the integrand at an interior point.

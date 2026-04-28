@@ -347,7 +347,7 @@ bool Darcy::evalDarcyVel (Vector& q, const Vectors& eV,
   double rho = this->getDensity(fe);
   if (rho <= 0.0) return false;
 
-  Vec3 dP = this->pressureGradient(eV, fe, 0);
+  Vec3 dP = this->pressureGradient(eV, fe);
   if (bodyforce)
     dP -= rho * (*bodyforce)(X);
 
@@ -397,9 +397,7 @@ Vec3 Darcy::getBodyForce (const Vec3& X) const
 }
 
 
-Vec3 Darcy::pressureGradient (const Vectors& eV,
-                              const FiniteElement& fe,
-                              size_t level) const
+Vec3 Darcy::pressureGradient (const Vectors& eV, const FiniteElement& fe) const
 {
   RealArray dP(nsd);
   fe.dNdX.multiply(eV.front(),dP,true);
@@ -408,8 +406,7 @@ Vec3 Darcy::pressureGradient (const Vectors& eV,
 }
 
 
-double Darcy::pressure (const Vectors& eV,
-                        const FiniteElement& fe,
+double Darcy::pressure (const Vectors& eV, const FiniteElement& fe,
                         size_t level) const
 {
   return fe.N.dot(eV[level]);
@@ -498,18 +495,18 @@ bool DarcyNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   size_t ip = this->getNoFields(1);
   size_t f = 2;
   for (const Vector& psol : pnorm.psol) {
-    if (!projFields.empty() || !psol.empty())
+    if (!prjFld.empty() || !psol.empty())
     {
       Vector dPr(fe.dNdX.cols());
-      if (!projFields.empty() && projFields[f-2]) {
+      if (!prjFld.empty() && prjFld[f-2]) {
         Vector vals;
-        projFields[f-2]->valueFE(fe, vals);
+        prjFld[f-2]->valueFE(fe, vals);
         std::copy(vals.begin(), vals.begin()+fe.dNdX.cols(), dPr.begin());
-      } else {
+      }
+      else
         // Evaluate projected pressure gradient
         for (size_t j = 0; j < fe.dNdX.cols(); j++)
           dPr[j] = psol.dot(fe.N,j,nrcmp);
-      }
 
       // Integrate the energy norm a(p^r,p^r)
       pnorm[ip+H1_Pr] += dPr.dot(Kinv*dPr)*rgw;
@@ -619,14 +616,6 @@ std::string DarcyNorm::getName (size_t i, size_t j, const char* prefix) const
     return n[j-1];
 
   return prefix + std::string(" ") + n[j-1];
-}
-
-
-void DarcyNorm::setProjectedFields (Fields* field, size_t idx)
-{
-  if (idx >= projFields.size())
-    projFields.resize(idx+1);
-  projFields[idx].reset(field);
 }
 
 
