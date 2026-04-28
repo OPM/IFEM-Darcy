@@ -115,6 +115,7 @@ ifem_add_regression_test(
     Tracer-be.reg
     Tracer-bdf2.reg
     Tracer-schedule.reg
+    Tracer-coupled.reg
 )
 
 ifem_add_regression_test(
