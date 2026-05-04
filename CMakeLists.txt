@@ -144,6 +144,11 @@ ifem_add_regression_test(
   TEST_FILES
     SquareCorr-p1.reg
     SquareCorr-p2.reg
+    SquareCorr-p1-AL.reg
+    SquareCorr2-p1.reg
+    SquareCorr2-p2.reg
+    SquareCorr3-p1.reg
+    SquareCorr3-p2.reg
 )
 
 if(IFEM_COMMON_APP_BUILD)
