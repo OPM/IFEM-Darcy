@@ -13,8 +13,8 @@ if(NOT TARGET IFEM)
   endif()
 endif()
 
-if(NOT TARGET CommonDarcy)
-  add_subdirectory(Common/Darcy)
+if(NOT TARGET IFEM::Darcy)
+  add_subdirectory(Darcy)
 endif()
 
 ifem_add_application(
@@ -26,7 +26,7 @@ ifem_add_application(
   HEADERS
     DarcyArgs.h
   LIBRARIES
-    CommonDarcy
+    IFEM::Darcy
 )
 
 ifem_add_application(
@@ -38,7 +38,7 @@ ifem_add_application(
   HEADERS
     DarcyArgs.h
   LIBRARIES
-    CommonDarcy
+    IFEM::Darcy
 )
 
 enable_testing()

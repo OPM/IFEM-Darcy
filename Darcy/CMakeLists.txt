@@ -1,10 +1,12 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(CommonDarcy LANGUAGES C CXX)
+project(DarcyLib LANGUAGES C CXX)
 
 ifem_add_library(
   NAME
-    CommonDarcy
+    Drcy
+  ALIAS
+    IFEM::Darcy
   SOURCES
     Darcy.C
     DarcyAdvection.C
@@ -36,14 +38,14 @@ ifem_add_library(
 
 # Unit tests
 ifem_add_test_app(
+  NAME
+    Darcy
   SOURCES
     ${PROJECT_SOURCE_DIR}/Test/TestSIMDarcy.C
   WORKDIR
-    ${PROJECT_SOURCE_DIR}/../../Test
-  NAME
-    Darcy
+    ${PROJECT_SOURCE_DIR}/../Test
   LIBRARIES
-    CommonDarcy
+    IFEM::Darcy
 )
 
 set(TEST_APPS ${TEST_APPS} PARENT_SCOPE)
