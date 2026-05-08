@@ -30,8 +30,8 @@ ifem_add_library(
     SIMDarcySchedule.h
     SIMDarcyTransportCorr.h
   LIBRARIES
-    IFEMAppCommon
     IFEM
+    IFEM::AppUtils
 )
 
 # Unit tests
