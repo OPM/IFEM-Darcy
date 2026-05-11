@@ -7,6 +7,8 @@ ifem_add_library(
     Drcy
   ALIAS
     IFEM::Darcy
+  ARCHIVE_NAME
+    Darcy
   SOURCES
     Darcy.C
     DarcyAdvection.C
@@ -34,11 +36,6 @@ ifem_add_library(
   LIBRARIES
     IFEM
     IFEM::AppUtils
-)
-set_target_properties(Drcy
-  PROPERTIES
-  ARCHIVE_OUTPUT_NAME
-    Darcy
 )
 
 # Unit tests
