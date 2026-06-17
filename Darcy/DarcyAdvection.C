@@ -12,7 +12,6 @@
 //==============================================================================
 
 #include "DarcyAdvection.h"
-#include "Darcy.h"
 
 #include "ElementSteps.h"
 #include "ElmMats.h"
@@ -29,9 +28,8 @@
 #include "tinyxml2.h"
 
 
-DarcyAdvection::DarcyAdvection (unsigned short int n,
-                                const Darcy& drc1, int torder) :
-  IntegrandBase(n), bdf(torder), drc(drc1)
+DarcyAdvection::DarcyAdvection (unsigned short int n, int torder)
+  : IntegrandBase(n), bdf(torder)
 {
   npv = 1;
   this->registerVector("pressure",&pVec);
@@ -99,7 +97,7 @@ bool DarcyAdvection::initElement (const std::vector<int>& MNPC,
     size_t iel = fe.iel - 1;
     ElmMats* A = dynamic_cast<ElmMats*>(&elmInt);
     if (A && iel < this->myKmats.size() && !A->A.empty())
-      A->A[0] = this->myKmats[iel];
+      A->A.front() = this->myKmats[iel];
   }
 
   return this->IntegrandBase::initElement(MNPC,fe,XC,nPt,elmInt);
@@ -115,18 +113,29 @@ bool DarcyAdvection::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
 
   if (!elMat.A.empty() && calcMats)
   {
+    const Vec3 K = mat->getPermeability(X);
     const double D = mat->getDispersivity(X);
-    WeakOps::Laplacian(elMat.A[0], fe, D, false);
-
-    RealArray q;
-    if (!this->evalDarcyVel(q,fe,X))
+    const double mu = mat->getViscosity();
+    if (mu <= 1.0e-16)
+    {
+      std::cerr <<" *** DarcyAdvection::evalInt: Non-positive viscosity ("
+                << mu <<")."<< std::endl;
       return false;
+    }
 
-    WeakOps::Advection(elMat.A[0], fe, q, 1.0, WeakOperators::CONSERVATIVE);
+    // Evaluate the Darcy velocity, q = -K/mu * grad(p)
+    Vector dP;
+    pField->gradFE(fe,dP);
+    Vec3 q(dP);
+    for (size_t i = 0; i < nsd; i++)
+      q[i] *= -K[i]/mu;
+
+    WeakOps::Laplacian(elMat.A.front(), fe, D, false);
+    WeakOps::Advection(elMat.A.front(), fe, q, 1.0, WeakOperators::CONSERVATIVE);
   }
 
   if (source)
-    WeakOps::Source(elMat.b[0], fe, (*source)(X), 1);
+    WeakOps::Source(elMat.b.front(), fe, (*source)(X), 1);
 
   if (bdf.getActualOrder() > 0)
   {
@@ -136,9 +145,9 @@ bool DarcyAdvection::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
     for (int t = 1; t <= bdf.getOrder(); t++)
       c -= elmInt.vec[t].dot(fe.N) * phi * bdf[t] / time.dt;
 
-    WeakOps::Source(elMat.b[0], fe, c, 1);
+    WeakOps::Source(elMat.b.front(), fe, c, 1);
     if (!elMat.A.empty() && calcMats)
-      WeakOps::Mass(elMat.A[0], fe, phi*bdf[0] / time.dt);
+      WeakOps::Mass(elMat.A.front(), fe, phi*bdf[0] / time.dt);
   }
 
   return true;
@@ -158,19 +167,6 @@ bool DarcyAdvection::finalizeElement (LocalIntegral& elmInt,
   }
 
   return this->IntegrandBase::finalizeElement(elmInt,fe,time,iGP);
-}
-
-
-bool DarcyAdvection::evalDarcyVel (RealArray& q,
-                                   const FiniteElement& fe, const Vec3& X) const
-{
-  Matrix K;
-  drc.formKmatrix(K, X);
-
-  Vector dP;
-  this->pField->gradFE(fe, dP);
-
-  return K.multiply(dP, q, - 1.0 / mat->getViscosity());
 }
 
 

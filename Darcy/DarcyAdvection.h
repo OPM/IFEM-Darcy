@@ -21,7 +21,6 @@
 
 #include <memory>
 
-class Darcy;
 class Field;
 class RealFunc;
 class SIMbase;
@@ -35,7 +34,7 @@ class DarcyAdvection : public IntegrandBase
 {
 public:
   //! \brief The constructor initializes all pointers to zero.
-  DarcyAdvection(unsigned short int n, const Darcy& drc, int torder = 0);
+  DarcyAdvection(unsigned short int n, int torder = 0);
   //! \brief Empty destructor.
   virtual ~DarcyAdvection();
 
@@ -111,14 +110,6 @@ public:
   //! returned pointer value.
   NormBase* getNormIntegrand(AnaSol*) const override;
 
-  //! \brief Returns concentration in a point.
-  //! \param eV Element vectors
-  //! \param fe Finite element data at current point
-  //! \param level Time level to evaluate at
-  double concentration(const Vectors& eV,
-                       const FiniteElement& fe,
-                       size_t level) const;
-
   //! \brief Returns order of time integration.
   int getOrder() const { return bdf.getActualOrder(); }
 
@@ -147,13 +138,6 @@ public:
   void setMaterial(DarcyMaterial& mat1) { mat = &mat1; }
 
 protected:
-  //! \brief Evaluate darcy velocity in a point.
-  //! \param q Resulting darcy velocity
-  //! \param fe Finite element data at current point
-  //! \param X Coordinates of current point
-  bool evalDarcyVel(RealArray& q,
-                    const FiniteElement& fe, const Vec3& X) const;
-
   SIMbase* ownerSim; //!< The simulator that owns this integrand
 
   const DarcyMaterial* mat; //!< Material to use
@@ -164,7 +148,6 @@ protected:
 
   TimeIntegration::BDF bdf; //!< BDF time stepping helper
 
-  const Darcy& drc; //!< Reference to darcy integrand
   Matrices myKmats; //!< Cached element matrices
 
   //! Flag for calculation/caching of element matrices.

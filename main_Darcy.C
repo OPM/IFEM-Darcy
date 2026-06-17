@@ -130,7 +130,7 @@ int runSimulatorScheduled(char* infile, const DarcyArgs& args)
   const int torder = TimeIntegration::Order(args.timeMethod);
 
   Darcy          dcy(Dim::dimension);
-  DarcyAdvection dcya(Dim::dimension,dcy,torder);
+  DarcyAdvection dcya(Dim::dimension,torder);
   SIMDarcy<Dim>          darcy(dcy);
   SIMDarcyAdvection<Dim> darcya(dcya);
   SIMDarcySchedule<Dim>  schedule(darcy, darcya);
