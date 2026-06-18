@@ -8,7 +8,6 @@ Number of Gauss points: 4
 		Dirac(1, 4) = 1
 		Dirac(8, 2) = 1
 		Dirac(8, 4) = 1
-	Permeability: 1.2|1.2
 Number of elements    256
 Number of nodes       289
 Number of dofs        289

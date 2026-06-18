@@ -5,7 +5,7 @@
   <!-- General - geometry definitions !-->
   <geometry dim="2" sets="true">
     <raiseorder patch="1" u="1" v="1"/>
-    <refine  patch="1" u="7" v="7"/>
+    <refine patch="1" u="7" v="7"/>
   </geometry>
 
   <!-- General - boundary conditions !-->
@@ -32,8 +32,9 @@
         p2y=2*x*(x-1)*h;
         ct - (cx*px + c*p2x + cy*py + c*p2y + p2x + p2y)
     </source_c>
+    <gravity y="-1.0"/>
+    <bodyforce>0.0|1.0</bodyforce>
     <permvalues>1.0|1.0</permvalues>
-    <gravity>1.0</gravity>
     <porosity type="constant">1.0</porosity>
     <dispersivity type="constant">1.0</dispersivity>
     <subiterations max="50" tol="1e-10"/>

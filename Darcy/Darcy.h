@@ -17,7 +17,7 @@
 #include "DarcyMaterial.h"
 
 #include "BDF.h"
-#include "IntegrandBase.h"
+#include "HasGravityBase.h"
 
 #include <memory>
 
@@ -32,7 +32,7 @@ class VecFunc;
   \brief Class representing the integrand of the Darcy problem.
 */
 
-class Darcy : public IntegrandBase
+class Darcy : public HasGravityBase
 {
 protected:
   int pp = 0; //!< Block for pressure
@@ -42,7 +42,7 @@ protected:
 public:
   //! \brief The constructor initializes all pointers to zero.
   explicit Darcy(unsigned short int n, int torder = 0);
-  //! \brief Empty destructor.
+  //! \brief The destructor deletes \ref reacInt and \ref bodyforce.
   virtual ~Darcy();
 
   //! \brief Assigns the owner simulator (used by parse()).
@@ -189,9 +189,6 @@ public:
   //! \param[in] fe Finite element data at current point
   double getDensity(const FiniteElement& fe) const;
 
-  //! \brief Returns gravitational acceleration.
-  double getGravity() const { return gacc; }
-
   //! \brief Initializes and toggles the use of left-hand-side matrix buffers.
   //! \param[in] nEl Number of elements in the model/toggle.
   //! - If larger than 1, element matrix buffers are allocated to given size.
@@ -210,7 +207,6 @@ public:
 protected:
   SIMbase* ownerSim; //!< The simulator that owns this integrand
 
-  double gacc = 9.81; //!< Gravitation constant
   DarcyMaterial* mat; //!< Material properties
 
   VecFunc*      bodyforce; //!< Body force function

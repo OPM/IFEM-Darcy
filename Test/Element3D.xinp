@@ -14,12 +14,14 @@
 
   <!-- Problem-specific block !-->
   <darcy>
+    <gravity z="-9.81"/>
+    <bodyforce>0.0 | 0.0 | 9.81</bodyforce>
+    <permvalues>1.2 | 1.2 | 1.2</permvalues>
     <source type="elementsum">
       # U V Val\
       0.25 0.25 0.25 1\
       0.75 0.75 0.25 1
     </source>
-    <permvalues>1.2|1.2|1.2</permvalues>
   </darcy>
 
 </simulation>

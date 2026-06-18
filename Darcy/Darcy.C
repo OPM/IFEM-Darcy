@@ -33,8 +33,7 @@
 #include "tinyxml2.h"
 
 
-Darcy::Darcy (unsigned short int n, int torder) :
-  IntegrandBase(n), bdf(torder)
+Darcy::Darcy (unsigned short int n, int torder) : HasGravityBase(n), bdf(torder)
 {
   this->registerVector("tracer",&cVec);
 
@@ -48,17 +47,19 @@ Darcy::Darcy (unsigned short int n, int torder) :
 }
 
 
-Darcy::~Darcy() = default;
+Darcy::~Darcy ()
+{
+  delete reacInt;
+  delete bodyforce;
+}
 
 
 bool Darcy::parse (const tinyxml2::XMLElement* elem)
 {
   char sourceType = 0;
   const char* input = nullptr;
-  if ((input = utl::getValue(elem,"bodyforce")))
+  if (!bodyforce && (input = utl::getValue(elem,"bodyforce")))
     bodyforce = new VecFuncExpr(input);
-  else if ((input = utl::getValue(elem,"gravity")))
-    gacc = atof(input);
   else if ((input = utl::getValue(elem,"source")))
     sourceType = 'a';
   else if ((input = utl::getValue(elem,"source_c")))
@@ -66,7 +67,7 @@ bool Darcy::parse (const tinyxml2::XMLElement* elem)
   else if (!strcasecmp(elem->Value(),"reactions"))
     extEner = 'R';
   else
-    return false;
+    return this->HasGravityBase::parse(elem);
 
   if (sourceType)
   {
@@ -228,13 +229,19 @@ bool Darcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   ElmMats& elMat = static_cast<ElmMats&>(elmInt);
 
   if (!elMat.A.empty() && calcMats)
-    WeakOps::LaplacianCoeff(elMat.A[pp], K, fe, 1.0/(rho*gacc));
+    WeakOps::LaplacianCoeff(elMat.A[pp], K, fe);
 
+  // Evaluate the body forces at this point
+
+  Vec3 bf(gravity);
   if (bodyforce)
+    bf += (*bodyforce)(X);
+
+  if (!bf.isZero())
   {
-    Vec3 bf = (*bodyforce)(X);
+    // Integrate RHS-contributions from gravity and other body forces
     for (size_t i = 0; i < nsd; i++)
-      bf[i] *= K[i] / gacc;
+      bf[i] *= rho*K[i];
 #if INT_DEBUG > 3
     std::cout <<"  bf = "<< bf;
 #endif
@@ -247,7 +254,7 @@ bool Darcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
 #if INT_DEBUG > 3
     std::cout <<"  src = "<< src;
 #endif
-    WeakOps::Source(elMat.b[pp], fe, src);
+    WeakOps::Source(elMat.b[pp], fe, rho*gravity.length()*src);
   }
 
   if (bdf.getActualOrder() > 0 && elmInt.vec.size() > 1 && pp == 0)
@@ -294,15 +301,13 @@ bool Darcy::evalBou (LocalIntegral& elmInt, const FiniteElement& fe,
     return false;
   }
 
-  double qw = -this->getFlux(X,normal);
-  double rho = this->getDensity(fe);
-  if (rho <= 0.0) return false;
+  const double h = this->getFlux(X,normal);
 #if INT_DEBUG > 3
   std::cout <<"Darcy::evalBou("<< fe.iel <<", "<< X <<", "<< normal
-            <<"): h = "<< -qw/rho << std::endl;
+            <<"): h = "<< h << std::endl;
 #endif
 
-  EqualOrderOperators::Weak::Source(elMat.b[pp], fe, qw/rho);
+  EqualOrderOperators::Weak::Source(elMat.b[pp], fe, -h*gravity.length());
 
   return true;
 }
@@ -332,13 +337,13 @@ bool Darcy::evalDarcyVel (Vector& q, const Vectors& eV,
   double rho = this->getDensity(fe);
   if (rho <= 0.0) return false;
 
-  Vec3 dP = this->pressureGradient(eV, fe);
+  Vec3 dP = this->pressureGradient(eV, fe) - rho*gravity;
   if (bodyforce)
     dP -= rho * (*bodyforce)(X);
 
-  // q = -K/(rho*g) * (grad(p) - rho*bf)
+  // q = -K/(rho*g) * (grad(p) - rho*(g+bf))
   Vec3 K = mat->getPermeability(X);
-  K *= -1.0/(rho*gacc);
+  K *= -1.0/(rho*gravity.length());
   q = dP.vec(nsd);
   q *= K.vec(nsd);
 
@@ -455,7 +460,7 @@ bool DarcyNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
     else
       return false;
 
-  double rgw = problem.getDensity(fe) * problem.getGravity() * fe.detJxW;
+  double rgw = problem.getDensity(fe) * problem.getGravity().length() * fe.detJxW;
   if (rgw <= 0.0) return false;
 
   // Evaluate the finite element Darcy velocity field

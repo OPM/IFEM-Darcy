@@ -11,20 +11,29 @@ Updating pressure according to a schedule.
 Parsing input file Tracer-coupled.xinp
 Parsing <discretization>
 Parsing <geometry>
+  Generating linear geometry on unit parameter domain \[0,1]^2
   Parsing <raiseorder>
   Parsing <refine>
+  Parsing <topologysets>
+	Topology sets: Boundary (1,1,1D) (1,2,1D) (1,3,1D) (1,4,1D)
   Parsing <raiseorder>
 	Raising order of P1 1 1
   Parsing <refine>
 	Refining P1 7 7
-Parsing <darcy>
+  Parsing <topologysets>
+Parsing <boundaryconditions>
   Parsing <dirichlet>
 	Dirichlet code 1: (fixed)
+Parsing <darcy>
+  Parsing <source>
 	Source function: -2.0\*(x\*x-x+y\*y-y)
+  Parsing <gravity>
+	Gravitation vector: 0 -1
 		Permeability: 1.0|1.0
 		Fluid density: (expression) 1.0+t
 		Porosity: 1
 		Dispersivity: 1
+		Fluid viscosity: 1
 Parsing <darcyadvection>
 Parsing <timestepping>
 Parsing input file succeeded.
@@ -35,37 +44,43 @@ Parsing <geometry>
   Generating linear geometry on unit parameter domain \[0,1]^2
   Parsing <raiseorder>
   Parsing <refine>
+  Parsing <topologysets>
+	Topology sets: Boundary (1,1,1D) (1,2,1D) (1,3,1D) (1,4,1D)
   Parsing <raiseorder>
 	Raising order of P1 1 1
   Parsing <refine>
 	Refining P1 7 7
-Parsing <darcy>
-Parsing <darcyadvection>
+  Parsing <topologysets>
+Parsing <boundaryconditions>
   Parsing <dirichlet>
 	Dirichlet code 1: (fixed)
+Parsing <darcy>
 		Permeability: 1.0|1.0
 		Fluid density: (expression) 1.0+t
 		Porosity: 1
 		Dispersivity: 1
 		Fluid viscosity: 1
-	Source function: h=t; dh=1; c=x\*(x-1)\*y\*(y-1)\*h; ct=x\*(x-1)\*y\*(y-1)\*dh; px=(2\*x-1)\*y\*(y-1)\*h; py=x\*(x-1)\*(2\*y-1)\*h; cx=px; cy=py; p2x=2\*y\*(y-1)\*h; p2y=2\*x\*(x-1)\*h; ct - (cx\*px + c\*p2x + cy\*py + c\*p2y + p2x + p2y)
+Parsing <darcyadvection>
+	Source function: h=t; dh=1; c=(x\*x-x)\*(y\*y-y)\*h; ct=(x\*x-x)\*(y\*y-y)\*dh; px=(2\*x-1)\*(y\*y-y)\*h; py=(x\*x-x)\*(2\*y-1)\*h; cx=px; cy=py; p2x=2\*(y\*y-y)\*h; p2y=2\*(x\*x-x)\*h; ct - (cx\*px + c\*p2x + cy\*py + c\*p2y + p2x + p2y)
 Parsing <timestepping>
 Parsing input file succeeded.
 Parsing input file Tracer-coupled.xinp
 Parsing <geometry>
+Parsing <boundaryconditions>
+Parsing <discretization>
 Parsing <darcy>
 	Scheduled pressure updates: 0.5
 Parsing <darcyadvection>
 Parsing <timestepping>
-Parsing <discretization>
 Parsing input file succeeded.
 3. Time integration driver
 Parsing input file Tracer-coupled.xinp
 Parsing <geometry>
+Parsing <boundaryconditions>
+Parsing <discretization>
 Parsing <darcy>
 Parsing <darcyadvection>
 Parsing <timestepping>
-Parsing <discretization>
 Parsing input file succeeded.
 11. Darcy solver
 Resolving Dirichlet boundary conditions
@@ -106,26 +121,26 @@ Solving Darcy advection problem
   Max concentration  : 0.0245663
  \* Scheduled pressure change at time 0.5, calculating new pressure matrix.
   step=5  time=0.5
-  L2-norm            : 0.0279852
-  Max pressure       : 0.0632717
-  L2-norm            : 0.0137128
-  Max concentration  : 0.0307696
+  L2-norm            : 0.0282106
+  Max pressure       : 0.0636708
+  L2-norm            : 0.0137118
+  Max concentration  : 0.0307675
   step=6  time=0.6
-  L2-norm            : 0.0164842
-  Max concentration  : 0.0370161
+  L2-norm            : 0.0164824
+  Max concentration  : 0.0370122
   step=7  time=0.7
-  L2-norm            : 0.0192688
-  Max concentration  : 0.0433035
+  L2-norm            : 0.0192664
+  Max concentration  : 0.0432984
   step=8  time=0.8
-  L2-norm            : 0.0220662
-  Max concentration  : 0.0496299
+  L2-norm            : 0.0220634
+  Max concentration  : 0.049624
   step=9  time=0.9
-  L2-norm            : 0.0248761
-  Max concentration  : 0.0559947
+  L2-norm            : 0.024873
+  Max concentration  : 0.055988
   step=10  time=1
-  L2-norm            : 0.0276985
-  Max concentration  : 0.0623978
+  L2-norm            : 0.027695
+  Max concentration  : 0.0623902
   Time integration completed.
 >>> Norm summary <<<
-  H1 norm |p^h| = a(p^h,p^h)^0.5     : 0.14876
-  External energy |(h,p^h)|^0.5      : 0.149703
+  H1 norm |p^h| = a(p^h,p^h)^0.5     : 0.150007
+  External energy |(h,p^h)|^0.5      : 0.150327

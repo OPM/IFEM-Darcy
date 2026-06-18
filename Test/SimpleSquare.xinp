@@ -10,6 +10,9 @@
     <boundaryconditions>
       <dirichlet set="Boundary" comp="1" type="anasol"/>
     </boundaryconditions>
+    <gravity y="-1.0"/>
+    <bodyforce>0.0 | 1.0</bodyforce>
+    <permvalues>1.0 | 1.0</permvalues>
     <source type="expression">
       ut=x*(x-1)*y*(y-1);
       uxx=2*y*(y-1)*t;
@@ -20,8 +23,6 @@
       <primary>x*(x-1)*y*(y-1)*t</primary>
       <secondary>-(2*x-1)*y*(y-1)*t|-(2*y-1)*x*(x-1)*t</secondary>
     </anasol>
-    <permvalues>1.0|1.0</permvalues>
-    <gravity>1.0</gravity>
   </darcy>
 
   <timestepping start="0.0" end="1.0" dt="0.1" type="be"/>

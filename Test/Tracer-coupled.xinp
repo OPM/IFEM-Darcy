@@ -26,7 +26,8 @@
   <!-- Problem-specific block - for pressure solver !-->
   <darcy>
     <source type="expression">-2.0*(x*x-x+y*y-y)</source>
-    <gravity>1.0</gravity>
+    <gravity y="-1.0"/>
+    <bodyforce>0.0|1.0</bodyforce>
     <permvalues>1.0|1.0</permvalues>
     <density type="expression">1.0+t</density>
     <porosity type="constant">1.0</porosity>
@@ -39,18 +40,16 @@
 
   <!-- Problem-specific block - for tracer concentration solver !-->
   <darcyadvection>
-    <source type="expression">
-        h=t;
-        dh=1;
-        c=x*(x-1)*y*(y-1)*h;
-        ct=x*(x-1)*y*(y-1)*dh;
-        px=(2*x-1)*y*(y-1)*h;
-        py=x*(x-1)*(2*y-1)*h;
-        cx=px;
-        cy=py;
-        p2x=2*y*(y-1)*h;
-        p2y=2*x*(x-1)*h;
-        ct - (cx*px + c*p2x + cy*py + c*p2y + p2x + p2y)
+    <source type="expression">h=t; dh=1;
+      c=(x*x-x)*(y*y-y)*h;
+      ct=(x*x-x)*(y*y-y)*dh;
+      px=(2*x-1)*(y*y-y)*h;
+      py=(x*x-x)*(2*y-1)*h;
+      cx=px;
+      cy=py;
+      p2x=2*(y*y-y)*h;
+      p2y=2*(x*x-x)*h;
+      ct - (cx*px + c*p2x + cy*py + c*p2y + p2x + p2y)
     </source>
   </darcyadvection>
 

@@ -4,7 +4,7 @@
 
   <!-- General - geometry definitions !-->
   <geometry dim="2" sets="true" Lx="10" Ly="5">
-    <refine  patch="1" u="15" v="15"/>
+    <refine patch="1" u="15" v="15"/>
   </geometry>
 
   <!-- General - boundary conditions !-->
@@ -14,12 +14,14 @@
 
   <!-- Problem-specific block !-->
   <darcy>
+    <gravity y="-9.81"/>
+    <bodyforce>0.0 | 9.81</bodyforce>
+    <permvalues>1.2 | 1.2</permvalues>
     <source type="elementsum">
       # U V Val\
       0.25 0.25 1\
       0.75 0.75 1
     </source>
-    <permvalues>1.2|1.2</permvalues>
   </darcy>
 
 </simulation>

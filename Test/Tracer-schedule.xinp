@@ -26,7 +26,8 @@
   <!-- Problem-specific block - for pressure solver !-->
   <darcy>
     <source type="expression">h=1; -2.0*(x*x-x+y*y-y)*h</source>
-    <gravity>1.0</gravity>
+    <gravity y="-1.0"/>
+    <bodyforce>0.0|1.0</bodyforce>
     <permvalues>1.0|1.0</permvalues>
     <porosity type="constant">1.0</porosity>
     <dispersivity type="constant">1.0</dispersivity>

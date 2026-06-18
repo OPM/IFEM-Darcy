@@ -35,7 +35,9 @@
 
   <!-- Problem-specific block !-->
   <darcy adap="recovery_press">
-    <permvalues>9.81|9.81</permvalues>
+    <gravity y="-1.0"/>
+    <bodyforce>0.0 | 1.0</bodyforce>
+    <permvalues>1.0 | 1.0</permvalues>
     <anasol type="expression">
       <variables>
         r2=if(below(x*x+y*y,1.0e-16),1.0e-16,x*x+y*y);
