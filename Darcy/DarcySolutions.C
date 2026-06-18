@@ -19,48 +19,11 @@
 #include "LogStream.h"
 #include "SIMbase.h"
 #include "StringUtils.h"
-#include "Vec3.h"
 
 #include <array>
 #include <cmath>
 #include <sstream>
 #include <string>
-
-
-double LshapeDarcy::evaluate (const Vec3& X) const
-{
-  double x = X.x;
-  double y = X.y;
-  double pi = M_PI;
-
-  double r2 = x*x + y*y;
-  double theta = atan2(y,x);
-  if (theta <= 0) theta += 2*pi;
-
-  return pow(r2,1.0/3)*(sin((2.0*theta-pi)/3));
-}
-
-Vec3 LshapeDarcyVelocity::evaluate (const Vec3& X) const
-{
-  double x = X.x;
-  double y = X.y;
-  double pi = M_PI;
-
-  double r2 = x*x + y*y;
-  double theta = atan2(y,x);
-  if (theta <= 0) theta += 2*pi;
-  if (r2 < 1e-16) {  // truncate the singularity to avoid NaN values
-    r2 = 1e-16;
-    theta = 2*pi;
-  }
-
-  Vec3 velocity;
-
-  velocity.x = (2.0/3) * (cos(2.0/3*theta + pi/6)*x + sin(2.0/3*theta + pi/6)*y) / pow(r2, 2.0/3);
-  velocity.y = (-2.0/3) * (sin(2.0/3*theta - pi/3)*y + sin(2.0/3*theta + pi/6)*x) / pow(r2, 2.0/3);
-
-  return velocity;
-}
 
 
 bool DiracSum::parse (const char* input)

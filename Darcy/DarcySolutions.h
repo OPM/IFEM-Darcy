@@ -14,51 +14,12 @@
 #ifndef _DARCY_SOLUTIONS_H
 #define _DARCY_SOLUTIONS_H
 
-#include "Function.h"
 #include "FunctionSum.h"
-#include "Vec3.h"
 
 #include <memory>
 #include <vector>
 
-
 class SIMbase;
-
-
-/*!
- \brief Primary solution for Darcy problem on a L-shape domain.
-*/
-
-class LshapeDarcy : public RealFunc
-{
-public:
-  //! \brief Empty constructor.
-  LshapeDarcy() {}
-  //! \brief Empty destructor.
-  virtual ~LshapeDarcy() {}
-
-protected:
-  //! \brief Evaluates the analytic pressure field at the point \a X.
-  Real evaluate(const Vec3& X) const override;
-};
-
-
-/*!
- \brief Secondary solution for Darcy problem on a L-shape domain.
-*/
-
-class LshapeDarcyVelocity : public VecFunc
-{
-public:
-  //! \brief Empty constructor.
-  LshapeDarcyVelocity() {}
-  //! \brief Empty destructor.
-  virtual ~LshapeDarcyVelocity() {}
-
-protected:
-  //! \brief Evaluates the analytic vecocity vector at the point \a X.
-  Vec3 evaluate(const Vec3& X) const override;
-};
 
 
 /*!

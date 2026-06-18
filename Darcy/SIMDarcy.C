@@ -14,7 +14,6 @@
 #include "SIMDarcy.h"
 
 #include "Darcy.h"
-#include "DarcySolutions.h"
 
 #include "AnaSol.h"
 #include "DataExporter.h"
@@ -83,16 +82,8 @@ bool SIMDarcy<Dim>::parse (const tinyxml2::XMLElement* elem)
     else if (defaultMaterial.parse(child))
       gotMaterialData = true;
     else if (!strcasecmp(child->Value(),"anasol")) {
-      std::string type;
-      utl::getAttribute(child,"type",type);
-      if (type == "Lshape") {
-        Dim::mySol = new AnaSol(new LshapeDarcy(), new LshapeDarcyVelocity());
-        IFEM::cout <<"\tAnalytical solution: Lshape"<< std::endl;
-      }
-      else {
-        Dim::mySol = new AnaSol(child);
-        IFEM::cout <<"\tAnalytical solution: expression"<< std::endl;
-      }
+      Dim::mySol = new AnaSol(child);
+      IFEM::cout <<"\tAnalytical solution: expression"<< std::endl;
 
       // Define the analytical boundary traction field
       if (int code = 0; utl::getAttribute(child,"code",code))

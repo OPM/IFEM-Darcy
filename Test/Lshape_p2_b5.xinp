@@ -4,8 +4,7 @@
 
   <!-- General - geometry definitions !-->
   <geometry dim="2">
-    <patch>200 1 0 0\
-      2 0\
+    <patch>200 1 0 0 \ 2 0\
       3 2 0 0 1 2 2\
       2 2 0 0 1 1\
      -1.0 1.0 -1.0 -1.0  1.0 -1.0\
@@ -37,7 +36,23 @@
   <!-- Problem-specific block !-->
   <darcy adap="recovery_press">
     <permvalues>9.81|9.81</permvalues>
-    <anasol type="Lshape"/>
+    <anasol type="expression">
+      <variables>
+        r2=if(below(x*x+y*y,1.0e-16),1.0e-16,x*x+y*y);
+        theta=if(above(atan2(y,x),0.0),atan2(y,x),atan2(y,x)+2.0*PI);
+        othird=1.0/3.0;
+        tthird=2.0/3.0;
+        pthird=PI/3.0;
+        psixth=PI/6.0
+      </variables>
+      <primary>
+        pow(r2,othird) * sin(tthird*theta - pthird)
+      </primary>
+      <secondary>
+        tthird * (cos(tthird*theta + psixth)*x + sin(tthird*theta + psixth)*y) / pow(r2,tthird) |
+       -tthird * (sin(tthird*theta - pthird)*y + sin(tthird*theta + psixth)*x) / pow(r2,tthird)
+      </secondary>
+    </anasol>
   </darcy>
 
   <postprocessing>
