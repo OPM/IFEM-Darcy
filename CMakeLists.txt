@@ -29,6 +29,10 @@ ifem_add_application(
     IFEM::Darcy
 )
 
+if(VERBOSE_DEBUG GREATER 0)
+  target_compile_definitions(Drcy PUBLIC $<$<CONFIG:Debug>:INT_DEBUG=${VERBOSE_DEBUG}>)
+endif()
+
 ifem_add_application(
   NAME
     DarcyCorrection
