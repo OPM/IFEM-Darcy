@@ -3,25 +3,34 @@
 <simulation>
 
   <!-- General - geometry definitions !-->
-  <geometry dim="2" sets="true">
+  <geometry dim="2">
     <raiseorder patch="1" u="1" v="1"/>
-    <refine  patch="1" u="7" v="7"/>
+    <refine patch="1" u="7" v="7"/>
+    <topologysets>
+      <set name="Boundary" type="edge">
+        <item patch="1">1 2 3 4</item>
+      </set>
+    </topologysets>
   </geometry>
 
-  <!-- Problem-specific block !-->
+  <!-- General - boundary conditions !-->
+  <boundaryconditions>
+    <dirichlet set="Boundary" comp="1"/>
+  </boundaryconditions>
+
+  <!-- General - numerical integration scheme !-->
+  <discretization>
+    <nGauss>3</nGauss>
+  </discretization>
+
+  <!-- Problem-specific block - for pressure solver !-->
   <darcy>
-    <!-- General - boundary conditions !-->
-    <boundaryconditions>
-      <dirichlet set="Boundary" comp="1"/>
-    </boundaryconditions>
-    <source type="expression">
-      h=1;
-      (-2*(x-1)*x-2*(y-1)*y)*h
-    </source>
-    <permvalues>1.0|1.0</permvalues>
+    <source type="expression">h=1; -2.0*(x*x-x+y*y-y)*h</source>
     <gravity>1.0</gravity>
+    <permvalues>1.0|1.0</permvalues>
     <porosity type="constant">1.0</porosity>
     <dispersivity type="constant">1.0</dispersivity>
+    <viscosity>1.0</viscosity>
     <anasol type="expression">
       <variables>h=1</variables>
       <primary>x*(x-1)*y*(y-1)*h</primary>
@@ -34,15 +43,8 @@
     </schedule>
   </darcy>
 
+  <!-- Problem-specific block - for tracer concentration solver !-->
   <darcyadvection>
-    <boundaryconditions>
-      <dirichlet set="Boundary" comp="1"/>
-    </boundaryconditions>
-    <permvalues>1.0|1.0</permvalues>
-    <gravity>1.0</gravity>
-    <porosity type="constant">1.0</porosity>
-    <dispersivity type="constant">1.0</dispersivity>
-    <viscosity>1.0</viscosity>
     <source type="expression">
         h=t;
         dh=1;
@@ -58,10 +60,7 @@
     </source>
   </darcyadvection>
 
+  <!-- General - time-stepping setup !-->
   <timestepping start="0" end="1.0" dt="0.1" type="bdf2"/>
-
-  <discretization>
-    <nGauss>3</nGauss>
-  </discretization>
 
 </simulation>

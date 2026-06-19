@@ -12,7 +12,6 @@
 //==============================================================================
 
 #include "SIMDarcyAdvection.h"
-
 #include "DarcyAdvection.h"
 
 #include "DataExporter.h"
@@ -33,6 +32,7 @@ template<class Dim>
 SIMDarcyAdvection<Dim>::SIMDarcyAdvection (DarcyAdvection& itg) :
   Dim(1), drc(itg)
 {
+  drc.setOwnerSim(this);
   Dim::myProblem = &drc;
   Dim::myHeading = "Darcy advection solver";
   Dim::msgLevel  = 1;
@@ -50,7 +50,8 @@ SIMDarcyAdvection<Dim>::~SIMDarcyAdvection ()
 template<class Dim>
 bool SIMDarcyAdvection<Dim>::parse (const tinyxml2::XMLElement* elem)
 {
-  if (strcasecmp(elem->Value(),"darcyadvection"))
+  bool darcyContext = !strcasecmp(elem->Value(),"darcy");
+  if (!darcyContext && strcasecmp(elem->Value(),"darcyadvection"))
     return this->Dim::parse(elem);
 
   if (bool useCache = false; utl::getAttribute(elem,"cache",useCache)) {
@@ -65,15 +66,21 @@ bool SIMDarcyAdvection<Dim>::parse (const tinyxml2::XMLElement* elem)
 
   const tinyxml2::XMLElement* child = elem->FirstChildElement();
   for (; child; child = child->NextSiblingElement())
-    if (!strcasecmp(child->Value(),"materialdata")) {
+    if (!strcasecmp(child->Value(),"materialdata"))
+    {
       IFEM::cout <<"\tMaterial data with code "
                  << this->parseMaterialSet(child,mVec.size()) <<":\n";
       mVec.emplace_back(child);
     }
     else if (defaultMaterial.parse(child))
       gotMaterialData = true;
-    else if (!Dim::myProblem->parse(child))
-      this->Dim::parse(child);
+
+    else if (!strcasecmp(child->Value(),"gravity") ||
+             !strcasecmp(child->Value(),"bodyforce") || !darcyContext)
+      // Gravity, body force and material properties may also be parsed
+      // from the <darcy> context, but nothing else
+      if (!Dim::myProblem->parse(child))
+        this->Dim::parse(child);
 
   if (gotMaterialData && mVec.empty())
     mVec.push_back(std::move(defaultMaterial));

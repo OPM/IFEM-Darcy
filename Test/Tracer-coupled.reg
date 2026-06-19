@@ -11,8 +11,6 @@ Updating pressure according to a schedule.
 Parsing input file Tracer-coupled.xinp
 Parsing <discretization>
 Parsing <geometry>
-  Using 2D multi-patch model generator.
-	Reading patch 1
   Parsing <raiseorder>
   Parsing <refine>
   Parsing <raiseorder>
@@ -22,7 +20,7 @@ Parsing <geometry>
 Parsing <darcy>
   Parsing <dirichlet>
 	Dirichlet code 1: (fixed)
-	Source function: -2\*(x\*(x-1)+y\*(y-1))
+	Source function: -2.0\*(x\*x-x+y\*y-y)
 		Permeability: 1.0|1.0
 		Fluid density: (expression) 1.0+t
 		Porosity: 1
