@@ -17,7 +17,6 @@
 #include "DarcyMaterial.h"
 
 #include "BDF.h"
-#include "EqualOrderOperators.h"
 #include "IntegrandBase.h"
 
 #include <memory>
@@ -36,8 +35,6 @@ class VecFunc;
 class Darcy : public IntegrandBase
 {
 protected:
-  using WeakOps = EqualOrderOperators::Weak; //!< Convenience renaming
-
   int pp = 0; //!< Block for pressure
   int cc = 0; //!< Block for concentration
   int cp = 0; //!< Block coupling concentration to pressure
@@ -135,12 +132,6 @@ public:
   //! \param[in] normal Boundary normal vector at current integration point
   bool evalBou(LocalIntegral& elmInt, const FiniteElement& fe,
                const Vec3& X, const Vec3& normal) const override;
-
-  //! \brief Sets up the permeability matrix.
-  //! \param[out] K \f$ n_{sd}\times n_{sd}\f$-matrix or its inverse
-  //! \param[in] X Cartesian coordinates of current point
-  //! \param[in] inverse If \e true, set up the inverse matrix instead
-  bool formKmatrix(Matrix& K, const Vec3& X, bool inverse = false) const;
 
   //! \brief Evaluates the secondary solution at a result point.
   //! \param[out] s Array of solution field values at current point

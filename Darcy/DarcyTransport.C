@@ -16,6 +16,7 @@
 #include "AnaSol.h"
 #include "BlockElmMats.h"
 #include "ElmNorm.h"
+#include "EqualOrderOperators.h"
 #include "Fields.h"
 #include "FiniteElement.h"
 #include "Function.h"
@@ -25,8 +26,6 @@
 #include "Utilities.h"
 #include "Vec3.h"
 #include "Vec3Oper.h"
-
-#include <ext/alloc_traits.h>
 
 
 DarcyTransport::DarcyTransport (unsigned short int n, int torder) :
@@ -93,6 +92,8 @@ bool DarcyTransport::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
 {
   if (!this->Darcy::evalInt(elmInt, fe, time, X))
     return false;
+
+  using WeakOps = EqualOrderOperators::Weak;
 
   ElmMats& elMat = static_cast<ElmMats&>(elmInt);
 
