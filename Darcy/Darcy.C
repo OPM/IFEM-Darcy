@@ -124,6 +124,12 @@ Vec3 Darcy::getPermeability (const Vec3& X) const
 }
 
 
+double Darcy::getViscosity () const
+{
+  return mat ? mat->getViscosity() : 0.0;
+}
+
+
 double Darcy::getFlux (const Vec3& X, const Vec3& normal) const
 {
   if (flux)
@@ -214,22 +220,23 @@ bool Darcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
 {
   using WeakOps = EqualOrderOperators::Weak;
 
-  // Evaluate the fluid density and permeability at this point
+  // Get fluid density, viscosity and permeability at this point
 
   const double rho = this->getDensity(fe);
   if (rho <= 0.0) return false;
 
+  const double mu = mat->getViscosity();
   const Vec3 K = mat->getPermeability(X);
 
 #if INT_DEBUG > 3
   std::cout <<"Darcy::evalInt("<< fe.iel <<", "<< X
-            <<"): rho = "<< rho <<" K = "<< K;
+            <<"): rho = "<< rho <<" mu = "<< mu <<" K = "<< K;
 #endif
 
   ElmMats& elMat = static_cast<ElmMats&>(elmInt);
 
   if (!elMat.A.empty() && calcMats)
-    WeakOps::LaplacianCoeff(elMat.A[pp], K, fe);
+    WeakOps::LaplacianCoeff(elMat.A[pp], K, fe, 1.0/mu);
 
   // Evaluate the body forces at this point
 
@@ -241,7 +248,7 @@ bool Darcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   {
     // Integrate RHS-contributions from gravity and other body forces
     for (size_t i = 0; i < nsd; i++)
-      bf[i] *= rho*K[i];
+      bf[i] *= K[i]*rho/mu;
 #if INT_DEBUG > 3
     std::cout <<"  bf = "<< bf;
 #endif
@@ -254,7 +261,7 @@ bool Darcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
 #if INT_DEBUG > 3
     std::cout <<"  src = "<< src;
 #endif
-    WeakOps::Source(elMat.b[pp], fe, rho*gravity.length()*src);
+    WeakOps::Source(elMat.b[pp], fe, src);
   }
 
   if (bdf.getActualOrder() > 0 && elmInt.vec.size() > 1 && pp == 0)
@@ -307,7 +314,7 @@ bool Darcy::evalBou (LocalIntegral& elmInt, const FiniteElement& fe,
             <<"): h = "<< h << std::endl;
 #endif
 
-  EqualOrderOperators::Weak::Source(elMat.b[pp], fe, -h*gravity.length());
+  EqualOrderOperators::Weak::Source(elMat.b[pp], fe, -h);
 
   return true;
 }
@@ -334,16 +341,16 @@ bool Darcy::evalSol2 (Vector& s, const Vectors& eV,
 bool Darcy::evalDarcyVel (Vector& q, const Vectors& eV,
                           const FiniteElement& fe, const Vec3& X) const
 {
-  double rho = this->getDensity(fe);
+  const double rho = this->getDensity(fe);
   if (rho <= 0.0) return false;
 
   Vec3 dP = this->pressureGradient(eV, fe) - rho*gravity;
   if (bodyforce)
     dP -= rho * (*bodyforce)(X);
 
-  // q = -K/(rho*g) * (grad(p) - rho*(g+bf))
+  // q = -K/mu * (grad(p) - rho*(g + bf))
   Vec3 K = mat->getPermeability(X);
-  K *= -1.0/(rho*gravity.length());
+  K *= -1.0/mat->getViscosity();
   q = dP.vec(nsd);
   q *= K.vec(nsd);
 
@@ -456,12 +463,9 @@ bool DarcyNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   Kinv.diag(problem.getPermeability(X).vec(fe.dNdX.cols()));
   for (size_t i = 1; i <= Kinv.cols(); i++)
     if (double& k = Kinv(i,i); k != 0.0)
-      k = 1.0/k;
+      k = problem.getViscosity()/k;
     else
       return false;
-
-  double rgw = problem.getDensity(fe) * problem.getGravity().length() * fe.detJxW;
-  if (rgw <= 0.0) return false;
 
   // Evaluate the finite element Darcy velocity field
   Vector dPh, dP, error;
@@ -469,7 +473,7 @@ bool DarcyNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
     return false;
 
   // Integrate the energy norm a(p^h,p^h)
-  pnorm[H1_Ph] += dPh.dot(Kinv*dPh)*rgw;
+  pnorm[H1_Ph] += dPh.dot(Kinv*dPh)*fe.detJxW;
   // Evaluate the finite element pressure field
   double p = problem.pressure(pnorm.vec, fe, 0);
   // Integrate the external energy (h,p^h)
@@ -481,10 +485,10 @@ bool DarcyNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
     // Evaluate the analytical Darcy velocity
     dP.fill((*anasol)(X).ptr(),fe.dNdX.cols());
     // Integrate the energy norm a(p,p)
-    pnorm[H1_P] += dP.dot(Kinv*dP)*rgw;
+    pnorm[H1_P] += dP.dot(Kinv*dP)*fe.detJxW;
     // Integrate the error in energy norm a(p-p^h,p-p^h)
     error = dP - dPh;
-    double E = error.dot(Kinv*error)*rgw;
+    double E = error.dot(Kinv*error)*fe.detJxW;
     pnorm[H1_E_Ph] += E;
     pnorm[TOTAL_NORM_E] += E;
   }
@@ -506,11 +510,11 @@ bool DarcyNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
           dPr[j] = psol.dot(fe.N,j,nrcmp);
 
       // Integrate the energy norm a(p^r,p^r)
-      pnorm[ip+H1_Pr] += dPr.dot(Kinv*dPr)*rgw;
+      pnorm[ip+H1_Pr] += dPr.dot(Kinv*dPr)*fe.detJxW;
 
       // Integrate the estimated error in energy norm a(p^r-p^h,p^r-p^h)
       error = dPr - dPh;
-      double E = error.dot(Kinv*error)*rgw;
+      double E = error.dot(Kinv*error)*fe.detJxW;
       pnorm[ip+H1_Pr_Ph] += E;
       pnorm[ip+TOTAL_NORM_REC] += E;
 
@@ -518,7 +522,7 @@ bool DarcyNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
       {
         // Integrate the error in the projected solution a(p-p^r,p-p^r)
         error = dP - dPr;
-        E = error.dot(Kinv*error)*rgw;
+        E = error.dot(Kinv*error)*fe.detJxW;
         pnorm[ip+H1_E_Pr] += E;
         pnorm[ip+TOTAL_E_REC] += E;
       }

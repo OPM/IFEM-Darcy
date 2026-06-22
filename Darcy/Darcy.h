@@ -75,6 +75,8 @@ public:
   double getDispersivity(const Vec3& X) const;
   //! \brief Returns the permeability at a given point.
   Vec3 getPermeability(const Vec3& X) const;
+  //! \brief Returns the fluid viscosity.
+  double getViscosity() const;
 
   //! \brief Defines the solution mode before the element assembly is started.
   //! \param[in] mode The solution mode to use

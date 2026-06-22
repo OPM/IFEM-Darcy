@@ -67,7 +67,7 @@ private:
   std::unique_ptr<RealFunc>   dispersivity; //!< Dispersivity function
   std::unique_ptr<ScalarFunc> density;      //!< Fluid density function
 
-  double viscosity = 0.0; //!< Fluid viscosity
+  double viscosity = 1.0; //!< Fluid viscosity
 };
 
 #endif

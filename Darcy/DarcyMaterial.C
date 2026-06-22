@@ -44,7 +44,7 @@ DarcyMaterial::DarcyMaterial (DarcyMaterial&& tmp)
   if (!density.get())
     density = std::move(tmp.density);
 
-  if (viscosity == 0.0)
+  if (viscosity == 1.0 && tmp.viscosity > 0.0)
     viscosity = tmp.viscosity;
 }
 
@@ -90,11 +90,10 @@ bool DarcyMaterial::parse (const tinyxml2::XMLElement* elem)
     IFEM::cout <<"\t\tFluid density: ";
     density.reset(utl::parseTimeFunc(value,type));
   }
-  else if ((value = utl::getValue(elem,"viscosity")))
-    IFEM::cout <<"\t\tFluid viscosity: "
-               << (viscosity = atof(value)) << std::endl;
-  else
+  else if (!(value = utl::getValue(elem,"viscosity")))
     return false;
+  else if (double mu = atof(value); mu > 0.0)
+    IFEM::cout <<"\t\tFluid viscosity: "<< (viscosity = mu) << std::endl;
 
   return true;
 }
