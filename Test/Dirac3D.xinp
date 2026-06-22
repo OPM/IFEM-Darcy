@@ -3,8 +3,13 @@
 <simulation>
 
   <!-- General - geometry definitions !-->
-  <geometry dim="3" sets="true">
+  <geometry dim="3">
     <refine patch="1" u="7" v="7" w="7"/>
+    <topologysets>
+      <set name="Face6" type="face">
+        <item patch="1">6</item>
+      </set>
+    </topologysets>
   </geometry>
 
   <!-- General - boundary conditions !-->
@@ -19,10 +24,10 @@
     <permvalues>1.2 | 1.2 | 1.2</permvalues>
     <source type="diracsum" pointTol="0.1">
       # X Y Val\
-      0.5 0.25 0.5 1\
-      0.1 0.2 0.25 1\
-      0.9 0.8 0.1 1\
-      0.7 0.7 0.7 1
+      0.5 0.25 0.5 9.81\
+      0.1 0.2 0.25 9.81\
+      0.9 0.8 0.1 9.81\
+      0.7 0.7 0.7 9.81
     </source>
   </darcy>
 

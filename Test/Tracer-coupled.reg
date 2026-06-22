@@ -121,26 +121,26 @@ Solving Darcy advection problem
   Max concentration  : 0.0245663
  \* Scheduled pressure change at time 0.5, calculating new pressure matrix.
   step=5  time=0.5
-  L2-norm            : 0.0282106
-  Max pressure       : 0.0636708
-  L2-norm            : 0.0137118
-  Max concentration  : 0.0307675
+  L2-norm            : 0.0277344
+  Max pressure       : 0.0625
+  L2-norm            : 0.0137151
+  Max concentration  : 0.0307802
   step=6  time=0.6
-  L2-norm            : 0.0164824
-  Max concentration  : 0.0370122
+  L2-norm            : 0.0164883
+  Max concentration  : 0.037033
   step=7  time=0.7
-  L2-norm            : 0.0192664
-  Max concentration  : 0.0432984
+  L2-norm            : 0.0192741
+  Max concentration  : 0.0433243
   step=8  time=0.8
-  L2-norm            : 0.0220634
-  Max concentration  : 0.049624
+  L2-norm            : 0.0220723
+  Max concentration  : 0.049654
   step=9  time=0.9
-  L2-norm            : 0.024873
-  Max concentration  : 0.055988
+  L2-norm            : 0.024883
+  Max concentration  : 0.056022
   step=10  time=1
-  L2-norm            : 0.027695
-  Max concentration  : 0.0623902
+  L2-norm            : 0.0277062
+  Max concentration  : 0.0624281
   Time integration completed.
 >>> Norm summary <<<
-  H1 norm |p^h| = a(p^h,p^h)^0.5     : 0.150007
-  External energy |(h,p^h)|^0.5      : 0.150327
+  H1 norm |p^h| = a(p^h,p^h)^0.5     : 0.149071
+  External energy |(h,p^h)|^0.5      : 0.149071

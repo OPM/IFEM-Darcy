@@ -3,8 +3,13 @@
 <simulation>
 
   <!-- General - geometry definitions !-->
-  <geometry dim="2" sets="true" Lx="10" Ly="5">
+  <geometry dim="2" Lx="10" Ly="5">
     <refine patch="1" u="15" v="15"/>
+    <topologysets>
+      <set name="Edge4" type="edge">
+        <item patch="1">4</item>
+      </set>
+    </topologysets>
   </geometry>
 
   <!-- General - boundary conditions !-->
@@ -19,10 +24,10 @@
     <permvalues>1.2 | 1.2</permvalues>
     <source type="diracsum" pointTol="0.1">
       # X Y Val\
-      5.0 2.5 1\
-      1.0 4.0 1\
-      8.0 2.0 1\
-      8.0 4.0 1
+      5.0 2.5 9.81\
+      1.0 4.0 9.81\
+      8.0 2.0 9.81*cos(t)\
+      8.0 4.0 9.81*(1.0+sin(t))
     </source>
   </darcy>
 
