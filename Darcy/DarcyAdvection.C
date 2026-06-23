@@ -12,6 +12,7 @@
 //==============================================================================
 
 #include "DarcyAdvection.h"
+#include "DarcyMaterial.h"
 
 #include "ElementSteps.h"
 #include "ElmMats.h"
@@ -25,27 +26,31 @@
 #include "TimeDomain.h"
 #include "Utilities.h"
 #include "Vec3.h"
+#include "Vec3Oper.h"
 #include "tinyxml2.h"
 
 
 DarcyAdvection::DarcyAdvection (unsigned short int n, int torder)
-  : IntegrandBase(n), bdf(torder)
+  : DarcyBase(n,torder)
 {
-  npv = 1;
   this->registerVector("pressure",&pVec);
-  primsol.resize(1+torder);
 
-  ownerSim = nullptr;
-  mat = nullptr;
+  bodyforce = nullptr;
 }
 
 
-DarcyAdvection::~DarcyAdvection() = default;
+DarcyAdvection::~DarcyAdvection ()
+{
+  delete bodyforce;
+}
 
 
 bool DarcyAdvection::parse (const tinyxml2::XMLElement* elem)
 {
-  if (const char* input = utl::getValue(elem,"source"); input)
+  const char* input = nullptr;
+  if (!bodyforce && (input = utl::getValue(elem,"bodyforce")))
+    bodyforce = new VecFuncExpr(input);
+  else if ((input = utl::getValue(elem,"source")))
   {
     std::string type;
     utl::getAttribute(elem,"type",type);
@@ -70,37 +75,9 @@ bool DarcyAdvection::parse (const tinyxml2::XMLElement* elem)
       source.reset(src);
   }
   else
-    return false;
+    return this->DarcyBase::parse(elem);
 
   return true;
-}
-
-
-LocalIntegral* DarcyAdvection::getLocalIntegral (size_t nen,
-                                                 size_t iEl, bool neumann) const
-{
-  LocalIntegral* res = this->IntegrandBase::getLocalIntegral(nen,iEl,neumann);
-  if (calcMats >= 0)
-    static_cast<ElmMats*>(res)->rhsOnly = !calcMats;
-
-  return res;
-}
-
-
-bool DarcyAdvection::initElement (const std::vector<int>& MNPC,
-                                  const FiniteElement& fe,
-                                  const Vec3& XC,
-                                  size_t nPt, LocalIntegral& elmInt)
-{
-  if (fe.iel > 0 && calcMats > 0)
-  {
-    size_t iel = fe.iel - 1;
-    ElmMats* A = dynamic_cast<ElmMats*>(&elmInt);
-    if (A && iel < this->myKmats.size() && !A->A.empty())
-      A->A.front() = this->myKmats[iel];
-  }
-
-  return this->IntegrandBase::initElement(MNPC,fe,XC,nPt,elmInt);
 }
 
 
@@ -116,17 +93,15 @@ bool DarcyAdvection::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
     const Vec3 K = mat->getPermeability(X);
     const double D = mat->getDispersivity(X);
     const double mu = mat->getViscosity();
-    if (mu <= 1.0e-16)
-    {
-      std::cerr <<" *** DarcyAdvection::evalInt: Non-positive viscosity ("
-                << mu <<")."<< std::endl;
-      return false;
-    }
 
-    // Evaluate the Darcy velocity, q = -K/mu * grad(p)
+    // Evaluate the Darcy velocity, q = -K/mu * (grad(p) - rho*(g + bf))
     Vector dP;
     pField->gradFE(fe,dP);
-    Vec3 q(dP);
+    Vec3 q(dP), bf(gravity);
+    if (bodyforce)
+      bf += (*bodyforce)(X);
+    if (!bf.isZero())
+      q -= mat->getDensity(elmInt.vec.front().dot(fe.N))*bf;
     for (size_t i = 0; i < nsd; i++)
       q[i] *= -K[i]/mu;
 
@@ -151,22 +126,6 @@ bool DarcyAdvection::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   }
 
   return true;
-}
-
-
-bool DarcyAdvection::finalizeElement (LocalIntegral& elmInt,
-                                      const FiniteElement& fe,
-                                      const TimeDomain& time, size_t iGP)
-{
-  if (fe.iel > 0 && calcMats)
-  {
-    size_t iel = fe.iel - 1;
-    ElmMats* A = dynamic_cast<ElmMats*>(&elmInt);
-    if (A && iel < this->myKmats.size())
-      this->myKmats[iel] = A->getNewtonMatrix();
-  }
-
-  return this->IntegrandBase::finalizeElement(elmInt,fe,time,iGP);
 }
 
 
@@ -202,8 +161,7 @@ bool DarcyAdvection::evalSol2 (Vector& s, const Vectors& eV,
 
   Vector dCh(nsd);
   fe.grad(1).multiply(eV.front(),dCh,true);
-  for (int i = 0; i < nsd; ++i)
-    s.push_back(dCh[i]);
+  s.push_back(dCh.begin(),dCh.end());
 
   return true;
 }
@@ -215,21 +173,6 @@ void DarcyAdvection::setNamedField (const std::string& name, Field* field)
     pField.reset(field);
   else
     delete field;
-}
-
-
-void DarcyAdvection::initLHSbuffers (size_t nEl)
-{
-  if (calcMats < 0)
-    return;
-
-  if (nEl > 1)
-    myKmats.resize(nEl);
-
-  if (nEl > 0)
-    calcMats = true;
-  else if (!myKmats.empty())
-    calcMats = false;
 }
 
 

@@ -12,6 +12,7 @@
 //==============================================================================
 
 #include "Darcy.h"
+#include "DarcyMaterial.h"
 
 #include "AnaSol.h"
 #include "ElementSteps.h"
@@ -33,12 +34,10 @@
 #include "tinyxml2.h"
 
 
-Darcy::Darcy (unsigned short int n, int torder) : HasGravityBase(n), bdf(torder)
+Darcy::Darcy (unsigned short int n, int torder) : DarcyBase(n,torder)
 {
   this->registerVector("tracer",&cVec);
 
-  ownerSim = nullptr;
-  mat = nullptr;
   flux = nullptr;
   vflux = bodyforce = nullptr;
   tflux = nullptr;
@@ -67,7 +66,7 @@ bool Darcy::parse (const tinyxml2::XMLElement* elem)
   else if (!strcasecmp(elem->Value(),"reactions"))
     extEner = 'R';
   else
-    return this->HasGravityBase::parse(elem);
+    return this->DarcyBase::parse(elem);
 
   if (sourceType)
   {
@@ -112,24 +111,6 @@ double Darcy::getPotential (const Vec3& X) const
 }
 
 
-double Darcy::getDispersivity (const Vec3& X) const
-{
-  return mat ? mat->getDispersivity(X) : 0.0;
-}
-
-
-Vec3 Darcy::getPermeability (const Vec3& X) const
-{
-  return mat ? mat->getPermeability(X) : Vec3();
-}
-
-
-double Darcy::getViscosity () const
-{
-  return mat ? mat->getViscosity() : 0.0;
-}
-
-
 double Darcy::getFlux (const Vec3& X, const Vec3& normal) const
 {
   if (flux)
@@ -140,16 +121,6 @@ double Darcy::getFlux (const Vec3& X, const Vec3& normal) const
     return (*tflux)(X,normal)*normal;
   else
     return 0.0;
-}
-
-
-void Darcy::setMode (SIM::SolutionMode mode)
-{
-  m_mode = mode;
-  if (mode == SIM::RECOVERY)
-    primsol.resize(1);
-  else
-    primsol.resize(1+bdf.getActualOrder());
 }
 
 
@@ -165,53 +136,7 @@ GlobalIntegral& Darcy::getGlobalInt (GlobalIntegral* gq) const
   if (m_mode == SIM::RHS_ONLY && reacInt)
     return *reacInt;
 
-  return this->IntegrandBase::getGlobalInt(gq);
-}
-
-
-LocalIntegral* Darcy::getLocalIntegral (size_t nen, size_t, bool neumann) const
-{
-  ElmMats* result = new ElmMats();
-
-  result->rhsOnly = neumann || !calcMats;
-  result->withLHS = !neumann;
-  result->resize(neumann ? 0 : 1, 1);
-  result->redim(nen);
-
-  return result;
-}
-
-
-bool Darcy::initElement (const std::vector<int>& MNPC,
-                         const FiniteElement& fe,
-                         const Vec3& XC,
-                         size_t nPt, LocalIntegral& elmInt)
-{
-  if (fe.iel > 0 && !calcMats)
-  {
-    size_t iel = fe.iel - 1;
-    ElmMats* A = dynamic_cast<ElmMats*>(&elmInt);
-    if (A && iel < myKmats.size() && !A->A.empty())
-      A->A[0] = myKmats[iel];
-  }
-
-  return this->IntegrandBase::initElement(MNPC,fe,XC,nPt,elmInt);
-}
-
-
-bool Darcy::finalizeElement (LocalIntegral& elmInt,
-                             const FiniteElement& fe,
-                             const TimeDomain& time, size_t iGP)
-{
-  if (fe.iel > 0 && calcMats)
-  {
-    size_t iel = fe.iel - 1;
-    ElmMats* A = dynamic_cast<ElmMats*>(&elmInt);
-    if (A && iel < myKmats.size())
-      myKmats[iel] = A->getNewtonMatrix();
-  }
-
-  return this->IntegrandBase::finalizeElement(elmInt,fe,time,iGP);
+  return this->DarcyBase::getGlobalInt(gq);
 }
 
 
@@ -416,21 +341,6 @@ double Darcy::pressure (const Vectors& eV, const FiniteElement& fe,
 double Darcy::getDensity (const FiniteElement& fe) const
 {
   return mat->getDensity(cField.get() ? cField->valueFE(fe) : 1.0);
-}
-
-
-void Darcy::initLHSbuffers (size_t nEl)
-{
-  if (calcMats < 0)
-    return;
-
-  if (nEl > 1)
-    myKmats.resize(nEl);
-
-  if (nEl > 0)
-    calcMats = true;
-  else if (!myKmats.empty())
-    calcMats = false;
 }
 
 

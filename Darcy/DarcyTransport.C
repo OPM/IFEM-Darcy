@@ -12,6 +12,7 @@
 //==============================================================================
 
 #include "DarcyTransport.h"
+#include "DarcyMaterial.h"
 
 #include "AnaSol.h"
 #include "BlockElmMats.h"

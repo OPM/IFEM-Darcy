@@ -12,6 +12,7 @@ ifem_add_library(
   SOURCES
     Darcy.C
     DarcyAdvection.C
+    DarcyBase.C
     DarcyMaterial.C
     DarcyTransport.C
     DarcyTransportCorr.C
@@ -22,6 +23,7 @@ ifem_add_library(
   HEADERS
     Darcy.h
     DarcyAdvection.h
+    DarcyBase.h
     DarcyEnums.h
     DarcyMaterial.h
     DarcyTransport.h
