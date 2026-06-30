@@ -13,7 +13,6 @@ ifem_add_library(
     Darcy.C
     DarcyAdvection.C
     DarcyMaterial.C
-    DarcySolutions.C
     DarcyTransport.C
     DarcyTransportCorr.C
     SIMDarcy.C
@@ -25,7 +24,6 @@ ifem_add_library(
     DarcyAdvection.h
     DarcyEnums.h
     DarcyMaterial.h
-    DarcySolutions.h
     DarcyTransport.h
     DarcyTransportCorr.h
     SIMDarcy.h

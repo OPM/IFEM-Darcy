@@ -14,7 +14,6 @@
 #include "SIMDarcyAdvection.h"
 
 #include "DarcyAdvection.h"
-#include "DarcySolutions.h"
 
 #include "DataExporter.h"
 #include "IFEM.h"

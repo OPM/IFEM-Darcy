@@ -12,14 +12,15 @@
 //==============================================================================
 
 #include "DarcyAdvection.h"
-#include "DarcySolutions.h"
 #include "Darcy.h"
 
+#include "ElementSteps.h"
 #include "ElmMats.h"
 #include "ElmNorm.h"
 #include "ExprFunctions.h"
 #include "Field.h"
 #include "FiniteElement.h"
+#include "FunctionSum.h"
 #include "IFEM.h"
 #include "SIMbase.h"
 #include "TimeDomain.h"
@@ -61,25 +62,11 @@ bool DarcyAdvection::parse (const tinyxml2::XMLElement* elem)
     {
       double tol = 1e-2;
       utl::getAttribute(elem,"pointTol",tol);
-      if (input)
-      {
-        IFEM::cout << " DiracSum";
-        DiracSum* f = new DiracSum(tol,nsd);
-        if (f->parse(input))
-          src = f;
-        else
-          delete f;
-      }
+      src = new DiracSum(input,tol,nsd);
+
     }
     else if (type == "elementsum" && ownerSim->createFEMmodel('y'))
-    {
-      IFEM::cout << " ElementSum";
-      ElementSum* f = new ElementSum(nsd);
-      if (f->parse(input,*ownerSim))
-        src = f;
-      else
-        delete f;
-    }
+      src = new ElementSteps(input,*ownerSim,nsd);
 
     if (src)
       source.reset(src);
