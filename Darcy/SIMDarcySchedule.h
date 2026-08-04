@@ -18,6 +18,7 @@
 #include "SIMDarcy.h"
 #include "SIMDarcyAdvection.h"
 #include "SIMCoupled.h"
+#include <set>
 
 
 /*!
@@ -28,12 +29,11 @@ template<class Dim>
 class SIMDarcySchedule : public SIMCoupled<SIMDarcy<Dim>, SIMDarcyAdvection<Dim>>,
                          public SIMadmin
 {
-  //! Convenience type alias
-  using Base = SIMCoupled<SIMDarcy<Dim>,SIMDarcyAdvection<Dim>>;
-
 public:
-  //! \brief Default constructor.
-  SIMDarcySchedule(SIMDarcy<Dim>& dcySim, SIMDarcyAdvection<Dim>& advSim);
+  //! \brief The constructor forwards to the parent class constructor.
+  SIMDarcySchedule(SIMDarcy<Dim>& s1, SIMDarcyAdvection<Dim>& s2) :
+    SIMCoupled<SIMDarcy<Dim>,SIMDarcyAdvection<Dim>>(s1,s2),
+    schit(schedule.end()) {}
 
   //! \brief Computes the solution for the current time step.
   bool solveStep(TimeStep& tp, bool = true) override;
@@ -41,12 +41,12 @@ public:
   //! \brief Sets up field dependencies.
   void setupDependencies() override;
 
-  //! \brief Parse an XML input element.
+  //! \brief Parses an XML input element.
   bool parse(const tinyxml2::XMLElement* elem) override;
 
 protected:
-  size_t currSchedule = 0; //!< Index for current schedule entry
-  std::vector<double> schedule; //!< Scheduled pressure changes
+  std::set<double> schedule; //!< Scheduled pressure changes
+  std::set<double>::const_iterator schit; //!< Iterator for current schedule entry
 };
 
 #endif
