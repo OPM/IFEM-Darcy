@@ -47,7 +47,6 @@ public:
   bool evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
                const TimeDomain& time, const Vec3& X) const override;
 
-  using DarcyBase::evalSol2;
   //! \brief Evaluates the secondary solution at a result point.
   //! \param[out] s Array of solution field values at current point
   //! \param[in] fe Finite element data at current point
