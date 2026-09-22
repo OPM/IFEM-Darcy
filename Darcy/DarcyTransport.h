@@ -26,36 +26,33 @@ class DarcyTransport : public Darcy
 public:
   //! \brief The constructor initializes all pointers to zero.
   explicit DarcyTransport(unsigned short int n, int torder = 0);
-  //! \brief Empty destructor.
+  //! \brief Default destructor.
   ~DarcyTransport() override;
 
   //! \brief Defines the concentration source function.
   void setCSource(RealFunc* s) override;
 
-  using IntegrandBase::getLocalIntegral;
   //! \brief Returns a local integral contribution object for given element.
   //! \param[in] nen Number of nodes on element
   //! \param[in] neumann Whether or not we are assembling Neumann BCs
   LocalIntegral* getLocalIntegral(size_t nen, size_t,
                                   bool neumann) const override;
 
-  using IntegrandBase::initElement;
+  using Darcy::initElement;
   //! \brief Initializes current element for numerical integration.
   //! \param[in] MNPC Matrix of nodal point correspondance for current element
   //! \param elmInt Local integral for element
-  bool initElement(const std::vector<int>& MNPC, LocalIntegral& elmInt) override;
+  bool initElement(const std::vector<int>& MNPC,
+                   LocalIntegral& elmInt) override;
 
-  using IntegrandBase::evalInt;
   //! \brief Evaluates the integrand at an interior point.
   //! \param elmInt The local integral object to receive the contributions
   //! \param[in] fe Finite element data of current integration point
   //! \param[in] time Time stepping parameters
   //! \param[in] X Cartesian coordinates of current integration point
   bool evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
-               const TimeDomain& time,
-               const Vec3& X) const override;
+               const TimeDomain& time, const Vec3& X) const override;
 
-  using IntegrandBase::evalBou;
   //! \brief Evaluates the integrand at a boundary point.
   //! \param elmInt The local integral object to receive the contributions
   //! \param[in] fe Finite element data of current integration point
@@ -64,19 +61,15 @@ public:
   bool evalBou(LocalIntegral& elmInt, const FiniteElement& fe,
                const Vec3& X, const Vec3& normal) const override;
 
-  using IntegrandBase::evalSol;
   //! \brief Evaluates the secondary solution at a result point.
   //! \param[out] s Array of solution field values at current point
   //! \param[in] fe Finite element data at current point
   //! \param[in] X Cartesian coordinates of current integration point
   //! \param[in] MNPC Matrix of nodal point correspondance
-  bool evalSol (Vector& s,
-                const FiniteElement& fe,
-                const Vec3& X,
-                const std::vector<int>& MNPC) const override;
+  bool evalSol(Vector& s, const FiniteElement& fe, const Vec3& X,
+               const std::vector<int>& MNPC) const override;
 
-  using IntegrandBase::finalizeElement;
-
+  using Darcy::finalizeElement;
   //! \brief Finalizes the element quantities after the numerical integration.
   bool finalizeElement(LocalIntegral& A) override;
 
@@ -125,6 +118,14 @@ public:
                              const FiniteElement& fe,
                              size_t level) const;
 
+private:
+  //! \brief Extracts element solution vectors for current element.
+  //! \param[in] MNPC Matrix of nodal point correspondance for current element
+  //! \param[out] eV Element solution vectors
+  //! \param[in] nSol Number of solution levels to extract for
+  bool getElementSol(const std::vector<int>& MNPC,
+                     Vectors& eV, size_t nSol = 1) const;
+
 protected:
   std::unique_ptr<RealFunc> sourceC; //!< Concentration source function
 };
@@ -145,7 +146,7 @@ public:
                               VecFunc* a = nullptr,
                               VecFunc* c = nullptr);
 
-  using NormBase::evalInt;
+  using DarcyNorm::evalInt;
   //! \brief Evaluates the integrand at an interior point.
   //! \param elmInt The local integral object to receive the contributions
   //! \param[in] fe Finite element data of current integration point

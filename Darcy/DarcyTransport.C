@@ -68,21 +68,32 @@ void DarcyTransport::setCSource (RealFunc* s)
 bool DarcyTransport::initElement (const std::vector<int>& MNPC,
                                   LocalIntegral& elmInt)
 {
-  if (primsol.empty() || primsol.front().empty()) return true;
+  return this->getElementSol(MNPC,elmInt.vec,this->getNoSolutions());
+}
 
-  // Extract the element level solution vectors
-  elmInt.vec.resize(2*this->getNoSolutions());
+
+bool DarcyTransport::getElementSol (const std::vector<int>& MNPC,
+                                    Vectors& eV, size_t nSol) const
+{
   int ierr = 0;
-  for (size_t k = 0; k < elmInt.vec.size() / 2 && !primsol[k].empty(); ++k) {
-    Matrix tmp(2,MNPC.size());
-    utl::gather(MNPC,npv,primsol[k],tmp);
-    elmInt.vec[2*k] = tmp.getRow(1);
-    elmInt.vec[2*k+1] = tmp.getRow(2);
+  if (primsol.empty() || primsol.front().empty())
+    nSol = 0;
+
+  // Extract the element-level solution vectors.
+  // Here we put each solution component as separate element-level vectors.
+  eV.clear();
+  eV.reserve(npv*nSol);
+  for (size_t k = 0; k < nSol && !primsol[k].empty(); ++k)
+  {
+    Matrix tmp;
+    ierr += utl::gather(MNPC,npv,primsol[k],tmp);
+    for (unsigned short int i = 1; i <= npv; i++)
+      eV.push_back(tmp.getRow(i));
   }
 
-  if (ierr != 0)
-    std::cerr << " *** DarcyTransport::initElement: Detected " << ierr
-              << " node numbers out of range." << std::endl;
+  if (ierr > 1)
+    std::cerr <<" *** DarcyTransport::getElementSol: Detected "<< ierr/2
+              <<" node numbers out of range."<< std::endl;
 
   return ierr == 0;
 }
@@ -163,24 +174,24 @@ bool DarcyTransport::evalSol (Vector& s, const FiniteElement& fe,
                               const Vec3& X,
                               const std::vector<int>& MNPC) const
 {
-  ElmMats A;
-  if (!const_cast<DarcyTransport*>(this)->initElement(MNPC,A))
+  s.clear();
+  s.reserve(2+3*nsd);
+
+  Vectors eV;
+  if (!this->getElementSol(MNPC,eV))
     return false;
 
-  if (!this->Darcy::evalDarcyVel(s,A.vec,fe,X))
+  if (!this->evalDarcyVel(s,eV,fe,X))
     return false;
 
   s.push_back(source ? (*source)(X) : 0.0);
   s.push_back(sourceC ? (*sourceC)(X) : 0.0);
   s.push_back(mat->getPorosity(X));
 
-  Vec3 dCh = this->concentrationGradient(A.vec,fe,0);
-  for (int i = 0; i < nsd; ++i)
-    s.push_back(dCh[i]);
-
-  Vec3 perm = mat->getPermeability(X);
-  for (int i = 0; i < nsd; ++i)
-    s.push_back(perm[i]);
+  Vec3 dC = this->concentrationGradient(eV,fe,0);
+  Vec3 K  = mat->getPermeability(X);
+  s.push_back(dC.ptr(),dC.ptr()+nsd);
+  s.push_back(K.ptr(),K.ptr()+nsd);
 
   return true;
 }
