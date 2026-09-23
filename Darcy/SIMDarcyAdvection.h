@@ -16,7 +16,6 @@
 
 #include "DarcyMaterial.h"
 
-#include "SIMconfigure.h"
 #include "SIMsolution.h"
 
 class DarcyAdvection;
@@ -32,18 +31,9 @@ template<class Dim>
 class SIMDarcyAdvection : public Dim, public SIMsolution
 {
 public:
-  //! \brief Setup properties.
-  struct SetupProps {
-    DarcyAdvection* itg = nullptr; //!< Pointer to integrand
-  };
-
   //! \brief Default constructor.
   //! \param itg Integrand to use
   explicit SIMDarcyAdvection(DarcyAdvection& itg);
-
-  //! \brief Construct from setup properties.
-  //! \param[in] p Setup properties
-  explicit SIMDarcyAdvection(const SetupProps& p) : SIMDarcyAdvection(*p.itg) {}
 
   //! \brief Destructor.
   virtual ~SIMDarcyAdvection();
@@ -98,19 +88,6 @@ private:
   std::vector<DarcyMaterial> mVec; //!< Vector of patchwise material data
 
   bool newTangent = true; //!< True to assemble system matrix
-};
-
-
-//! \brief Partial specialization for configurator.
-template<class Dim>
-struct SolverConfigurator<SIMDarcyAdvection<Dim>> {
-  //! \brief Configure a SIMDarcyAdvection instance.
-  //! \param ad The SIMDarcy instance to configure
-  //! \param[in] props Configuration properties
-  //! \param[in] infile The input file to read
-  int setup(SIMDarcyAdvection<Dim>& ad,
-            const typename SIMDarcyAdvection<Dim>::SetupProps& props,
-            char* infile);
 };
 
 #endif

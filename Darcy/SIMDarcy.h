@@ -17,7 +17,6 @@
 #include "DarcyEnums.h"
 #include "DarcyMaterial.h"
 
-#include "SIMconfigure.h"
 #include "SIMMultiPatchModelGen.h"
 #include "SIMsolution.h"
 
@@ -34,19 +33,10 @@ template<class Dim>
 class SIMDarcy : public SIMMultiPatchModelGen<Dim>, public SIMsolution
 {
 public:
-  //! \brief Setup properties.
-  struct SetupProps {
-    Darcy* itg = nullptr; //!< Pointer to integrand
-  };
-
   //! \brief Default constructor.
   //! \param itg Integrand to use
   //! \param[in] nf Number of primary fields
   explicit SIMDarcy(Darcy& itg, unsigned char nf = 1);
-
-  //! \brief Construct from setup properties.
-  //! \param[in] p Setup properties
-  explicit SIMDarcy(const SetupProps& p) : SIMDarcy(*p.itg) {}
 
   //! \brief Destructor.
   virtual ~SIMDarcy();
@@ -222,19 +212,6 @@ private:
 
   bool newTangent  = true;  //!< True to assemble element matrices
   bool newSolution = false; //!< True if a new solution has been computed
-};
-
-
-//! \brief Partial specialization for configurator.
-template<class Dim>
-struct SolverConfigurator<SIMDarcy<Dim>> {
-  //! \brief Configure a SIMDarcy instance.
-  //! \param ad The SIMDarcy instance to configure
-  //! \param[in] props Configuration properties
-  //! \param[in] infile The input file to read
-  int setup(SIMDarcy<Dim>& ad,
-            const typename SIMDarcy<Dim>::SetupProps& props,
-            char* infile);
 };
 
 #endif

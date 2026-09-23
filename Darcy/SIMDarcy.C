@@ -12,7 +12,6 @@
 //==============================================================================
 
 #include "SIMDarcy.h"
-
 #include "Darcy.h"
 
 #include "AnaSol.h"
@@ -604,33 +603,6 @@ double SIMDarcy<Dim>::getEffectivityIndex (const Vectors& gNorm,
 }
 
 
-template<class Dim>
-int SolverConfigurator<SIMDarcy<Dim>>::
-setup (SIMDarcy<Dim>& darcy,
-       const typename SIMDarcy<Dim>::SetupProps& props,
-       char* infile)
-{
-  utl::profiler->start("Model input");
-
-  if (!darcy.read(infile))
-    return 1;
-
-  utl::profiler->stop("Model input");
-
-  if (!darcy.preprocess())
-    return 2;
-
-  darcy.init();
-
-  return 0;
-}
-
-
-//! \brief Instantiation macro.
-#define INSTANTIATE(T) \
-  template class SIMDarcy<T>; \
-  template struct SolverConfigurator<SIMDarcy<T>>;
-
-INSTANTIATE(SIM1D)
-INSTANTIATE(SIM2D)
-INSTANTIATE(SIM3D)
+template class SIMDarcy<SIM1D>;
+template class SIMDarcy<SIM2D>;
+template class SIMDarcy<SIM3D>;

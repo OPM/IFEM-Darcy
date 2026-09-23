@@ -184,33 +184,6 @@ bool SIMDarcyAdvection<Dim>::initMaterial (size_t propInd)
 }
 
 
-template<class Dim>
-int SolverConfigurator<SIMDarcyAdvection<Dim>>::
-setup (SIMDarcyAdvection<Dim>& darcy,
-       const typename SIMDarcyAdvection<Dim>::SetupProps& props,
-       char* infile)
-{
-  utl::profiler->start("Model input");
-
-  if (!darcy.read(infile))
-    return 1;
-
-  utl::profiler->stop("Model input");
-
-  if (!darcy.preprocess())
-    return 2;
-
-  darcy.init();
-
-  return 0;
-}
-
-
-//! \brief Instantiation macro.
-#define INSTANTIATE(T) \
-  template class SIMDarcyAdvection<T>; \
-  template struct SolverConfigurator<SIMDarcyAdvection<T>>;
-
-INSTANTIATE(SIM1D)
-INSTANTIATE(SIM2D)
-INSTANTIATE(SIM3D)
+template class SIMDarcyAdvection<SIM1D>;
+template class SIMDarcyAdvection<SIM2D>;
+template class SIMDarcyAdvection<SIM3D>;
