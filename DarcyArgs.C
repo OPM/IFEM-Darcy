@@ -26,6 +26,8 @@ bool DarcyArgs::parseArg (const char* argv)
     return false;
   else if (strcasecmp(argv, "-tracer") == 0)
     tracer = true;
+  else if (strcasecmp(argv, "-compatible") == 0)
+    ASMmxBase::Type = ASMmxBase::DIV_COMPATIBLE;
   else if (strcmp(argv, "-mixed1") == 0)
     mixed = 1;
   else if (strcmp(argv, "-mixed") == 0)
@@ -84,6 +86,10 @@ bool DarcyArgs::parse (const tinyxml2::XMLElement* elem)
   else if (!strcasecmp(elem->Value(),"darcy")) {
     utl::getAttribute(elem,"tracer",tracer);
     ASMmxBase::Type = ASMmxBase::NONE;
+    std::string formulation;
+    utl::getAttribute(elem,"formulation",formulation);
+    if (formulation == "compatible" || formulation == "div-compatible")
+      ASMmxBase::Type = ASMmxBase::DIV_COMPATIBLE;
     if (const char* ad = elem->Attribute("adap"); ad) {
       if (strcasecmp(ad,"pressure") == 0)
         adNorm = DCY::PRESSURE_H1;

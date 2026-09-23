@@ -10,6 +10,7 @@ ifem_add_library(
   ARCHIVE_NAME
     Darcy
   SOURCES
+    CompatibleDarcy.C
     Darcy.C
     DarcyAdvection.C
     DarcyBase.C
@@ -21,6 +22,7 @@ ifem_add_library(
     SIMDarcySchedule.C
     SIMDarcyTransportCorr.C
   HEADERS
+    CompatibleDarcy.h
     Darcy.h
     DarcyAdvection.h
     DarcyBase.h

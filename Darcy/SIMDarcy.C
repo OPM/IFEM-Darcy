@@ -34,6 +34,21 @@ template<class Dim>
 SIMDarcy<Dim>::SIMDarcy (Darcy& itg, unsigned char nf) :
   SIMMultiPatchModelGen<Dim>(nf), drc(itg), solVec(nullptr)
 {
+  this->initProblem();
+}
+
+
+template<class Dim>
+SIMDarcy<Dim>::SIMDarcy (Darcy& itg, const CharVec& nf) :
+  SIMMultiPatchModelGen<Dim>(nf), drc(itg), solVec(nullptr)
+{
+  this->initProblem();
+}
+
+
+template<class Dim>
+void SIMDarcy<Dim>::initProblem ()
+{
   drc.setOwnerSim(this);
   Dim::myProblem = &drc;
   Dim::myHeading = "Darcy solver";
@@ -256,8 +271,9 @@ template<class Dim>
 bool SIMDarcy<Dim>::init ()
 {
   this->initSolution(this->getNoDOFs(), 1 + drc.getOrder());
+
   if (!solVec) solVec = &solution.front();
-  this->registerField("pressure", *solVec);
+  this->registerField(this->mixedProblem() ? "solution" : "pressure", *solVec);
 
   this->initSystem(Dim::opt.solver);
   this->setQuadratureRule(Dim::opt.nGauss[0],true);
@@ -368,7 +384,9 @@ void SIMDarcy<Dim>::printSolutionSummary (const Vector& solution,
                                           int printSol, const char*,
                                           std::streamsize outPrec)
 {
-  if (this->getNoFields() == 2)
+  if (this->mixedProblem())
+    this->SIMbase::printSolutionSummary(solution,printSol,"solution",outPrec);
+  else if (this->getNoFields() == 2)
   {
     // Compute and print solution norms
     size_t iMax[2];

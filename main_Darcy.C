@@ -11,6 +11,7 @@
 //!
 //==============================================================================
 
+#include "CompatibleDarcy.h"
 #include "DarcyAdvection.h"
 #include "DarcyArgs.h"
 #include "DarcyTransport.h"
@@ -45,12 +46,24 @@ template<class Dim, template<class T> class Solver>
 int runSimulator(char* infile, const DarcyArgs& args)
 {
   std::unique_ptr<Darcy> itg;
-  if (args.tracer)
+  std::vector<unsigned char> fields;
+  if (ASMmxBase::Type == ASMmxBase::DIV_COMPATIBLE)
+  {
+    itg = std::make_unique<CompatibleDarcy>(Dim::dimension,0);
+    fields.resize(Dim::dimension+1,1);
+  }
+  else if (args.tracer)
+  {
     itg = std::make_unique<DarcyTransport>(Dim::dimension,0);
+    fields.resize(1,2);
+  }
   else
+  {
     itg = std::make_unique<Darcy>(Dim::dimension,0);
+    fields.resize(1,1);
+  }
 
-  SIMDarcy<Dim> darcy(*itg, args.tracer ? 2 : 1);
+  SIMDarcy<Dim> darcy(*itg,fields);
   darcy.setAdaptiveNorm(args.adNorm);
   Solver solver(darcy);
 
@@ -70,7 +83,7 @@ int runSimulator(char* infile, const DarcyArgs& args)
     solver.handleDataOutput(darcy.opt.hdf5,darcy.getProcessAdm());
 
   int res = solver.solveProblem(infile,"Solving Darcy problem");
-  if (!res)
+  if (!res && ASMmxBase::Type != ASMmxBase::DIV_COMPATIBLE)
     darcy.printFinalNorms(TimeStep());
 
   return res;
@@ -87,13 +100,26 @@ template<class Dim>
 int runSimulatorTransient(char* infile, const DarcyArgs& args)
 {
   const int torder = TimeIntegration::Order(args.timeMethod);
-  std::unique_ptr<Darcy> itg;
-  if (args.tracer)
-    itg = std::make_unique<DarcyTransport>(Dim::dimension,torder);
-  else
-    itg = std::make_unique<Darcy>(Dim::dimension,torder);
 
-  SIMDarcy<Dim> darcy(*itg, args.tracer ? 2 : 1);
+  std::unique_ptr<Darcy> itg;
+  std::vector<unsigned char> fields;
+  if (ASMmxBase::Type == ASMmxBase::DIV_COMPATIBLE)
+  {
+    itg = std::make_unique<CompatibleDarcy>(Dim::dimension,torder);
+    fields.resize(Dim::dimension+1,1);
+  }
+  else if (args.tracer)
+  {
+    itg = std::make_unique<DarcyTransport>(Dim::dimension,torder);
+    fields.resize(1,2);
+  }
+  else
+  {
+    itg = std::make_unique<Darcy>(Dim::dimension,torder);
+    fields.resize(1,1);
+  }
+
+  SIMDarcy<Dim> darcy(*itg,fields);
   SIMSolver solver(darcy);
 
   utl::profiler->start("Model input");
@@ -112,7 +138,7 @@ int runSimulatorTransient(char* infile, const DarcyArgs& args)
     solver.handleDataOutput(darcy.opt.hdf5,darcy.getProcessAdm());
 
   int res = solver.solveProblem(infile,"Solving Darcy problem");
-  if (!res)
+  if (!res && ASMmxBase::Type != ASMmxBase::DIV_COMPATIBLE)
     darcy.printFinalNorms(solver.getTimePrm());
 
   return res;
@@ -175,6 +201,23 @@ int runSimulatorScheduled(char* infile, const DarcyArgs& args)
 template<class Dim>
 int runSimulator1(char* infile, const DarcyArgs& args)
 {
+  if (ASMmxBase::Type == ASMmxBase::DIV_COMPATIBLE)
+  {
+    if (args.scheduled || args.adap || args.tracer)
+    {
+      std::cerr <<" *** The div-compatible formulation does not support"
+                <<" scheduled, adaptive and/or tracer simulations."
+                << std::endl;
+      return 1;
+    }
+    else if (args.timeMethod != TimeIntegration::NONE)
+    {
+      std::cerr <<" *** The div-compatible formulation is not yet"
+                <<" implemented for transient simulations."<< std::endl;
+      return 1;
+    }
+  }
+
   if (args.adap)
     return runSimulator<Dim,SIMDarcyAdap>(infile,args);
   else if (args.scheduled)
@@ -241,7 +284,7 @@ int main (int argc, char** argv)
               <<" <inputfile> [-dense|-spr|-superlu[<nt>]|-samg|-petsc]\n"
               <<"       [-lag|-spec|-LR] [-2D] [-nGauss <n>] [-hdf5]\n"
               <<"       [-vtf <format> [-nviz <nviz>] [-nu <nu>] [-nv <nv>]"
-              <<" [-nw <nw>]]\n";
+              <<" [-nw <nw>]]\n       [-compatible]\n";
     return 0;
   }
 
@@ -249,17 +292,18 @@ int main (int argc, char** argv)
     IFEM::getOptions().discretization = ASM::LRSpline;
 
   IFEM::cout <<"\nInput file: "<< infile;
-  IFEM::getOptions().print(IFEM::cout) << std::endl;
-  if (args.tracer)
-    IFEM::cout << "Including a tracer field." << std::endl;
+  IFEM::getOptions().print(IFEM::cout);
+  if (ASMmxBase::Type == ASMmxBase::DIV_COMPATIBLE)
+    IFEM::cout <<"\nUsing a divergence-compatible Darcy formulation.";
+  else if (args.tracer || args.scheduled)
+    IFEM::cout <<"\nIncluding a tracer field.";
   if (args.timeMethod == TimeIntegration::BE)
-    IFEM::cout << "Using Backward-Euler time stepping." << std::endl;
+    IFEM::cout <<"\nUsing Backward-Euler time stepping.";
   else if (args.timeMethod == TimeIntegration::BDF2)
-    IFEM::cout << "Using BDF2 time stepping." << std::endl;
-  if (args.scheduled) {
-    IFEM::cout << "Including a tracer field." << std::endl;
-    IFEM::cout << "Updating pressure according to a schedule." << std::endl;
-  }
+    IFEM::cout <<"\nUsing BDF2 time stepping.";
+  if (args.scheduled)
+    IFEM::cout <<"\nUpdating pressure according to a schedule.";
+   IFEM::cout << std::endl;
 
   utl::profiler->stop("Initialization");
 
