@@ -23,7 +23,6 @@
 #include "IFEM.h"
 #include "LogStream.h"
 #include "Profiler.h"
-#include "SIM1D.h"
 #include "SIM2D.h"
 #include "SIM3D.h"
 #include "SIMoptions.h"
@@ -77,6 +76,7 @@ int runSimulator(char* infile, const DarcyArgs& args)
   return res;
 }
 
+
 /*!
   \brief Launch a simulator using a specified solver template.
   \param infile The input file to parse
@@ -117,6 +117,7 @@ int runSimulatorTransient(char* infile, const DarcyArgs& args)
 
   return res;
 }
+
 
 /*!
   \brief Launch a simulator using a specified solver template.
@@ -184,6 +185,7 @@ int runSimulator1(char* infile, const DarcyArgs& args)
     return runSimulator<Dim, SIMSolverStat>(infile,args);
 }
 
+
 /*!
   \brief Main program for the isogeometric Darcy solver.
 
@@ -237,7 +239,7 @@ int main (int argc, char** argv)
   {
     std::cout <<"usage: "<< argv[0]
               <<" <inputfile> [-dense|-spr|-superlu[<nt>]|-samg|-petsc]\n"
-              <<"       [-lag|-spec|-LR] [-1D|-2D] [-nGauss <n>] [-hdf5]\n"
+              <<"       [-lag|-spec|-LR] [-2D] [-nGauss <n>] [-hdf5]\n"
               <<"       [-vtf <format> [-nviz <nviz>] [-nu <nu>] [-nv <nv>]"
               <<" [-nw <nw>]]\n";
     return 0;
@@ -265,6 +267,7 @@ int main (int argc, char** argv)
     return runSimulator1<SIM3D>(infile,args);
   else if (args.dim == 2)
     return runSimulator1<SIM2D>(infile,args);
-  else
-    return runSimulator1<SIM1D>(infile,args);
+
+  std::cerr <<" *** Sorry, no 1D implementation."<< std::endl;
+  return 1;
 }
