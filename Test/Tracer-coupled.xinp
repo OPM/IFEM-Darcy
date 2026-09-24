@@ -28,7 +28,7 @@
     <source type="expression">-2.0*(x*x-x+y*y-y)</source>
     <gravity y="-1.0"/>
     <bodyforce>0.0|1.0</bodyforce>
-    <permvalues>1.0|1.0</permvalues>
+    <permeability type="constant">1.0</permeability>
     <density type="expression">1.0+t</density>
     <porosity type="constant">1.0</porosity>
     <dispersivity type="constant">1.0</dispersivity>

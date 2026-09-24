@@ -3,8 +3,13 @@
 <simulation>
 
   <!-- General - geometry definitions !-->
-  <geometry dim="2" sets="true">
+  <geometry dim="2">
     <refine patch="1" u="7" v="7"/>
+    <topologysets>
+      <set name="Boundary" type="edge">
+        <item patch="1">1 2 3 4</item>
+      </set>
+    </topologysets>
   </geometry>
 
   <!-- General - boundary conditions !-->
@@ -29,7 +34,7 @@
     </source_c>
     <gravity y="-1.0"/>
     <bodyforce>0.0|1.0</bodyforce>
-    <permvalues>1.0|1.0</permvalues>
+    <permeability type="constant">1.0</permeability>
     <porosity type="constant">1.0</porosity>
     <dispersivity type="constant">1.0</dispersivity>
     <subiterations max="50" tol="1e-10"/>

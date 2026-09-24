@@ -2,7 +2,7 @@ Tracer.xinp
 
 Input file: Tracer.xinp
 Including a tracer field.
-	Permeability: 1.0|1.0
+	Permeability: 1
 	Porosity: 1
 	Dispersivity: 1
 	Using sub-iterations: tol = 1e-10 max = 50

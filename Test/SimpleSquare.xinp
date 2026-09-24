@@ -2,17 +2,22 @@
 
 <simulation>
 
-  <geometry dim="2" sets="true">
-    <refine type="uniform" patch="1" u="7" v="7"/>
+  <geometry dim="2">
+    <refine patch="1" u="7" v="7"/>
+    <topologysets>
+      <set name="Boundary" type="edge">
+        <item patch="1">1 2 3 4</item>
+      </set>
+    </topologysets>
   </geometry>
 
+  <boundaryconditions>
+    <dirichlet set="Boundary" comp="1" type="anasol"/>
+  </boundaryconditions>
+
   <darcy>
-    <boundaryconditions>
-      <dirichlet set="Boundary" comp="1" type="anasol"/>
-    </boundaryconditions>
     <gravity y="-1.0"/>
     <bodyforce>0.0 | 1.0</bodyforce>
-    <permvalues>1.0 | 1.0</permvalues>
     <source type="expression">
       ut=x*(x-1)*y*(y-1);
       uxx=2*y*(y-1)*t;

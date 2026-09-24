@@ -27,7 +27,7 @@
   <darcy>
     <gravity y="-1.0"/>
     <bodyforce>0.0 | 1.0</bodyforce>
-    <permvalues>10.0 | 1.0</permvalues>
+    <permeability type="diag">10.0 | 1.0</permeability>
     <source type="expression">
       X = x-0.5;
       Y = y-0.5;

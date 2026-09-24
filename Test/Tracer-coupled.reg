@@ -29,7 +29,7 @@ Parsing <darcy>
 	Source function: -2.0\*(x\*x-x+y\*y-y)
   Parsing <gravity>
 	Gravitation vector: 0 -1
-		Permeability: 1.0|1.0
+		Permeability: 1
 		Fluid density: (expression) 1.0+t
 		Porosity: 1
 		Dispersivity: 1
@@ -55,7 +55,7 @@ Parsing <boundaryconditions>
   Parsing <dirichlet>
 	Dirichlet code 1: (fixed)
 Parsing <darcy>
-		Permeability: 1.0|1.0
+		Permeability: 1
 		Fluid density: (expression) 1.0+t
 		Porosity: 1
 		Dispersivity: 1

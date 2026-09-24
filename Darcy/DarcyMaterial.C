@@ -17,6 +17,7 @@
 #include "Utilities.h"
 #include "Vec3.h"
 #include "tinyxml2.h"
+#include <cstring>
 
 
 DarcyMaterial::DarcyMaterial (const tinyxml2::XMLElement* elem)
@@ -29,6 +30,9 @@ DarcyMaterial::DarcyMaterial (const tinyxml2::XMLElement* elem)
 
 DarcyMaterial::DarcyMaterial (DarcyMaterial&& tmp)
 {
+  if (!permmatrix.get())
+    permmatrix = std::move(tmp.permmatrix);
+
   if (!permvalues.get())
     permvalues = std::move(tmp.permvalues);
 
@@ -61,16 +65,43 @@ bool DarcyMaterial::parse (const tinyxml2::XMLElement* elem)
   utl::getAttribute(elem,"type",type);
 
   const char* value = nullptr;
-  if ((value = utl::getValue(elem,"permvalues")))
+  if (utl::getValue(elem,"permvalues"))
   {
-    IFEM::cout <<"\t\tPermeability";
-    permvalues.reset(utl::parseVecFunc(value));
-    IFEM::cout << std::endl;
+    std::cerr <<" *** DarcyMaterial::parse(): The <permvalues> tag is not"
+              <<" supported, use <permeability type=\"diag\"> instead."
+              << std::endl;
   }
   else if ((value = utl::getValue(elem,"permeability")))
   {
     IFEM::cout <<"\t\tPermeability";
-    permeability.reset(utl::parseRealFunc(value,type));
+    if (type == "diag" || type == "diagonal" || type == "vector")
+      permvalues.reset(utl::parseVecFunc(value));
+    else if (type != "matrix")
+      permeability.reset(utl::parseRealFunc(value,type));
+    else
+    {
+      std::vector<double> values;
+      char* strtmp = strdup(value);
+      for (char* s = strtok(strtmp," \t\r\n"); s; s = strtok(nullptr," \t\r\n"))
+        values.push_back(atof(s));
+      free(strtmp);
+      size_t ndim = static_cast<size_t>(sqrt(values.size()));
+      if (ndim < 2 || ndim > 3)
+      {
+        IFEM::cout << std::endl;
+        std::cerr <<" *** DarcyMaterial::parse(): Invalid matrix dimension ("
+                  << ndim <<"), "<< values.size() <<" values specified."
+                  << std::endl;
+      }
+      else
+      {
+        Matrix Kmat(ndim,ndim);
+        Kmat.fill(values.data());
+        permmatrix.reset(new Matrix(Kmat,true));
+        IFEM::cout <<" matrix:"<< *permmatrix;
+      }
+      return true;
+    }
     IFEM::cout << std::endl;
   }
   else if ((value = utl::getValue(elem,"porosity")))
@@ -102,30 +133,43 @@ bool DarcyMaterial::parse (const tinyxml2::XMLElement* elem)
 Vec3 DarcyMaterial::getPermeability (const Vec3& X) const
 {
   Vec3 result;
-  if (permvalues)
+  if (permvalues.get())
     result = (*permvalues)(X);
-  else if (permeability)
+  else if (permeability.get())
     result = (*permeability)(X);
+  else
+    result = 1.0;
 
   return result;
 }
 
 
+bool DarcyMaterial::getPermeability (Matrix* K) const
+{
+  if (!permmatrix.get())
+    return false;
+  else if (K)
+    *K = *permmatrix;
+
+  return true;
+}
+
+
 double DarcyMaterial::getPorosity (const Vec3& X) const
 {
-  return porosity ? (*porosity)(X) : 0.0;
+  return porosity.get() ? (*porosity)(X) : 0.0;
 }
 
 
 double DarcyMaterial::getDispersivity (const Vec3& X) const
 {
-  return dispersivity ? (*dispersivity)(X) : 0.0;
+  return dispersivity.get() ? (*dispersivity)(X) : 0.0;
 }
 
 
 double DarcyMaterial::getDensity (double c) const
 {
-  double rho = density ? (*density)(c) : 1.0;
+  double rho = density.get() ? (*density)(c) : 1.0;
   if (rho > 1.0e-16) return rho;
 
   std::cerr <<" *** DarcyMaterial::getDensity(): Non-positive fluid density ("

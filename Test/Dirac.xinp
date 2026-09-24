@@ -21,7 +21,7 @@
   <darcy>
     <gravity y="-9.81"/>
     <bodyforce>0.0 | 9.81</bodyforce>
-    <permvalues>1.2 | 1.2</permvalues>
+    <permeability type="constant">1.2</permeability>
     <source type="diracsum" pointTol="0.1">
       # X Y Val\
       5.0 2.5 9.81\

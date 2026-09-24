@@ -21,7 +21,7 @@
   <darcy>
     <gravity y="-9.81"/>
     <bodyforce>0.0 | 9.81</bodyforce>
-    <permvalues>1.2 | 1.2</permvalues>
+    <permeability type="constant">1.2</permeability>
     <source type="elementsum">
       # U V Val\
       0.25 0.25 9.81\

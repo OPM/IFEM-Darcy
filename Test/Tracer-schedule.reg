@@ -3,7 +3,7 @@ Tracer-schedule.xinp
 Using BDF2 time stepping.
 Including a tracer field.
 Updating pressure according to a schedule.
-		Permeability: 1.0|1.0
+		Permeability: 1
 		Porosity: 1
 		Dispersivity: 1
 		Fluid viscosity: 1

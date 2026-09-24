@@ -44,6 +44,7 @@ ifem_add_test_app(
     Darcy
   SOURCES
     ${PROJECT_SOURCE_DIR}/Test/TestSIMDarcy.C
+    ${PROJECT_SOURCE_DIR}/Test/TestDarcyMaterial.C
   WORKDIR
     ${PROJECT_SOURCE_DIR}/../Test
   LIBRARIES

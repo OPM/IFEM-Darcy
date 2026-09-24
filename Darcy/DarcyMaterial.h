@@ -14,12 +14,17 @@
 #ifndef _DARCY_MATERIAL_H_
 #define _DARCY_MATERIAL_H_
 
+#include "matrix.h"
 #include <memory>
 
 class RealFunc;
 class ScalarFunc;
 class VecFunc;
 class Vec3;
+//! \cond convenience_alias
+using Matrix = utl::matrix<double>;
+//! \endcond
+
 namespace tinyxml2 { class XMLElement; }
 
 
@@ -42,7 +47,9 @@ public:
   //! \brief Parses an XML-element.
   bool parse(const tinyxml2::XMLElement* elem);
 
-  //! \brief Returns the permeability at a given point.
+  //! \brief Check for (and optionally return) the constant permeability matrix.
+  bool getPermeability(Matrix* K = nullptr) const;
+  //! \brief Returns the permeability as a diagonal matrix at a given point.
   Vec3 getPermeability(const Vec3& X) const;
 
   //! \brief Returns the porosity at a given point.
@@ -61,6 +68,7 @@ public:
   void setParam(const std::string& name, double value);
 
 private:
+  std::unique_ptr<Matrix>     permmatrix;   //!< Permeability matrix (constant)
   std::unique_ptr<VecFunc>    permvalues;   //!< Permeability function
   std::unique_ptr<RealFunc>   permeability; //!< Permeability field function
   std::unique_ptr<RealFunc>   porosity;     //!< Porosity function
