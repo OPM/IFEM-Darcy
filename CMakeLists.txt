@@ -109,12 +109,14 @@ ifem_add_regression_test(
   TEST_FILES
     Lshape_p2_b5.reg
     Wavefront_k10_p2_b20.reg
+    Wavefront_kmat_p2_b20.reg
     Dirac.reg
     Dirac3D.reg
     Element.reg
     Element3D.reg
     SimpleSquare.reg
     SimpleSquare2p.reg
+    Square-Kmat.reg
     Tracer.reg
     Tracer-be.reg
     Tracer-bdf2.reg

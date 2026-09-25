@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<simulation>
+
+  <!-- General - geometry definitions !-->
+  <geometry dim="2">
+    <raiseorder patch="1" u="1" v="1"/>
+    <refine patch="1" u="25" v="25"/>
+    <topologysets>
+      <set name="Nonhomogeneous" type="edge">
+        <item patch="1">1 2 3 4</item>
+      </set>
+    </topologysets>
+  </geometry>
+
+  <!-- General - numerical integration scheme !-->
+  <discretization>
+    <nGauss>3 5</nGauss>
+  </discretization>
+
+  <!-- General - boundary conditions !-->
+  <boundaryconditions>
+    <dirichlet set="Nonhomogeneous" comp="1" type="anasol"/>
+  </boundaryconditions>
+
+  <!-- Problem-specific block !-->
+  <darcy>
+    <gravity y="-1.0"/>
+    <bodyforce>0.0 | 1.0</bodyforce>
+    <permeability type="matrix">
+      10.0 0.0
+       0.0 1.0
+    </permeability>
+    <source type="expression">
+      X = x-0.5;
+      Y = y-0.5;
+      a = sqrt(X*X+Y*Y);
+      b = 1.0 + 2500.0*(a-0.25)*(a-0.25);
+      c = 10.0;
+      f1 = 250000.0*(a-0.25)/(a*a*b*b);
+      f2 = 50.0/(a*a*a*b);
+      f3 = 50.0*(c+1.0)/(a*b);
+      (f1+f2)*(c*X*X+Y*Y) - f3
+    </source>
+    <anasol type="expression">
+      <variables>
+        X = x-0.5;
+        Y = y-0.5;
+        a = sqrt(X*X+Y*Y);
+        b = 1.0 + 2500.0*(a-0.25)*(a-0.25);
+        c = 10.0
+      </variables>
+      <primary>atan(50.0*(a-0.25))</primary>
+      <secondary>-50.0*c*X/(a*b) | -50.0*Y/(a*b)</secondary>
+    </anasol>
+    <reactions/>
+  </darcy>
+
+  <postprocessing>
+    <projection>
+      <CGL2/>
+    </projection>
+  </postprocessing>
+
+</simulation>

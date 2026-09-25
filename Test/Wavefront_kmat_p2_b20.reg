@@ -1,0 +1,74 @@
+Wavefront_kmat_p2_b20.xinp
+
+Input file: Wavefront_kmat_p2_b20.xinp
+Equation solver: 2
+Number of Gauss points: 4
+Basis function values are precalculated but not cached
+1. Darcy solver
+Parsing input file Wavefront_kmat_p2_b20.xinp
+Parsing <discretization>
+Parsing <geometry>
+  Generating linear geometry on unit parameter domain \[0,1]^2
+  Parsing <raiseorder>
+  Parsing <refine>
+  Parsing <topologysets>
+	Topology sets: Nonhomogeneous (1,1,1D) (1,2,1D) (1,3,1D) (1,4,1D)
+  Parsing <raiseorder>
+	Raising order of P1 1 1
+  Parsing <refine>
+	Refining P1 25 25
+  Parsing <topologysets>
+Parsing <boundaryconditions>
+  Parsing <dirichlet>
+	Dirichlet code 1: (analytic)
+Parsing <darcy>
+  Parsing <gravity>
+	Gravitation vector: 0 -1
+		Permeability matrix:
+Row 1: 10 0
+Row 2: 1
+  Parsing <source>
+	Source function: X = x-0.5; Y = y-0.5; a = sqrt(X\*X+Y\*Y); b = 1.0 + 2500.0\*(a-0.25)\*(a-0.25); c = 10.0; f1 = 250000.0\*(a-0.25)/(a\*a\*b\*b); f2 = 50.0/(a\*a\*a\*b); f3 = 50.0\*(c+1.0)/(a\*b); (f1+f2)\*(c\*X\*X+Y\*Y) - f3
+	Variables: X = x-0.5; Y = y-0.5; a = sqrt(X\*X+Y\*Y); b = 1.0 + 2500.0\*(a-0.25)\*(a-0.25); c = 10.0;
+	Primary: atan(50.0\*(a-0.25))
+	Secondary: -50.0\*c\*X/(a\*b) | -50.0\*Y/(a\*b)
+	Analytical solution: expression
+Parsing <postprocessing>
+  Parsing <projection>
+Parsing input file succeeded.
+11. Darcy solver
+Resolving Dirichlet boundary conditions
+	Constraining P1 E1 in direction(s) 1 code = 1
+	Constraining P1 E2 in direction(s) 1 code = 1
+	Constraining P1 E3 in direction(s) 1 code = 1
+	Constraining P1 E4 in direction(s) 1 code = 1
+ >>> SAM model summary <<<
+Number of elements    676
+Number of nodes       784
+Number of dofs        784
+Number of constraints 108
+Number of unknowns    676
+Solving Darcy problem
+Processing integrand associated with code 0
+Assembling interior matrix terms for P1
+Done.
+Solving the equation system ...
+	Condition number: 167.41
+Processing integrand associated with code 0
+Assembling interior matrix terms for P1
+Done.
+ >>> Solution summary <<<
+L2-norm            : 1.39877
+Max pressure       : 1.52707
+Projecting secondary solution ...
+	Continuous global L2-projection
+>>> Norm summary <<<
+  H1 norm |p^h| = a(p^h,p^h)^0.5     : 25.2035
+  External energy |(h,p^h)|^0.5      : 25.2227
+  H1 norm |p| = a(p,p)^0.5           : 26.0482
+  H1 norm |e| = a(e,e)^0.5, e=p-p^h  : 5.69085
+  Exact relative error (%)           : 21.8473
+Error estimates based on >>> Continuous global L2-projection <<<
+  H1 norm |p^r-p^h|                  : 3.96247
+  H1 norm |p^r-p|                    : 5.54201
+  Effectivity index eta^p            : 0.696289

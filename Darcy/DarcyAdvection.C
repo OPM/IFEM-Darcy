@@ -90,20 +90,27 @@ bool DarcyAdvection::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
 
   if (!elMat.A.empty() && calcMats)
   {
+    Matrix Kmat;
     const Vec3 K = mat->getPermeability(X);
+    const bool hasKmat = mat->getPermeability(&Kmat);
     const double D = mat->getDispersivity(X);
     const double mu = mat->getViscosity();
 
     // Evaluate the Darcy velocity, q = -K/mu * (grad(p) - rho*(g + bf))
     Vector dP;
     pField->gradFE(fe,dP);
-    Vec3 q(dP), bf(gravity);
+    Vec3 q(gravity);
     if (bodyforce)
-      bf += (*bodyforce)(X);
-    if (!bf.isZero())
-      q -= mat->getDensity(elmInt.vec.front().dot(fe.N))*bf;
-    for (size_t i = 0; i < nsd; i++)
-      q[i] *= -K[i]/mu;
+      q += (*bodyforce)(X);
+    if (!q.isZero())
+      dP.add(q.vec(nsd),-mat->getDensity(elmInt.vec.front().dot(fe.N)));
+    if (!hasKmat)
+      for (size_t i = 0; i < nsd; i++)
+        q[i] = -(K[i]/mu)*dP[i];
+    else if (Vector qVec; Kmat.multiply(dP,qVec,-1.0/mu))
+      q = Vec3(qVec);
+    else
+      return false;
 
     WeakOps::Laplacian(elMat.A.front(), fe, D, false);
     WeakOps::Advection(elMat.A.front(), fe, q, 1.0, WeakOperators::CONSERVATIVE);

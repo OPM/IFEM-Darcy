@@ -28,18 +28,20 @@ TEST_CASE("TestSIMDarcy.Parse")
 
   sim.init();
 
-  Vec3 perm = darcy.getPermeability(Vec3());
-  REQUIRE_THAT(perm[0], WithinRel(10.0));
-  REQUIRE_THAT(perm[1], WithinRel(1.0));
-  REQUIRE_THAT(perm[2], WithinAbs(0.0, 1e-14));
+  Matrix Kinv;
+  REQUIRE(darcy.getInvPermeability(Vec3(),Kinv));
+  REQUIRE(Kinv.cols() == 2);
+  REQUIRE(Kinv.rows() == 2);
+  CHECK_THAT(Kinv(1,1), WithinRel(0.1));
+  CHECK_THAT(Kinv(2,2), WithinRel(1.0));
   Vec3 body = darcy.getBodyForce(Vec3());
-  REQUIRE_THAT(body[0], WithinAbs(0.0, 1e-14));
-  REQUIRE_THAT(body[1], WithinAbs(1.0, 1e-14));
-  REQUIRE_THAT(body[2], WithinAbs(0.0, 1e-14));
+  CHECK_THAT(body[0], WithinAbs(0.0, 1e-14));
+  CHECK_THAT(body[1], WithinAbs(1.0, 1e-14));
+  CHECK_THAT(body[2], WithinAbs(0.0, 1e-14));
   double flux = darcy.getFlux(Vec3(),Vec3());
-  REQUIRE_THAT(flux, WithinAbs(0.0, 1e-14));
+  CHECK_THAT(flux, WithinAbs(0.0, 1e-14));
   double src = darcy.getPotential(Vec3());
-  REQUIRE_THAT(src, WithinRel(1.5515174, 1e-7));
+  CHECK_THAT(src, WithinRel(1.5515174, 1e-7));
   src = darcy.getPotential(Vec3(0.25, 0.25, 0.0));
-  REQUIRE_THAT(src, WithinRel(156.157, 1e-6));
+  CHECK_THAT(src, WithinRel(156.157, 1e-6));
 }

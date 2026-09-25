@@ -35,8 +35,8 @@ public:
   //! \brief Assigns the owner simulator.
   void setOwnerSim(SIMbase* sim) { ownerSim = sim; }
 
-  //! \brief Returns the permeability at specified point.
-  Vec3 getPermeability(const Vec3& X) const;
+  //! \brief Returns the inverse permeability matrix at specified point.
+  bool getInvPermeability(const Vec3& X, Matrix& Kinv) const;
   //! \brief Returns the dispersivity at specified point.
   double getDispersivity(const Vec3& X) const;
   //! \brief Returns the fluid viscosity.

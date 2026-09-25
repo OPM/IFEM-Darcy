@@ -115,9 +115,13 @@ bool DarcyTransport::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   if (!elMat.A.empty() && calcMats) {
     WeakOps::Laplacian(elMat.A[cc], fe, D, false);
 
+    Matrix Kmat;
     double cn = this->concentration(elmInt.vec, fe, 0);
-    Vec3 perm = mat->getPermeability(X);
-    elMat.A[cp].multiply(fe.dNdX,fe.dNdX,false,true,true,perm[0]*cn*fe.detJxW);
+    if (mat->getPermeability(&Kmat))
+      cn *= Kmat(1,1);
+    else
+      cn *= mat->getPermeability(X).x;
+    elMat.A[cp].multiply(fe.dNdX,fe.dNdX,false,true,true,cn*fe.detJxW);
   }
 
   if (sourceC)
@@ -139,19 +143,24 @@ bool DarcyTransport::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
 bool DarcyTransport::evalBou (LocalIntegral& elmInt, const FiniteElement& fe,
                               const Vec3& X, const Vec3& normal) const
 {
-  if (!this->Darcy::evalBou(elmInt,fe,X,normal))
+  if (!this->Darcy::evalBou(elmInt,fe,X,normal) || !mat)
     return false;
+  else if (mat->getPermeability())
+  {
+    std::cerr <<" *** DarcyTransport::evalBou():"
+              <<" Implemented for diagonal permeability only."<< std::endl;
+    return false;
+  }
 
   ElmMats& elMat = static_cast<ElmMats&>(elmInt);
 
   const double D = mat->getDispersivity(X);
-
-  Vec3 perm = mat->getPermeability(X);
+  const Vec3 K = mat->getPermeability(X);
 
   for (size_t i = 1; i <= fe.N.size(); ++i)
     for (size_t j = 1; j <= fe.N.size(); ++j)
       for (int k = 1; k <= nsd; ++k)
-        elMat.A[cp](i,j) += (fe.N(j)*perm[k-1]*fe.dNdX(j,k)*normal[k-1] - D*fe.dNdX(j,k))*fe.N(i)*fe.detJxW;
+        elMat.A[cp](i,j) += (fe.N(j)*K(k)*fe.dNdX(j,k)*normal(k) - D*fe.dNdX(j,k))*fe.N(i)*fe.detJxW;
 
   return true;
 }
@@ -175,7 +184,7 @@ bool DarcyTransport::evalSol (Vector& s, const FiniteElement& fe,
                               const std::vector<int>& MNPC) const
 {
   s.clear();
-  s.reserve(2+3*nsd);
+  s.reserve(3+3*nsd);
 
   Vectors eV;
   if (!this->getElementSol(MNPC,eV))
@@ -189,11 +198,23 @@ bool DarcyTransport::evalSol (Vector& s, const FiniteElement& fe,
   s.push_back(mat->getPorosity(X));
 
   Vec3 dC = this->concentrationGradient(eV,fe,0);
-  Vec3 K  = mat->getPermeability(X);
   s.push_back(dC.ptr(),dC.ptr()+nsd);
-  s.push_back(K.ptr(),K.ptr()+nsd);
+  if (!mat->getPermeability())
+  {
+    Vec3 K = mat->getPermeability(X);
+    s.push_back(K.ptr(),K.ptr()+nsd);
+  }
 
   return true;
+}
+
+
+size_t DarcyTransport::getNoFields (int fld) const
+{
+  if (fld < 2) return 2;
+  if (!mat) return 0;
+
+  return nsd*(mat->getPermeability() ? 2 : 3) + 3;
 }
 
 
@@ -214,21 +235,16 @@ std::string DarcyTransport::getField1Name (size_t i, const char* prefix) const
 
 std::string DarcyTransport::getField2Name (size_t i, const char* prefix) const
 {
-  if (i >= (nsd == 2 ? 9 : 12)) return "";
+  if (i >= this->getNoFields(2)) return "";
 
-  static const char* s2[9] = {"v_x", "v_y",
-                              "source", "source_c",
-                              "porosity",
-                              "c,x", "c,y",
-                              "perm_x", "perm_y"};
+  if (nsd == 2 && i > 1)
+    i += (i > 6 ? 2 : 1);
 
-  static const char* s3[12] = {"v_x","v_y","v_z",
-                               "source","source_c",
+  static const char* s[12] = { "v_x", "v_y", "v_z",
+                               "source", "source_c",
                                "porosity",
-                               "c,x","c,y","c,z",
-                               "perm_x", "perm_y", "perm_z"};
-
-  const char** s = (nsd == 2 ? s2 : s3);
+                               "c,x", "c,y", "c,z",
+                               "perm_x", "perm_y", "perm_z" };
 
   if (!prefix) return s[i];
 

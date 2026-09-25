@@ -26,9 +26,28 @@ DarcyBase::DarcyBase (unsigned short int n, int torder)
 }
 
 
-Vec3 DarcyBase::getPermeability (const Vec3& X) const
+bool DarcyBase::getInvPermeability (const Vec3& X, Matrix& Kinv) const
 {
-  return mat ? mat->getPermeability(X) : Vec3();
+  if (!mat) return false;
+
+  if (mat->getPermeability(&Kinv))
+  {
+    if (Kinv.inverse() > 0.0)
+      Kinv *= mat->getViscosity();
+    else
+      return false;
+  }
+  else
+  {
+    Kinv.diag(mat->getPermeability(X).vec(nsd));
+    for (size_t i = 1; i <= Kinv.cols(); i++)
+      if (double& k = Kinv(i,i); k != 0.0)
+        k = mat->getViscosity()/k;
+      else
+        return false;
+  }
+
+  return true;
 }
 
 

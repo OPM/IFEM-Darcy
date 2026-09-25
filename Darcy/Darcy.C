@@ -150,18 +150,28 @@ bool Darcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   const double rho = this->getDensity(fe);
   if (rho <= 0.0) return false;
 
+  Matrix Kmat;
   const double mu = mat->getViscosity();
   const Vec3 K = mat->getPermeability(X);
-
+  const bool hasKmat = mat->getPermeability(&Kmat);
 #if INT_DEBUG > 3
   std::cout <<"Darcy::evalInt("<< fe.iel <<", "<< X
-            <<"): rho = "<< rho <<" mu = "<< mu <<" K = "<< K;
+            <<"): rho = "<< rho <<" mu = "<< mu;
+  if (hasKmat)
+    std::cout <<"\n  K-matrix:"<< Kmat;
+  else
+    std::cout <<" K = "<< K;
 #endif
 
   ElmMats& elMat = static_cast<ElmMats&>(elmInt);
 
   if (!elMat.A.empty() && calcMats)
-    WeakOps::LaplacianCoeff(elMat.A[pp], K, fe, 1.0/mu);
+  {
+    if (hasKmat)
+      WeakOps::LaplacianCoeff(elMat.A[pp], Kmat, fe, 1.0/mu);
+    else
+      WeakOps::LaplacianCoeff(elMat.A[pp], K, fe, 1.0/mu);
+  }
 
   // Evaluate the body forces at this point
 
@@ -172,8 +182,15 @@ bool Darcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   if (!bf.isZero())
   {
     // Integrate RHS-contributions from gravity and other body forces
-    for (size_t i = 0; i < nsd; i++)
-      bf[i] *= K[i]*rho/mu;
+    if (hasKmat)
+    {
+      Vector tmp(bf.ptr(),nsd);
+      for (size_t i = 0; i < nsd; i++)
+        bf[i] = tmp.dot(Kmat,i,nsd)*rho/mu;
+    }
+    else
+      for (size_t i = 0; i < nsd; i++)
+        bf[i] *= K[i]*rho/mu;
 #if INT_DEBUG > 3
     std::cout <<"  bf = "<< bf;
 #endif
@@ -255,9 +272,12 @@ bool Darcy::evalSol2 (Vector& s, const Vectors& eV,
 
   s.push_back(source ? (*source)(X) : 0.0);
   s.push_back(mat->getPorosity(X));
-  Vec3 perm = mat->getPermeability(X);
-  for (size_t i = 0; i < nsd; ++i)
-    s.push_back(perm[i]);
+
+  if (!mat->getPermeability())
+  {
+    Vec3 K = mat->getPermeability(X);
+    s.push_back(K.ptr(),K.ptr()+nsd);
+  }
 
   return true;
 }
@@ -273,13 +293,30 @@ bool Darcy::evalDarcyVel (Vector& q, const Vectors& eV,
   if (bodyforce)
     dP -= rho * (*bodyforce)(X);
 
+  Matrix Kmat;
+  const Vec3 K = mat->getPermeability(X);
+  const bool hasKmat = mat->getPermeability(&Kmat);
+
   // q = -K/mu * (grad(p) - rho*(g + bf))
-  Vec3 K = mat->getPermeability(X);
-  K *= -1.0/mat->getViscosity();
-  q = dP.vec(nsd);
-  q *= K.vec(nsd);
+  if (hasKmat)
+    return Kmat.multiply(dP.vec(nsd),q,-1.0/mat->getViscosity());
+  else
+  {
+    q = dP.vec(nsd);
+    q *= K.vec(nsd);
+    q /= -mat->getViscosity();
+  }
 
   return true;
+}
+
+
+size_t Darcy::getNoFields (int fld) const
+{
+  if (fld < 2) return 1;
+  if (!mat) return 0;
+
+  return nsd*(mat->getPermeability() ? 1 : 2) + 2;
 }
 
 
@@ -293,12 +330,16 @@ std::string Darcy::getField1Name (size_t, const char* prefix) const
 
 std::string Darcy::getField2Name (size_t i, const char* prefix) const
 {
-  if (i >= 2*nsd+2u) return "";
+  if (i >= this->getNoFields(2)) return "";
 
   if (nsd == 2 && i > 1)
     ++i;
 
-  static const char* s[8] = {"v_x","v_y","v_z", "source", "porosity", "perm_x", "perm_y", "perm_z"};
+  static const char* s[8] = { "v_x", "v_y", "v_z",
+                              "source",
+                              "porosity",
+                              "perm_x", "perm_y", "perm_z" };
+
   if (!prefix) return s[i];
 
   return prefix + std::string(" ") + s[i];
@@ -340,6 +381,8 @@ double Darcy::pressure (const Vectors& eV, const FiniteElement& fe,
 
 double Darcy::getDensity (const FiniteElement& fe) const
 {
+  if (!mat) return 0.0;
+
   return mat->getDensity(cField.get() ? cField->valueFE(fe) : 1.0);
 }
 
@@ -370,12 +413,8 @@ bool DarcyNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
 
   // Evaluate the inverse constitutive matrix at this point
   Matrix Kinv;
-  Kinv.diag(problem.getPermeability(X).vec(fe.dNdX.cols()));
-  for (size_t i = 1; i <= Kinv.cols(); i++)
-    if (double& k = Kinv(i,i); k != 0.0)
-      k = problem.getViscosity()/k;
-    else
-      return false;
+  if (!problem.getInvPermeability(X,Kinv))
+    return false;
 
   // Evaluate the finite element Darcy velocity field
   Vector dPh, dP, error;
