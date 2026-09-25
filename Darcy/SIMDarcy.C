@@ -510,10 +510,10 @@ void SIMDarcy<Dim>::printNormGroup (const Vector& rNorm,
 
 
 template<class Dim>
-void SIMDarcy<Dim>::preprocessA ()
+bool SIMDarcy<Dim>::preprocessA ()
 {
   proj.resize(Dim::opt.project.size());
-  if (!Dim::mySol) return;
+  if (!Dim::mySol) return true;
 
   // Define analytical boundary condition fields
   PropertyVec::iterator p;
@@ -548,6 +548,8 @@ void SIMDarcy<Dim>::preprocessA ()
       else
         p->pcode = Property::UNDEFINED;
     }
+
+  return true;
 }
 
 
