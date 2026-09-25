@@ -116,7 +116,7 @@ bool SIMDarcyTransportCorr<Dim>::preprocessBeforeAsmInit (int& nnod)
 
 
 template<class Dim>
-void SIMDarcyTransportCorr<Dim>::preprocessA ()
+bool SIMDarcyTransportCorr<Dim>::preprocessA ()
 {
   for (Property& p : Dim::myProps)
     if (p.pcode == Property::DIRICHLET_ANASOL) {
@@ -129,6 +129,8 @@ void SIMDarcyTransportCorr<Dim>::preprocessA ()
       } else
         p.pcode = Property::UNDEFINED;
     }
+
+  return true;
 }
 
 

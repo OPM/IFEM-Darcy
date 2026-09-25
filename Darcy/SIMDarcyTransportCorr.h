@@ -83,7 +83,7 @@ protected:
   bool preprocessBeforeAsmInit(int& nnod) override;
 
   //! \brief Performs some pre-processing tasks on the FE model.
-  void preprocessA() override;
+  bool preprocessA() override;
 
   //! \brief Solves the current time step by Augmented Lagrange.
   //! \param tp Time stepping parameters
