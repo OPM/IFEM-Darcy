@@ -66,8 +66,7 @@ bool SIMDarcyAdvection<Dim>::parse (const tinyxml2::XMLElement* elem)
 
   const tinyxml2::XMLElement* child = elem->FirstChildElement();
   for (; child; child = child->NextSiblingElement())
-    if (!strcasecmp(child->Value(),"materialdata"))
-    {
+    if (!strcasecmp(child->Value(),"materialdata")) {
       IFEM::cout <<"\tMaterial data with code "
                  << this->parseMaterialSet(child,mVec.size()) <<":\n";
       mVec.emplace_back(child);
@@ -85,7 +84,21 @@ bool SIMDarcyAdvection<Dim>::parse (const tinyxml2::XMLElement* elem)
   if (gotMaterialData && mVec.empty())
     mVec.push_back(std::move(defaultMaterial));
 
-  return true;
+  bool ok = true;
+  for (const DarcyMaterial& mat : mVec)
+    if (mat.getViscosity() < 0.0)
+      ok = false;
+    else if (Matrix K; mat.getPermeability(&K))
+      if (K.rows() != Dim::dimension || K.cols() != Dim::dimension)
+      {
+        std::cerr <<" *** SIMDarcyAdvection::parse(): Invalid permeability"
+                  <<" matrix dimension ("<< K.rows() <<"x"<< K.cols() <<"),"
+                  <<" should be ("<< Dim::dimension <<"x"<< Dim::dimension
+                  <<")."<< std::endl;
+        ok = false;
+      }
+
+  return ok;
 }
 
 

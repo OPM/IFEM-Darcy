@@ -50,6 +50,8 @@ DarcyMaterial::DarcyMaterial (DarcyMaterial&& tmp)
 
   if (viscosity == 1.0 && tmp.viscosity > 0.0)
     viscosity = tmp.viscosity;
+  else if (tmp.viscosity < 0.0)
+    viscosity = tmp.viscosity; // invalid properties
 }
 
 
@@ -58,6 +60,12 @@ DarcyMaterial::DarcyMaterial () = default;
 
 DarcyMaterial::~DarcyMaterial () = default;
 
+
+/*!
+  \return \e false if \a elem is not a material tag, otherwise \a true
+  (also if the material data is invalid, which is flagged by setting
+  \ref viscosity to -1.0)
+*/
 
 bool DarcyMaterial::parse (const tinyxml2::XMLElement* elem)
 {
@@ -70,6 +78,7 @@ bool DarcyMaterial::parse (const tinyxml2::XMLElement* elem)
     std::cerr <<" *** DarcyMaterial::parse(): The <permvalues> tag is not"
               <<" supported, use <permeability type=\"diag\"> instead."
               << std::endl;
+    viscosity = -1.0;
   }
   else if ((value = utl::getValue(elem,"permeability")))
   {
@@ -92,6 +101,7 @@ bool DarcyMaterial::parse (const tinyxml2::XMLElement* elem)
         std::cerr <<" *** DarcyMaterial::parse(): Invalid matrix dimension ("
                   << ndim <<"), "<< values.size() <<" values specified."
                   << std::endl;
+        viscosity = -1.0;
       }
       else
       {
@@ -122,8 +132,8 @@ bool DarcyMaterial::parse (const tinyxml2::XMLElement* elem)
     density.reset(utl::parseTimeFunc(value,type));
   }
   else if (!(value = utl::getValue(elem,"viscosity")))
-    return false;
-  else if (double mu = atof(value); mu > 0.0)
+    return false; // not a material tag
+  else if (double mu = atof(value); mu > 0.0 && viscosity > 0.0)
     IFEM::cout <<"\t\tFluid viscosity: "<< (viscosity = mu) << std::endl;
 
   return true;

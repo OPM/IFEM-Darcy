@@ -105,7 +105,21 @@ bool SIMDarcy<Dim>::parse (const tinyxml2::XMLElement* elem)
   if (gotMaterialData && mVec.empty())
     mVec.push_back(std::move(defaultMaterial));
 
-  return true;
+  bool ok = true;
+  for (const DarcyMaterial& mat : mVec)
+    if (mat.getViscosity() < 0.0)
+      ok = false;
+    else if (Matrix K; mat.getPermeability(&K))
+      if (K.rows() != Dim::dimension || K.cols() != Dim::dimension)
+      {
+        std::cerr <<" *** SIMDarcy::parse(): Invalid permeability"
+                  <<" matrix dimension ("<< K.rows() <<"x"<< K.cols() <<"),"
+                  <<" should be ("<< Dim::dimension <<"x"<< Dim::dimension
+                  <<")."<< std::endl;
+        ok = false;
+      }
+
+  return ok;
 }
 
 
