@@ -51,9 +51,13 @@ public:
   bool getPermeability(Matrix* K = nullptr) const;
   //! \brief Returns the permeability as a diagonal matrix at a given point.
   Vec3 getPermeability(const Vec3& X) const;
+  //! \brief Returns \e true if the permeability is non-constant.
+  bool isPermeabilityFunc() const;
 
   //! \brief Returns the porosity at a given point.
   double getPorosity(const Vec3& X) const;
+  //! \brief Returns \e true if the porosity is non-constant.
+  bool isPorosityFunc() const;
 
   //! \brief Returns the dispersivity at a given point.
   double getDispersivity(const Vec3& X) const;

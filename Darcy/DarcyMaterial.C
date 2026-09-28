@@ -30,22 +30,22 @@ DarcyMaterial::DarcyMaterial (const tinyxml2::XMLElement* elem)
 
 DarcyMaterial::DarcyMaterial (DarcyMaterial&& tmp)
 {
-  if (!permmatrix.get())
+  if (!permmatrix)
     permmatrix = std::move(tmp.permmatrix);
 
-  if (!permvalues.get())
+  if (!permvalues)
     permvalues = std::move(tmp.permvalues);
 
-  if (!permeability.get())
+  if (!permeability)
     permeability = std::move(tmp.permeability);
 
-  if (!porosity.get())
+  if (!porosity)
     porosity = std::move(tmp.porosity);
 
-  if (!dispersivity.get())
+  if (!dispersivity)
     dispersivity = std::move(tmp.dispersivity);
 
-  if (!density.get())
+  if (!density)
     density = std::move(tmp.density);
 
   if (viscosity == 1.0 && tmp.viscosity > 0.0)
@@ -143,9 +143,9 @@ bool DarcyMaterial::parse (const tinyxml2::XMLElement* elem)
 Vec3 DarcyMaterial::getPermeability (const Vec3& X) const
 {
   Vec3 result;
-  if (permvalues.get())
+  if (permvalues)
     result = (*permvalues)(X);
-  else if (permeability.get())
+  else if (permeability)
     result = (*permeability)(X);
   else
     result = 1.0;
@@ -156,7 +156,7 @@ Vec3 DarcyMaterial::getPermeability (const Vec3& X) const
 
 bool DarcyMaterial::getPermeability (Matrix* K) const
 {
-  if (!permmatrix.get())
+  if (!permmatrix)
     return false;
   else if (K)
     *K = *permmatrix;
@@ -165,21 +165,40 @@ bool DarcyMaterial::getPermeability (Matrix* K) const
 }
 
 
+bool DarcyMaterial::isPermeabilityFunc () const
+{
+  if (permmatrix)
+    return false;
+  else if (permvalues)
+    return !permvalues->isConstant();
+  else if (permeability)
+    return !permeability->isConstant();
+
+  return false;
+}
+
+
 double DarcyMaterial::getPorosity (const Vec3& X) const
 {
-  return porosity.get() ? (*porosity)(X) : 0.0;
+  return porosity ? (*porosity)(X) : 0.0;
+}
+
+
+bool DarcyMaterial::isPorosityFunc () const
+{
+  return porosity ? !porosity->isConstant() : false;
 }
 
 
 double DarcyMaterial::getDispersivity (const Vec3& X) const
 {
-  return dispersivity.get() ? (*dispersivity)(X) : 0.0;
+  return dispersivity ? (*dispersivity)(X) : 0.0;
 }
 
 
 double DarcyMaterial::getDensity (double c) const
 {
-  double rho = density.get() ? (*density)(c) : 1.0;
+  double rho = density ? (*density)(c) : 1.0;
   if (rho > 1.0e-16) return rho;
 
   std::cerr <<" *** DarcyMaterial::getDensity(): Non-positive fluid density ("
@@ -190,15 +209,15 @@ double DarcyMaterial::getDensity (double c) const
 
 void DarcyMaterial::setParam (const std::string& name, double value)
 {
-  if (permvalues.get())
+  if (permvalues)
     permvalues->setParam(name,value);
 
-  if (permeability.get())
+  if (permeability)
     permeability->setParam(name,value);
 
-  if (porosity.get())
+  if (porosity)
     porosity->setParam(name,value);
 
-  if (dispersivity.get())
+  if (dispersivity)
     dispersivity->setParam(name,value);
 }
