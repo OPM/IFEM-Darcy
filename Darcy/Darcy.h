@@ -141,6 +141,9 @@ public:
   //! \param[in] fe Finite element data at current point
   double getDensity(const FiniteElement& fe) const;
 
+  //! \brief Sets the \ref fluxOnly flag.
+  void set2ndFluxOnly(bool onOff) { fluxOnly = onOff; }
+
 protected:
   VecFunc*      bodyforce; //!< Body force function
   RealFunc*     flux;      //!< Flux function
@@ -152,6 +155,8 @@ protected:
   Vector                    cVec;   //!< Tracer concentration values
 
   GlobalIntegral* reacInt; //!< Reaction-forces-only integral
+
+  bool fluxOnly; //!< If \e true, output Darcy flux only as 2ndary solution
 
 public:
   char extEner; //!< If \e true, external energy is to be computed

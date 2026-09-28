@@ -221,9 +221,13 @@ bool SIMDarcy<Dim>::saveStep (const TimeStep& tp, int& nBlock)
 
     if (!solVec->empty() && !Dim::opt.pSolOnly)
     {
-      if (Matrix tmp; !this->project(tmp,*solVec))
-        return false;
-      else if (!this->writeGlvV(tmp,"velocity",iDump,nBlock,110,Dim::nsd))
+      Matrix tmp;
+      drc.set2ndFluxOnly(true);
+      bool ok = this->project(tmp,*solVec);
+      drc.set2ndFluxOnly(false);
+      if (!ok) return false;
+
+      if (!this->writeGlvV(tmp,"velocity",iDump,nBlock,110,Dim::nsd))
         return false;
 
       // Project the secondary solution onto the splines basis

@@ -35,7 +35,6 @@ DarcyTransport::DarcyTransport (unsigned short int n, int torder) :
   pp = 1;
   cc = 2;
   cp = 4;
-  sourceC = nullptr;
   npv = 2;
 }
 
@@ -192,14 +191,20 @@ bool DarcyTransport::evalSol (Vector& s, const FiniteElement& fe,
 
   if (!this->evalDarcyVel(s,eV,fe,X))
     return false;
-
-  s.push_back(source ? (*source)(X) : 0.0);
-  s.push_back(sourceC ? (*sourceC)(X) : 0.0);
-  s.push_back(mat->getPorosity(X));
+  else if (fluxOnly)
+    return true;
 
   Vec3 dC = this->concentrationGradient(eV,fe,0);
   s.push_back(dC.ptr(),dC.ptr()+nsd);
-  if (!mat->getPermeability())
+
+  if (source)
+    s.push_back((*source)(X));
+  if (sourceC)
+    s.push_back((*sourceC)(X));
+  if (mat->isPorosityFunc())
+    s.push_back(mat->getPorosity(X));
+
+  if (mat->isPermeabilityFunc())
   {
     Vec3 K = mat->getPermeability(X);
     s.push_back(K.ptr(),K.ptr()+nsd);
@@ -211,10 +216,22 @@ bool DarcyTransport::evalSol (Vector& s, const FiniteElement& fe,
 
 size_t DarcyTransport::getNoFields (int fld) const
 {
-  if (fld < 2) return 2;
-  if (!mat) return 0;
+  if (fld < 2)
+    return 2;
+  else if (!mat)
+    return 0;
+  else if (fluxOnly)
+    return nsd;
 
-  return nsd*(mat->getPermeability() ? 2 : 3) + 3;
+  size_t nField = nsd*(mat->isPermeabilityFunc() ? 3 : 2);
+  if (source)
+    ++nField;
+  if (sourceC)
+    ++nField;
+  if (mat->isPorosityFunc())
+    ++nField;
+
+  return nField;
 }
 
 
@@ -235,15 +252,23 @@ std::string DarcyTransport::getField1Name (size_t i, const char* prefix) const
 
 std::string DarcyTransport::getField2Name (size_t i, const char* prefix) const
 {
-  if (i >= this->getNoFields(2)) return "";
+  if (i >= this->DarcyTransport::getNoFields(2)) return "";
 
   if (nsd == 2 && i > 1)
-    i += (i > 6 ? 2 : 1);
+    ++i;
+  if (nsd == 2 && i > 4)
+    ++i;
+  if (!source && i > 5)
+    ++i;
+  if (!sourceC && i > 6)
+    ++i;
+  if (!mat->isPorosityFunc() && i > 7)
+    ++i;
 
   static const char* s[12] = { "v_x", "v_y", "v_z",
+                               "c,x", "c,y", "c,z",
                                "source", "source_c",
                                "porosity",
-                               "c,x", "c,y", "c,z",
                                "perm_x", "perm_y", "perm_z" };
 
   if (!prefix) return s[i];
@@ -308,38 +333,39 @@ bool DarcyTransportNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe
 
   pnorm[H1_Ch] += D*dCh*dCh*fe.detJxW;
 
-  Vec3 dC;
-  if (anac) {
+  double E = 0.0;
+  Vec3 dC, dCr, error;
+  if (anac)
+  {
     dC = (*anac)(X);
     pnorm[H1_C] += D*dC*dC*fe.detJxW;
-    Vec3 error =  dC-dCh;
-    double E = D*error*error*fe.detJxW;
+    error = dC - dCh;
+    E = D*error*error*fe.detJxW;
     pnorm[H1_E_Ch] += E;
     pnorm[TOTAL_NORM_E] += E;
   }
 
+  const size_t nsd = fe.dNdX.cols();
   size_t ip = this->getNoFields(1);
-  size_t f = 2;
-  for (const Vector& psol : pnorm.psol) {
-    if (!prjFld.empty() || !psol.empty())
+  for (size_t k = 0; k < pnorm.psol.size(); ip += this->getNoFields(2+k++))
+    if (!prjFld.empty() || !pnorm.psol[k].empty())
     {
-      Vec3 dCr;
-      if (!prjFld.empty() && prjFld[f-2]) {
+      // Evaluate projected concentration field
+      if (prjFld.size() > k && prjFld[k])
+      {
         Vector vals;
-        prjFld[f-2]->valueFE(fe, vals);
-        for (size_t i = 0; i < fe.dNdX.cols(); ++i)
-          dCr[i] = vals[i+3+fe.dNdX.cols()];
-      } else {
-        // Evaluate projected concentration field
-        for (size_t i = 0; i < fe.dNdX.cols(); ++i)
-          dCr[i] = psol.dot(fe.N,i+3+fe.dNdX.cols(),nrcmp);
+        prjFld[k]->valueFE(fe,vals);
+        dCr = Vec3(vals.ptr()+nsd,nsd);
       }
+      else
+        for (size_t i = 0; i < nsd; i++)
+          dCr[i] = pnorm.psol[k].dot(fe.N,nsd+i,nrcmp);
 
       // Integrate the energy norm a(c^r,c^r)
       pnorm[ip+H1_Cr] += D*dCr*dCr*fe.detJxW;
       // Integrate the estimated error in energy norm a(c^r-c^h,c^r-c^h)
-      Vec3 error = dCr - dCh;
-      double E = D*error*error*fe.detJxW;
+      error = dCr - dCh;
+      E = D*error*error*fe.detJxW;
       pnorm[ip+H1_Cr_Ch] += E;
       pnorm[ip+TOTAL_NORM_REC] += E;
 
@@ -352,8 +378,6 @@ bool DarcyTransportNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe
         pnorm[ip+TOTAL_E_REC] += E;
       }
     }
-    ip += this->getNoFields(f++);
-  }
 
   return true;
 }

@@ -136,6 +136,15 @@ bool DarcyAdvection::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
 }
 
 
+size_t DarcyAdvection::getNoFields (int fld) const
+{
+  if (fld < 2)
+    return 1;
+
+  return source ? nsd+1 : nsd;
+}
+
+
 std::string DarcyAdvection::getField1Name (size_t i, const char* prefix) const
 {
   if (i == 11)
@@ -151,6 +160,9 @@ std::string DarcyAdvection::getField2Name (size_t i, const char* prefix) const
 {
   if (i >= this->getNoFields(2)) return "";
 
+  if (!source)
+    ++i;
+
   static const char* s[4] = {"source_c", "c,x", "c,y", "c,z"};
 
   if (!prefix) return s[i];
@@ -164,7 +176,8 @@ bool DarcyAdvection::evalSol2 (Vector& s, const Vectors& eV,
 {
   s.clear();
   s.reserve(1+nsd);
-  s.push_back(source ? (*source)(X) : 0.0);
+  if (source)
+    s.push_back((*source)(X));
 
   Vector dCh(nsd);
   fe.grad(1).multiply(eV.front(),dCh,true);

@@ -42,7 +42,7 @@ Darcy::Darcy (unsigned short int n, int torder) : DarcyBase(n,torder)
   vflux = bodyforce = nullptr;
   tflux = nullptr;
   reacInt = nullptr;
-  extEner = false;
+  extEner = fluxOnly = false;
 }
 
 
@@ -269,11 +269,15 @@ bool Darcy::evalSol2 (Vector& s, const Vectors& eV,
   s.reserve(2+2*nsd);
   if (!this->evalDarcyVel(s,eV,fe,X))
     return false;
+  else if (fluxOnly)
+    return true;
 
-  s.push_back(source ? (*source)(X) : 0.0);
-  s.push_back(mat->getPorosity(X));
+  if (source)
+    s.push_back((*source)(X));
+  if (mat->isPorosityFunc())
+    s.push_back(mat->getPorosity(X));
 
-  if (!mat->getPermeability())
+  if (mat->isPermeabilityFunc())
   {
     Vec3 K = mat->getPermeability(X);
     s.push_back(K.ptr(),K.ptr()+nsd);
@@ -313,10 +317,20 @@ bool Darcy::evalDarcyVel (Vector& q, const Vectors& eV,
 
 size_t Darcy::getNoFields (int fld) const
 {
-  if (fld < 2) return 1;
-  if (!mat) return 0;
+  if (fld < 2)
+    return 1;
+  else if (!mat)
+    return 0;
+  else if (fluxOnly)
+    return nsd;
 
-  return nsd*(mat->getPermeability() ? 1 : 2) + 2;
+  size_t nField = nsd*(mat->isPermeabilityFunc() ? 2 : 1);
+  if (source)
+    ++nField;
+  if (mat->isPorosityFunc())
+    ++nField;
+
+  return nField;
 }
 
 
@@ -330,9 +344,13 @@ std::string Darcy::getField1Name (size_t, const char* prefix) const
 
 std::string Darcy::getField2Name (size_t i, const char* prefix) const
 {
-  if (i >= this->getNoFields(2)) return "";
+  if (i >= this->Darcy::getNoFields(2)) return "";
 
   if (nsd == 2 && i > 1)
+    ++i;
+  if (!source && i > 2)
+    ++i;
+  if (!mat->isPorosityFunc() && i > 3)
     ++i;
 
   static const char* s[8] = { "v_x", "v_y", "v_z",
@@ -383,7 +401,7 @@ double Darcy::getDensity (const FiniteElement& fe) const
 {
   if (!mat) return 0.0;
 
-  return mat->getDensity(cField.get() ? cField->valueFE(fe) : 1.0);
+  return mat->getDensity(cField ? cField->valueFE(fe) : 1.0);
 }
 
 
@@ -429,41 +447,43 @@ bool DarcyNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   if (problem.extEner)
     pnorm[EXT_ENERGY] += problem.getPotential(X)*p*fe.detJxW;
 
+  double E = 0.0;
+  const size_t nsd = fe.dNdX.cols();
+  Vector dPr(nsd);
+
   if (anasol)
   {
     // Evaluate the analytical Darcy velocity
-    dP.fill((*anasol)(X).ptr(),fe.dNdX.cols());
+    dP.fill((*anasol)(X).ptr(),nsd);
     // Integrate the energy norm a(p,p)
     pnorm[H1_P] += dP.dot(Kinv*dP)*fe.detJxW;
     // Integrate the error in energy norm a(p-p^h,p-p^h)
     error = dP - dPh;
-    double E = error.dot(Kinv*error)*fe.detJxW;
+    E = error.dot(Kinv*error)*fe.detJxW;
     pnorm[H1_E_Ph] += E;
     pnorm[TOTAL_NORM_E] += E;
   }
 
   size_t ip = this->getNoFields(1);
-  size_t f = 2;
-  for (const Vector& psol : pnorm.psol) {
-    if (!prjFld.empty() || !psol.empty())
+  for (size_t k = 0; k < pnorm.psol.size(); ip += this->getNoFields(2+k++))
+    if (!prjFld.empty() || !pnorm.psol[k].empty())
     {
       // Evaluate projected Darcy velocity
-      Vector dPr(fe.dNdX.cols());
-      if (!prjFld.empty() && prjFld[f-2]) {
-        Vector vals;
-        prjFld[f-2]->valueFE(fe, vals);
-        std::copy(vals.begin(), vals.begin()+fe.dNdX.cols(), dPr.begin());
+      if (prjFld.size() > k && prjFld[k])
+      {
+        prjFld[k]->valueFE(fe,dPr);
+        dPr.resize(nsd,utl::RETAIN);
       }
       else
-        for (size_t j = 0; j < fe.dNdX.cols(); j++)
-          dPr[j] = psol.dot(fe.N,j,nrcmp);
+        for (size_t j = 0; j < nsd; j++)
+          dPr[j] = pnorm.psol[k].dot(fe.N,j,nrcmp);
 
       // Integrate the energy norm a(p^r,p^r)
       pnorm[ip+H1_Pr] += dPr.dot(Kinv*dPr)*fe.detJxW;
 
       // Integrate the estimated error in energy norm a(p^r-p^h,p^r-p^h)
       error = dPr - dPh;
-      double E = error.dot(Kinv*error)*fe.detJxW;
+      E = error.dot(Kinv*error)*fe.detJxW;
       pnorm[ip+H1_Pr_Ph] += E;
       pnorm[ip+TOTAL_NORM_REC] += E;
 
@@ -476,8 +496,6 @@ bool DarcyNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
         pnorm[ip+TOTAL_E_REC] += E;
       }
     }
-    ip += this->getNoFields(f++);
-  }
 
   return true;
 }
@@ -512,12 +530,12 @@ bool DarcyNorm::finalizeElement (LocalIntegral& elmInt)
   ElmNorm& pnorm = static_cast<ElmNorm&>(elmInt);
 
   size_t ip = this->getNoFields(1);
-  for (size_t k = 0; k < pnorm.psol.size() && ip < pnorm.size(); ++k) {
+  for (size_t k = 0; k < pnorm.psol.size(); ip += this->getNoFields(2+k++))
+  {
     pnorm[ip+EFF_REC_Ph] = sqrt(pnorm[ip+H1_Pr_Ph] / pnorm[H1_E_Ph]);
     pnorm[ip+EFF_REC_Ch] = sqrt(pnorm[ip+H1_Cr_Ch] / pnorm[H1_E_Ch]);
     pnorm[ip+EFF_REC_TOTAL] = sqrt((pnorm[ip+H1_Pr_Ph] + pnorm[ip+H1_Cr_Ch]) /
                                    (pnorm[H1_E_Ph] + pnorm[H1_E_Ch]));
-    ip += this->getNoFields(k+2);
   }
 
   return true;
