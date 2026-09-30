@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
+<simulation>
+
+  <geometry dim="2">
+    <raiseorder patch="1" u="1" v="1"/>
+    <refine patch="1" u="7" v="7"/>
+    <topologysets>
+      <set name="Vertical" type="edge">
+        <item patch="1">1 2</item>
+      </set>
+      <set name="Horizontal" type="edge">
+        <item patch="1">3 4</item>
+      </set>
+    </topologysets>
+  </geometry>
+
+  <boundaryconditions>
+    <dirichlet set="Vertical" type="expression" basis="3" comp="1">
+      x+y+y
+    </dirichlet>
+    <neumann set="Horizontal" type="expression" direction="0">
+      PI*sin(PI*x)+2.4*(1.0-y-y)
+    </neumann>
+  </boundaryconditions>
+
+  <darcy>
+    <permeability type="matrix">
+      2.0 0.4
+      0.4 1.0
+    </permeability>
+    <source type="expression">
+      3.0*PI*PI*sin(PI*x)*sin(PI*y) - 0.8*PI*PI*cos(PI*x)*cos(PI*y)
+    </source>
+    <anasol type="expression">
+      <variables>
+        ax = PI*cos(PI*x)*sin(PI*y)+1.0;
+        ay = PI*sin(PI*x)*cos(PI*y)+2.0
+      </variables>
+      <primary>sin(PI*x)*sin(PI*y)+x+y+y</primary>
+      <secondary>-2.0*ax-0.4*ay|-0.4*ax-ay</secondary>
+    </anasol>
+  </darcy>
+
+</simulation>
