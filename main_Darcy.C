@@ -22,7 +22,6 @@
 #include "ASMenums.h"
 #include "ASMmxBase.h"
 #include "IFEM.h"
-#include "LogStream.h"
 #include "Profiler.h"
 #include "SIM2D.h"
 #include "SIM3D.h"
@@ -31,9 +30,24 @@
 #include "TimeIntUtils.h"
 #include "TimeStep.h"
 
-#include <iostream>
-#include <string>
-#include <vector>
+
+/*!
+  \brief Template class for stationary simulator driver.
+*/
+
+template<class T> class SIMDarcyStat : public SIMSolverStat<T>
+{
+public:
+  //! \brief The constructor forwards to the parent class constructor.
+  explicit SIMDarcyStat(T& s) : SIMSolverStat<T>(s) {}
+
+  //! \brief Returns a const reference to dummy time stepping information.
+  const TimeStep& getTimePrm() const
+  {
+    static TimeStep dummy;
+    return dummy;
+  }
+};
 
 
 /*!
@@ -44,60 +58,6 @@
 
 template<class Dim, template<class T> class Solver>
 int runSimulator(char* infile, const DarcyArgs& args)
-{
-  std::unique_ptr<Darcy> itg;
-  std::vector<unsigned char> fields;
-  if (ASMmxBase::Type == ASMmxBase::DIV_COMPATIBLE)
-  {
-    itg = std::make_unique<CompatibleDarcy>(Dim::dimension,0);
-    fields.resize(Dim::dimension+1,1);
-  }
-  else if (args.tracer)
-  {
-    itg = std::make_unique<DarcyTransport>(Dim::dimension,0);
-    fields.resize(1,2);
-  }
-  else
-  {
-    itg = std::make_unique<Darcy>(Dim::dimension,0);
-    fields.resize(1,1);
-  }
-
-  SIMDarcy<Dim> darcy(*itg,fields);
-  darcy.setAdaptiveNorm(args.adNorm);
-  Solver solver(darcy);
-
-  utl::profiler->start("Model input");
-
-  if (!darcy.read(infile) || !solver.read(infile))
-    return 1;
-
-  utl::profiler->stop("Model input");
-
-  if (!darcy.preprocess())
-    return 2;
-
-  darcy.init();
-
-  if (darcy.opt.dumpHDF5(infile))
-    solver.handleDataOutput(darcy.opt.hdf5,darcy.getProcessAdm());
-
-  int res = solver.solveProblem(infile,"Solving Darcy problem");
-  if (!res && ASMmxBase::Type != ASMmxBase::DIV_COMPATIBLE)
-    darcy.printFinalNorms(TimeStep());
-
-  return res;
-}
-
-
-/*!
-  \brief Launch a simulator using a specified solver template.
-  \param infile The input file to parse
-  \param args Darcy arguments
-*/
-
-template<class Dim>
-int runSimulatorTransient(char* infile, const DarcyArgs& args)
 {
   const int torder = TimeIntegration::Order(args.timeMethod);
 
@@ -120,7 +80,8 @@ int runSimulatorTransient(char* infile, const DarcyArgs& args)
   }
 
   SIMDarcy<Dim> darcy(*itg,fields);
-  SIMSolver solver(darcy);
+  darcy.setAdaptiveNorm(args.adNorm);
+  Solver solver(darcy);
 
   utl::profiler->start("Model input");
 
@@ -146,13 +107,13 @@ int runSimulatorTransient(char* infile, const DarcyArgs& args)
 
 
 /*!
-  \brief Launch a simulator using a specified solver template.
+  \brief Launch a coupled simulator using a specified solver template.
   \param infile The input file to parse
   \param args Darcy arguments
 */
 
 template<class Dim>
-int runSimulatorScheduled(char* infile, const DarcyArgs& args)
+int runCoupledSimulator(char* infile, const DarcyArgs& args)
 {
   const int torder = TimeIntegration::Order(args.timeMethod);
 
@@ -221,11 +182,11 @@ int runSimulator1(char* infile, const DarcyArgs& args)
   if (args.adap)
     return runSimulator<Dim,SIMDarcyAdap>(infile,args);
   else if (args.scheduled)
-    return runSimulatorScheduled<Dim>(infile,args);
+    return runCoupledSimulator<Dim>(infile,args);
   else if (args.timeMethod != TimeIntegration::NONE)
-    return runSimulatorTransient<Dim>(infile,args);
+    return runSimulator<Dim,SIMSolver>(infile,args);
   else
-    return runSimulator<Dim, SIMSolverStat>(infile,args);
+    return runSimulator<Dim,SIMDarcyStat>(infile,args);
 }
 
 
@@ -253,6 +214,7 @@ int runSimulator1(char* infile, const DarcyArgs& args)
   \arg -hdf5 : Write primary and projected secondary solution to HDF5 file
   \arg -2D : Use two-parametric simulation driver
   \arg -adap : Use adaptive simulation driver with LR-splines discretization
+  \arg -compatible : Use a div-compatible mixed basis
 */
 
 int main (int argc, char** argv)
@@ -284,7 +246,7 @@ int main (int argc, char** argv)
               <<" <inputfile> [-dense|-spr|-superlu[<nt>]|-samg|-petsc]\n"
               <<"       [-lag|-spec|-LR] [-2D] [-nGauss <n>] [-hdf5]\n"
               <<"       [-vtf <format> [-nviz <nviz>] [-nu <nu>] [-nv <nv>]"
-              <<" [-nw <nw>]]\n       [-compatible]\n";
+              <<" [-nw <nw>]]\n       [-adap] [-compatible]\n";
     return 0;
   }
 
