@@ -1,4 +1,4 @@
-Square-divcomp.xinp -compatible
+Square-divcomp.xinp
 
 Input file: Square-divcomp.xinp
 Equation solver: 2
@@ -20,25 +20,24 @@ Parsing <geometry>
 	Refining P1 7 7
   Parsing <topologysets>
 Parsing <boundaryconditions>
-  Parsing <dirichlet>
-	Dirichlet code 1 (expression): x+y+y
   Parsing <neumann>
-	Neumann code 1000000 direction 0 (expression): PI\*sin(PI\*x)+2.4\*(1.0-y-y)
+	Neumann code 1000000 direction 0 (expression): -x-y-y
+  Parsing <dirichlet>
+	Dirichlet code 1 (expression): PI\*sin(PI\*x)\*(y+y-1.0)-2.4
 Parsing <darcy>
 		Permeability matrix:
 Row 1: 2 0.4
 Row 2: 1
   Parsing <source>
 	Source function: 3.0\*PI\*PI\*sin(PI\*x)\*sin(PI\*y) - 0.8\*PI\*PI\*cos(PI\*x)\*cos(PI\*y)
+  Parsing <anasol>
 	Variables: ax = PI\*cos(PI\*x)\*sin(PI\*y)+1.0; ay = PI\*sin(PI\*x)\*cos(PI\*y)+2.0;
-	Primary: sin(PI\*x)\*sin(PI\*y)+x+y+y
-	Secondary: -2.0\*ax-0.4\*ay|-0.4\*ax-ay
-	Analytical solution: expression
+	Primary: -2.0\*ax-0.4\*ay | -0.4\*ax-ay | sin(PI\*x)\*sin(PI\*y)+x+y+y
 Parsing input file succeeded.
 11. Darcy solver
 Resolving Dirichlet boundary conditions
-	Constraining P1 E1 in direction(s) 1 code = 1 basis = 3
-	Constraining P1 E2 in direction(s) 1 code = 1 basis = 3
+	Constraining P1 E3 in direction(s) 1 code = 1 basis = 2
+	Constraining P1 E4 in direction(s) 1 code = 1 basis = 2
  >>> SAM model summary <<<
 Number of elements    64
 Number of nodes       261
@@ -51,11 +50,11 @@ Number of unknowns    243
 Solving Darcy problem
 Processing integrand associated with code 0
 Assembling interior matrix terms for P1
-Assembling Neumann matrix terms for boundary 3 on P1
-Assembling Neumann matrix terms for boundary 4 on P1
+Assembling Neumann matrix terms for boundary 1 on P1
+Assembling Neumann matrix terms for boundary 2 on P1
 Done.
 Solving the equation system ...
-	Condition number: 2675.52
+	Condition number: 1199.78
  >>> Solution summary <<<
-L2-norm            : 125.856
-Max solution       : 380.885
+L2-norm            : 4.40152
+Max solution       : 9.17714

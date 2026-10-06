@@ -96,8 +96,8 @@ bool SIMDarcy<Dim>::parse (const tinyxml2::XMLElement* elem)
     else if (defaultMaterial.parse(child))
       gotMaterialData = true;
     else if (!strcasecmp(child->Value(),"anasol")) {
-      Dim::mySol = new AnaSol(child);
-      IFEM::cout <<"\tAnalytical solution: expression"<< std::endl;
+      IFEM::cout <<"  Parsing <anasol>"<< std::endl;
+      Dim::mySol = new AnaSol(child, !this->mixedProblem());
 
       // Define the analytical boundary traction field
       if (int code = 0; utl::getAttribute(child,"code",code))
@@ -109,10 +109,10 @@ bool SIMDarcy<Dim>::parse (const tinyxml2::XMLElement* elem)
         }
     }
     else if (!strcasecmp(child->Value(),"subiterations")) {
-      IFEM::cout <<"\tUsing sub-iterations:";
+      IFEM::cout <<"  Parsing <subiterations>";
       utl::getAttribute(child,"tol",cycleTol);
       utl::getAttribute(child,"max",maxCycle);
-      IFEM::cout <<" tol = "<< cycleTol <<" max = "<< maxCycle << std::endl;
+      IFEM::cout <<"\n\ttol = "<< cycleTol <<" max = "<< maxCycle << std::endl;
     }
     else if (!Dim::myProblem->parse(child))
       this->Dim::parse(child);

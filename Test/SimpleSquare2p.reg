@@ -4,7 +4,6 @@ Input file: SimpleSquare2p.xinp
 	Source function: 2\*(y-y\*y+x-x\*x)
 	Primary: x\*(x-1)\*y\*(y-1)
 	Secondary: -(2\*x-1)\*y\*(y-1)|-(2\*y-1)\*x\*(x-1)
-	Analytical solution: expression
 Number of elements    128
 Number of nodes       153
 Number of dofs        153

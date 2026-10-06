@@ -47,8 +47,20 @@ LocalIntegral* CompatibleDarcy::getLocalIntegral (const UintVec& nen,
   result->redim(qzqz, nsd == 3 ? nen[i++] : 0, 1, 3);
 
   result->redim(pp, nen[i], 1, -4);
+  if (mat && mat->getPermeability())
+  {
+    result->redimOffDiag(qxqy, 0);
+    result->redimOffDiag(qyqx, 0);
+  }
   result->redimOffDiag(qxp, -1);
   result->redimOffDiag(qyp, -1);
+  if (nsd == 3 && mat && mat->getPermeability())
+  {
+    result->redimOffDiag(qxqz, 0);
+    result->redimOffDiag(qyqz, 0);
+    result->redimOffDiag(qzqx, 0);
+    result->redimOffDiag(qzqy, 0);
+  }
   if (nsd == 3)
     result->redimOffDiag(qzp, -1);
 
@@ -120,23 +132,37 @@ bool CompatibleDarcy::evalIntMx (LocalIntegral& elmInt,
                                  const MxFiniteElement& fe,
                                  const Vec3& X) const
 {
-  static constexpr std::array<int,3> fluxMatIdx{ qxqx, qyqy, qzqz };
+  using IdxVec = std::array<int,3>;
+  using IdxMat = std::array<IdxVec,3>;
+
+  static constexpr IdxVec fluxDiagIdx{ qxqx, qyqy, qzqz };
+
+  static constexpr IdxMat fluxMatIdx{{
+      { qxqx, qxqy, qxqz },
+      { qyqx, qyqy, qyqz },
+      { qzqx, qzqy, qzqz }
+    }};
 
   using CompatibleOps = CompatibleOperators::Weak;
   using ScalarOps     = EqualOrderOperators::Weak;
 
   ElmMats& elMat = static_cast<ElmMats&>(elmInt);
 
-  Matrix Kmat;
+  Matrix Kinv;
   const double mu = mat->getViscosity();
   const Vec3 K = mat->getPermeability(X);
-  const bool hasKmat = mat->getPermeability(&Kmat);
+  const bool hasKmat = mat->getPermeability(&Kinv);
 
   if (!elMat.A.empty() && calcMats)
   {
-    for (size_t i = 1; i <= nsd; ++i)
-      ScalarOps::Mass(elMat.A[fluxMatIdx[i-1]], fe,
-                      mu/(hasKmat ? Kmat(i,i) : K(i)), i);
+    if (hasKmat)
+    {
+      // The flux mass term is (mu K^-1 q, v), coupling the flux components
+      if (Kinv.inverse() <= 0.0) return false;
+      CompatibleOps::MassCoeff(elMat.A, Kinv, fe, fluxMatIdx, mu);
+    }
+    else for (size_t i = 0; i < nsd; ++i)
+      ScalarOps::Mass(elMat.A[fluxDiagIdx[i]], fe, mu/K[i], i);
 
     CompatibleOps::Gradient(elMat.A, fe, { qxp, qyp, qzp });
   }

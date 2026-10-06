@@ -5,7 +5,7 @@ Including a tracer field.
 	Permeability: 1
 	Porosity: 1
 	Dispersivity: 1
-	Using sub-iterations: tol = 1e-10 max = 50
+	tol = 1e-10 max = 50
 Number of elements    64
 Number of nodes       100
 Number of dofs        200

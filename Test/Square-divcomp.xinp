@@ -16,15 +16,17 @@
   </geometry>
 
   <boundaryconditions>
-    <dirichlet set="Vertical" type="expression" basis="3" comp="1">
-      x+y+y
-    </dirichlet>
-    <neumann set="Horizontal" type="expression" direction="0">
-      PI*sin(PI*x)+2.4*(1.0-y-y)
+    <!-- Prescribed pressure enters weakly as the boundary term -(p,v.n) -->
+    <neumann set="Vertical" type="expression" direction="0">
+      -x-y-y
     </neumann>
+    <!-- Prescribed normal flux is imposed strongly on the q_y coefficients -->
+    <dirichlet set="Horizontal" type="expression" basis="2" comp="1">
+      PI*sin(PI*x)*(y+y-1.0)-2.4
+    </dirichlet>
   </boundaryconditions>
 
-  <darcy>
+  <darcy formulation="div-compatible">
     <permeability type="matrix">
       2.0 0.4
       0.4 1.0
@@ -37,8 +39,7 @@
         ax = PI*cos(PI*x)*sin(PI*y)+1.0;
         ay = PI*sin(PI*x)*cos(PI*y)+2.0
       </variables>
-      <primary>sin(PI*x)*sin(PI*y)+x+y+y</primary>
-      <secondary>-2.0*ax-0.4*ay|-0.4*ax-ay</secondary>
+      <primary>-2.0*ax-0.4*ay | -0.4*ax-ay | sin(PI*x)*sin(PI*y)+x+y+y</primary>
     </anasol>
   </darcy>
 

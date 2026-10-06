@@ -29,10 +29,10 @@ Row 1: 2 0.4
 Row 2: 1
   Parsing <source>
 	Source function: 3.0\*PI\*PI\*sin(PI\*x)\*sin(PI\*y) - 0.8\*PI\*PI\*cos(PI\*x)\*cos(PI\*y)
+  Parsing <anasol>
 	Variables: ax = PI\*cos(PI\*x)\*sin(PI\*y)+1.0; ay = PI\*sin(PI\*x)\*cos(PI\*y)+2.0;
 	Primary: sin(PI\*x)\*sin(PI\*y)+x+y+y
 	Secondary: -2.0\*ax-0.4\*ay|-0.4\*ax-ay
-	Analytical solution: expression
 Parsing input file succeeded.
 11. Darcy solver
 Resolving Dirichlet boundary conditions
