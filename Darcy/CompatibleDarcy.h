@@ -84,8 +84,8 @@ public:
   //! \brief Returns the name of a secondary field.
   std::string getField2Name(size_t i, const char* prefix) const override;
 
-  //! \brief No compatible flux-pressure norm integrand is available yet.
-  NormBase* getNormIntegrand(AnaSol*) const override { return nullptr; }
+  //! \brief Returns an integrand for compatible flux-pressure norms.
+  NormBase* getNormIntegrand(AnaSol* asol) const override;
 
 protected:
   //! \brief Extracts element solution vectors for current element.
@@ -95,6 +95,61 @@ protected:
 
 private:
   size_t scalarBasis; //!< Index of basis used for pressure
+};
+
+
+/*!
+  \brief Darcy norm integrand for a divergence-compatible mixed basis.
+  \details The Darcy flux components are evaluated from separate scalar bases,
+  while pressure is evaluated from the final basis.
+*/
+
+class CompatibleDarcyNorm : public NormBase
+{
+public:
+  //! \brief Enumeration of regular norm entries
+  enum NormEntries {
+    H1_Qh = DarcyNorm::NUM_NORM,
+    H1_Q,
+    H1_E_Qh,
+    NUM_NORM
+  };
+
+  //! \brief The constructor initializes the norm integrand.
+  explicit CompatibleDarcyNorm(CompatibleDarcy& p, AnaSol* a = nullptr);
+
+  using NormBase::evalIntMx;
+  //! \brief Evaluates the norm integrand at an interior point.
+  bool evalIntMx(LocalIntegral& elmInt, const MxFiniteElement& fe,
+                 const Vec3& X) const override;
+
+  using NormBase::evalBouMx;
+  //! \brief Evaluates the external energy at a boundary point.
+  bool evalBouMx(LocalIntegral& elmInt, const MxFiniteElement& fe,
+                 const Vec3& X, const Vec3& normal) const override;
+
+  //! \brief Returns whether this norm has explicit boundary contributions.
+  bool hasBoundaryTerms() const override { return true; }
+
+  //! \brief Returns the number of norm groups or size of a specified group.
+  //! \param[in] group The norm group to return the size of
+  //! (if zero, return the number of groups)
+  size_t getNoFields(int group) const override;
+
+  //! \brief Returns the name of a norm quantity.
+  //! \param[in] i The norm group (one-based index)
+  //! \param[in] j The norm number (one-based index)
+  //! \param[in] prefix Common prefix for all norm names
+  std::string getName(size_t i, size_t j, const char* prefix) const override;
+
+  //! \brief Returns whether a norm quantity stores element contributions.
+  //! \param[in] i The norm group (one-based index)
+  //! \param[in] j The norm number (one-based index)
+  bool hasElementContributions(size_t i, size_t j) const override;
+
+protected:
+  VecFunc*  flux;     //!< Analytical Darcy flux field
+  RealFunc* pressure; //!< Analytical pressure field
 };
 
 #endif

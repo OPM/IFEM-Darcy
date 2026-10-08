@@ -99,7 +99,7 @@ int runSimulator(char* infile, const DarcyArgs& args)
     solver.handleDataOutput(darcy.opt.hdf5,darcy.getProcessAdm());
 
   int res = solver.solveProblem(infile,"Solving Darcy problem");
-  if (!res && ASMmxBase::Type != ASMmxBase::DIV_COMPATIBLE)
+  if (!res)
     darcy.printFinalNorms(solver.getTimePrm());
 
   return res;

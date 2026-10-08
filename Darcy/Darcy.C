@@ -420,9 +420,6 @@ DarcyNorm::DarcyNorm (Darcy& p, VecFunc* a) : NormBase(p), anasol(a)
 }
 
 
-DarcyNorm::~DarcyNorm() = default;
-
-
 bool DarcyNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
                          const Vec3& X) const
 {
@@ -514,7 +511,7 @@ bool DarcyNorm::evalBou (LocalIntegral& elmInt, const FiniteElement& fe,
 
   // Integrate the external energy (h,p^h)
   ElmNorm& pnorm = static_cast<ElmNorm&>(elmInt);
-  pnorm[1] += h*p*fe.detJxW;
+  pnorm[EXT_ENERGY] += h*p*fe.detJxW;
   return true;
 }
 
@@ -544,16 +541,18 @@ bool DarcyNorm::finalizeElement (LocalIntegral& elmInt)
 
 size_t DarcyNorm::getNoFields (int group) const
 {
-  if (group < 1)
-    return this->NormBase::getNoFields();
-  else
-    return group == 1 ? 8 : 11;
+  if (group == 1)
+    return NUM_NORM;
+  else if (group > 1)
+    return NUM_REC;
+
+  return this->NormBase::getNoFields();
 }
 
 
 std::string DarcyNorm::getName (size_t i, size_t j, const char* prefix) const
 {
-  static const char* s[8] = {
+  static const char* s[NUM_NORM] = {
     "a(p^h,p^h)^0.5",
     "(h,p^h)^0.5",
     "a(c^h,c^h)^0.5",
@@ -564,7 +563,7 @@ std::string DarcyNorm::getName (size_t i, size_t j, const char* prefix) const
     "a(e,e)^0.5, e=(p,c)-(p,c)^h"
   };
 
-  static const char* r[11] = {
+  static const char* r[NUM_REC] = {
     "a(p^r,p^r)^0.5",
     "a(e,e)^0.5, e=p^r-p^h",
     "a(c^r,c^r)^0.5",

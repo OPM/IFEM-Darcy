@@ -179,7 +179,8 @@ public:
     H1_E_Ph,
     H1_C,
     H1_E_Ch,
-    TOTAL_NORM_E
+    TOTAL_NORM_E,
+    NUM_NORM
   };
 
   //! \brief Enumeration of recovery norm entries
@@ -194,15 +195,14 @@ public:
     TOTAL_E_REC,
     EFF_REC_Ph,
     EFF_REC_Ch,
-    EFF_REC_TOTAL
+    EFF_REC_TOTAL,
+    NUM_REC
   };
 
   //! \brief The only constructor initializes its data members.
   //! \param[in] p The Darcy problem to evaluate norms for
   //! \param[in] a The analytical darcy flux (optional)
   explicit DarcyNorm(Darcy& p, VecFunc* a = nullptr);
-  //! \brief Empty destructor.
-  virtual ~DarcyNorm();
 
   using NormBase::evalInt;
   //! \brief Evaluates the integrand at an interior point.
