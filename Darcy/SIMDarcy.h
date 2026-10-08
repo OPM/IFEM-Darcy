@@ -67,15 +67,13 @@ public:
   //! \brief Returns the name of this simulator (for use in the HDF5 export).
   std::string getName() const override { return "DarcyFlow"; }
 
-  //! \brief Sets solution vector used.
+  //! \brief Sets the solution vector to be used.
   //! \details To supply an external solution vector in adaptive simulations.
-  //! \param sol Pointer to vector to use.
   void setSol(const Vector* sol) { solVec = sol; }
-
-  //! \brief Return solution vector.
+  //! \brief Returns a const reference to the solution vector.
   const Vector& getSolution(int) const override { return *solVec; }
 
-  //! \brief Register fields for data export.
+  //! \brief Registers fields for data export.
   void registerFields(DataExporter& exporter);
 
   //! \brief Opens a new VTF-file and writes the model geometry to it.
@@ -89,11 +87,10 @@ public:
   //! \param nBlock Running VTF block counter
   bool saveStep(const TimeStep& tp, int& nBlock);
 
-  //! \brief Initialize simulator.
+  //! \brief Initializes the simulator.
   bool init();
-
-  //! \brief Initialize time-dependent simulator.
-  bool init(const TimeStep&) { return init(); }
+  //! \brief Initializes the simulator for time-dependent problems.
+  bool init(const TimeStep&) { return this->init(); }
 
   //! \brief Signals that current solution is kept in this time step.
   void keepStep(const TimeStep& tp);
@@ -101,10 +98,7 @@ public:
   //! \brief Computes the solution for the current time step.
   bool solveStep(const TimeStep& tp);
 
-  //! \brief Post-process solution.
-  void postSolve(const TimeStep&) {}
-
-  //! \brief Advance time stepping
+  //! \brief Advances the time stepping.
   bool advanceStep(TimeStep&);
 
   //! \brief Prints a summary of the calculated solution to std::cout.
@@ -149,7 +143,6 @@ public:
   }
 
   //! \brief Print final solution norms to terminal.
-  //! \param tp Time stepping parameters
   void printFinalNorms(const TimeStep& tp);
 
   //! \brief Print solution solution norms to terminal.
@@ -174,14 +167,12 @@ public:
     return this->savePoints(*solVec, time, iStep);
   }
 
-  //! \brief Set norm to adapt based on.
-  //! \param norm Norm to use
+  //! \brief Sets the norm to base the mesh adaptation on.
   void setAdaptiveNorm(DCY::AdaptationNorm norm) { adNorm = norm; }
-
-  //! \brief Returns norm to adapt based on.
+  //! \brief Returns the norm to base the mesh adaptation on.
   DCY::AdaptationNorm getAdaptiveNorm() const { return adNorm; }
 
-  //! \brief Returns the reference norm to base mesh adaptation upon.
+  //! \brief Returns the reference norm value to base mesh adaptation upon.
   //! \param[in] gNorm The calculated global norms
   //! \param[in] adaptor Which norm group to base adaptation on
   double getReferenceNorm(const Vectors& gNorm, size_t adaptor) const override;
@@ -195,10 +186,7 @@ public:
 
 protected:
   //! \brief Performs some pre-processing tasks on the FE model.
-  //! \details This method is reimplemented to resolve inhomogeneous boundary
-  //! condition fields in case they are derived from the analytical solution.
   bool preprocessA() override;
-
   //! \brief Performs some pre-processing tasks on the FE model.
   bool preprocessB() override;
 

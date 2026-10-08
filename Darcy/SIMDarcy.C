@@ -86,8 +86,8 @@ bool SIMDarcy<Dim>::parse (const tinyxml2::XMLElement* elem)
   DarcyMaterial defaultMaterial;
   if (mVec.empty()) mVec.reserve(1);
 
-  const tinyxml2::XMLElement* child = elem->FirstChildElement();
-  for (; child; child = child->NextSiblingElement())
+  for (const tinyxml2::XMLElement* child = elem->FirstChildElement();
+       child; child = child->NextSiblingElement())
     if (!strcasecmp(child->Value(),"materialdata")) {
       IFEM::cout <<"\tMaterial data with code "
                  << this->parseMaterialSet(child,mVec.size()) <<":\n";
@@ -228,23 +228,27 @@ bool SIMDarcy<Dim>::saveStep (const TimeStep& tp, int& nBlock)
   const int iType = tp.multiSteps() ? 0 : 1;
   const int iDump = iType == 0 ? tp.step/Dim::opt.saveInc : 1;
 
-  if (newSolution)
+  if (newSolution && !solVec->empty())
   {
     // Write solution fields
-    if (!this->writeGlvS(*solVec,iDump,nBlock,tp.time.t))
-      return false;
+    bool ok = this->writeGlvS(*solVec,iDump,nBlock,tp.time.t);
 
-    if (!solVec->empty() && !Dim::opt.pSolOnly)
+    // Write Darcy flux (velocity) vectors
+    if (this->mixedProblem())
+      ok &= this->writeGlvV(*solVec,"velocity",iDump,nBlock,110,Dim::nsd);
+    else if (!Dim::opt.pSolOnly)
     {
+      // Calculate Darcy flux vectors by projecting the secondary solution
       Matrix tmp;
       drc.set2ndFluxOnly(true);
-      bool ok = this->project(tmp,*solVec);
+      ok &= this->project(tmp,*solVec);
       drc.set2ndFluxOnly(false);
-      if (!ok) return false;
+      ok &= this->writeGlvV(tmp,"velocity",iDump,nBlock,110,Dim::nsd);
+    }
+    if (!ok) return false;
 
-      if (!this->writeGlvV(tmp,"velocity",iDump,nBlock,110,Dim::nsd))
-        return false;
-
+    if (!Dim::opt.pSolOnly)
+    {
       // Project the secondary solution onto the splines basis
       Vectors::iterator sit = proj.begin();
       for (const SIMoptions::ProjectionMap::value_type& pit : Dim::opt.project)
@@ -544,6 +548,11 @@ void SIMDarcy<Dim>::printNormGroup (const Vector& rNorm,
 }
 
 
+/*!
+  This method is overridden to resolve inhomogeneous boundary condition fields,
+  in case they are derived from the analytical solution.
+*/
+
 template<class Dim>
 bool SIMDarcy<Dim>::preprocessA ()
 {
@@ -551,37 +560,36 @@ bool SIMDarcy<Dim>::preprocessA ()
   if (!Dim::mySol) return true;
 
   // Define analytical boundary condition fields
-  PropertyVec::iterator p;
-  for (p = Dim::myProps.begin(); p != Dim::myProps.end(); ++p)
-    if (p->pcode == Property::DIRICHLET_ANASOL)
+  for (Property& prop : Dim::myProps)
+    if (prop.pcode == Property::DIRICHLET_ANASOL)
     {
       if (!Dim::mySol->getScalarSol())
-        p->pcode = Property::UNDEFINED;
-      else if (aCode[0] == abs(p->pindx))
-        p->pcode = Property::DIRICHLET_INHOM;
+        prop.pcode = Property::UNDEFINED;
+      else if (aCode[0] == abs(prop.pindx))
+        prop.pcode = Property::DIRICHLET_INHOM;
       else if (aCode[0] == 0)
       {
-        aCode[0] = abs(p->pindx);
+        aCode[0] = abs(prop.pindx);
         Dim::myScalars[aCode[0]] = Dim::mySol->getScalarSol();
-        p->pcode = Property::DIRICHLET_INHOM;
+        prop.pcode = Property::DIRICHLET_INHOM;
       }
       else
-        p->pcode = Property::UNDEFINED;
+        prop.pcode = Property::UNDEFINED;
     }
-    else if (p->pcode == Property::NEUMANN_ANASOL)
+    else if (prop.pcode == Property::NEUMANN_ANASOL)
     {
       if (!Dim::mySol->getScalarSecSol())
-        p->pcode = Property::UNDEFINED;
-      else if (aCode[1] == p->pindx)
-        p->pcode = Property::NEUMANN;
+        prop.pcode = Property::UNDEFINED;
+      else if (aCode[1] == prop.pindx)
+        prop.pcode = Property::NEUMANN;
       else if (aCode[1] == 0)
       {
-        aCode[1] = p->pindx;
+        aCode[1] = prop.pindx;
         Dim::myVectors[aCode[1]] = Dim::mySol->getScalarSecSol();
-        p->pcode = Property::NEUMANN;
+        prop.pcode = Property::NEUMANN;
       }
       else
-        p->pcode = Property::UNDEFINED;
+        prop.pcode = Property::UNDEFINED;
     }
 
   return true;
