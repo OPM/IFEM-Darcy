@@ -32,7 +32,8 @@ Row 2: 1
 	Source function: 3.0\*PI\*PI\*sin(PI\*x)\*sin(PI\*y) - 0.8\*PI\*PI\*cos(PI\*x)\*cos(PI\*y)
   Parsing <anasol>
 	Variables: ax = PI\*cos(PI\*x)\*sin(PI\*y)+1.0; ay = PI\*sin(PI\*x)\*cos(PI\*y)+2.0;
-	Primary: -2.0\*ax-0.4\*ay | -0.4\*ax-ay | sin(PI\*x)\*sin(PI\*y)+x+y+y
+	Primary: -2.0\*ax-0.4\*ay | -0.4\*ax-ay
+	Scalar Primary: sin(PI\*x)\*sin(PI\*y)+x+y+y
 Parsing input file succeeded.
 11. Darcy solver
 Resolving Dirichlet boundary conditions
@@ -55,6 +56,17 @@ Assembling Neumann matrix terms for boundary 2 on P1
 Done.
 Solving the equation system ...
 	Condition number: 1199.78
- >>> Solution summary <<<
-L2-norm            : 4.40152
-Max solution       : 9.17714
+>>> Primary solution summary <<<
+  L2-norm (q,p)  : 5.3133 1.98728
+  Max X-velocity : 9.17714
+  Max Y-velocity : 5.55169
+  Max pressure   : 3.00014
+>>> Norm summary <<<
+  H1 norm |q^h| = a(q^h,q^h)^0.5     : 3.87322
+  L2 norm |p^h| = (p^h,p^h)^0.5      : 2.03526
+  H1 norm |q| = a(q,q)^0.5           : 3.87327
+  H1 norm |e| = a(e,e)^0.5, e=q-q^h  : 0.0259781
+  L2 norm |p| = (p,p)^0.5            : 2.03286
+  L2 norm |e| = (e,e)^0.5, e=p-p^h   : 0.00526242
+  Exact relative error (in % of q)   : 0.670703
+  Exact relative error (in % of p)   : 0.258868

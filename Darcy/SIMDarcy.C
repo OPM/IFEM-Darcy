@@ -12,7 +12,7 @@
 //==============================================================================
 
 #include "SIMDarcy.h"
-#include "Darcy.h"
+#include "CompatibleDarcy.h"
 
 #include "AnaSol.h"
 #include "DataExporter.h"
@@ -389,7 +389,38 @@ void SIMDarcy<Dim>::printSolutionSummary (const Vector& solution,
                                           std::streamsize outPrec)
 {
   if (this->mixedProblem())
-    this->SIMbase::printSolutionSummary(solution,printSol,"solution",outPrec);
+  {
+    constexpr size_t nsd = Dim::dimension;
+
+    // Compute and print solution norms for each component
+    size_t iMax[Dim::dimension+1];
+    double dMax[Dim::dimension+1];
+    char D = 'P';
+    double dNorm1 = this->solutionNorms(solution,dMax,iMax,1,'D');
+    double dNorm2 = this->solutionNorms(solution,dMax+1,iMax+1,1,D);
+    double dNormq = hypot(dNorm1,dNorm2);
+    if (nsd == 3)
+      dNormq = hypot(dNormq,this->solutionNorms(solution,dMax+2,iMax+2,1,++D));
+    double dNormp = this->solutionNorms(solution,dMax+nsd,iMax+nsd,1,++D);
+
+    int oldPrec = Dim::adm.cout.precision();
+    if (outPrec > 0)
+      Dim::adm.cout << std::setprecision(outPrec);
+
+    Dim::adm.cout <<"\n>>> Primary solution summary <<<\n  L2-norm (q,p)  : "
+                  << utl::trunc(dNormq) <<" "<< utl::trunc(dNormp);
+    for (size_t d = 0; d < nsd; d++)
+      if (utl::trunc(dMax[d]) != 0.0)
+        Dim::adm.cout <<"\n  Max "<< char('X'+d) <<"-velocity : "
+                      << dMax[d] <<" node "<< iMax[d];
+    if (utl::trunc(dMax[nsd]) != 0.0)
+      Dim::adm.cout <<"\n  Max pressure   : "
+                    << dMax[nsd] <<" node "<< iMax[nsd];
+    Dim::adm.cout << std::endl;
+
+    if (outPrec > 0)
+      Dim::adm.cout << std::setprecision(oldPrec);
+  }
   else if (this->getNoFields() == 2)
   {
     // Compute and print solution norms
@@ -432,17 +463,97 @@ bool SIMDarcy<Dim>::solveSystem (Vector& solution, int printSol,
 }
 
 
-template<class Dim>
-void SIMDarcy<Dim>::printSolNorms (const Vector& gNorm, size_t w) const
+namespace
 {
-  IFEM::cout << "\n  H1 norm |p^h| = a(p^h,p^h)^0.5"
-             << utl::adjustRight(w-32,"") << gNorm[DarcyNorm::H1_Ph];
-  if (utl::trunc(gNorm[DarcyNorm::EXT_ENERGY]) != 0.0)
-    IFEM::cout << "\n  External energy |(h,p^h)|^0.5"
-                << utl::adjustRight(w-31,"") << gNorm[DarcyNorm::EXT_ENERGY];
-  if (this->getNoFields() > 1)
-    IFEM::cout << "\n  H1 norm |c^h| = a(c^h,c^h)^0.5"
-               << utl::adjustRight(w-32,"") << gNorm[DarcyNorm::H1_Ch];
+  //! \brief Prints some solution norms to log stream.
+  void printSolNorms (const Vector& gNorm, bool compatible, size_t w)
+  {
+    if (compatible)
+      if (double gn = gNorm[CompatibleDarcyNorm::H1_Qh]; utl::trunc(gn) != 0.0)
+        IFEM::cout <<"\n  H1 norm |q^h| = a(q^h,q^h)^0.5"
+                   << utl::adjustRight(w-32,"") << gn;
+    if (double gn = gNorm[DarcyNorm::H1_Ph]; utl::trunc(gn) != 0.0)
+      IFEM::cout << (compatible ?
+                     "\n  L2 norm |p^h| = (p^h,p^h)^0.5 " :
+                     "\n  H1 norm |p^h| = a(p^h,p^h)^0.5")
+                 << utl::adjustRight(w-32,"") << gn;
+    if (double gn = gNorm[DarcyNorm::EXT_ENERGY]; utl::trunc(gn) != 0.0)
+      IFEM::cout <<"\n  External energy |(h,p^h)|^0.5"
+                 << utl::adjustRight(w-31,"") << gn;
+    if (double gn = gNorm[DarcyNorm::H1_Ch]; utl::trunc(gn) != 0.0)
+      IFEM::cout <<"\n  H1 norm |c^h| = a(c^h,c^h)^0.5"
+                 << utl::adjustRight(w-32,"") << gn;
+  }
+
+  //! \brief Prints some norms related to the exact solution to log stream.
+  void printExactNorms (const Vector& gNorm, bool compatible, size_t w)
+  {
+    const double q   = compatible ? gNorm[CompatibleDarcyNorm::H1_Q] : 0.0;
+    const double eqh = compatible ? gNorm[CompatibleDarcyNorm::H1_E_Qh] : 0.0;
+    const double p   = gNorm[DarcyNorm::H1_P];
+    const double eph = gNorm[DarcyNorm::H1_E_Ph];
+    const double c   = gNorm[DarcyNorm::H1_C];
+    const double ech = gNorm[DarcyNorm::H1_E_Ch];
+
+    if (compatible && utl::trunc(q) != 0.0)
+      IFEM::cout <<"\n  H1 norm |q| = a(q,q)^0.5"
+                 << utl::adjustRight(w-26,"") << q;
+    if (compatible && utl::trunc(eqh) != 0.0)
+      IFEM::cout <<"\n  H1 norm |e| = a(e,e)^0.5, e=q-q^h"
+                 << utl::adjustRight(w-35,"") << eqh;
+    if (utl::trunc(p) != 0.0)
+      IFEM::cout << (compatible ?
+                     "\n  L2 norm |p| = (p,p)^0.5 " :
+                     "\n  H1 norm |p| = a(p,p)^0.5")
+                 << utl::adjustRight(w-26,"") << p;
+    if (utl::trunc(eph) != 0.0)
+      IFEM::cout << (compatible ?
+                     "\n  L2 norm |e| = (e,e)^0.5, e=p-p^h " :
+                     "\n  H1 norm |e| = a(e,e)^0.5, e=p-p^h")
+                 << utl::adjustRight(w-35,"") << eph;
+    if (utl::trunc(c) != 0.0)
+      IFEM::cout <<"\n  H1 norm |c| = a(c,c)^0.5"
+                 << utl::adjustRight(w-26,"") << c;
+    if (utl::trunc(ech) != 0.0)
+      IFEM::cout <<"\n  H1 norm |e| = a(e,e)^0.5, e=c-c^h"
+                 << utl::adjustRight(w-35,"") << ech;
+    if (compatible && fabs(q) > 1.0e-16)
+      IFEM::cout <<"\n  Exact relative error (in % of q)"
+                 << utl::adjustRight(w-34,"") << 100.0*eqh / q;
+    if (double pc = hypot(p,c); pc > 1.0e-16)
+      IFEM::cout <<"\n  Exact relative error ("<< (compatible ? "in % of p":"%")
+                 <<")"<< utl::adjustRight(compatible ? w-34 : w-26, "")
+                 << 100.0*hypot(eph,ech) / pc;
+  }
+
+  //! \brief Prints a norm group to the log stream.
+  void printNormGroup (const Vector& rNorm, const Vector& fNorm,
+                       const std::string& name, bool noAnaSol, size_t w)
+  {
+    IFEM::cout <<"\nError estimates based on >>> "<< name <<" <<<";
+    if (double rn = rNorm[DarcyNorm::H1_Pr_Ph]; utl::trunc(rn) != 0.0)
+      IFEM::cout <<"\n  H1 norm |p^r-p^h|"<< utl::adjustRight(w-19,"") << rn;
+    if (double rn = rNorm[DarcyNorm::H1_Cr_Ch]; utl::trunc(rn) != 0.0)
+      IFEM::cout <<"\n  H1 norm |c^r-c^h|"<< utl::adjustRight(w-19,"") << rn;
+
+    if (noAnaSol)
+      return;
+
+    if (double rn = rNorm[DarcyNorm::H1_E_Pr]; utl::trunc(rn) != 0.0)
+      IFEM::cout <<"\n  H1 norm |p^r-p|"<< utl::adjustRight(w-17,"") << rn;
+    if (double rn = rNorm[DarcyNorm::H1_E_Cr]; utl::trunc(rn) != 0.0)
+      IFEM::cout <<"\n  H1 norm |c^r-c|"<< utl::adjustRight(w-17,"") << rn;
+
+    if (double fn = fNorm[DarcyNorm::H1_E_Ph]; fabs(fn) > 1.0e-16)
+      IFEM::cout <<"\n  Effectivity index eta^p"<< utl::adjustRight(w-25,"")
+                 << rNorm[DarcyNorm::H1_Pr_Ph] / fn;
+    if (double fn = fNorm[DarcyNorm::H1_E_Ch]; fabs(fn) > 1.0e-16)
+      IFEM::cout <<"\n  Effectivity index eta^c"<< utl::adjustRight(w-25,"")
+                 << rNorm[DarcyNorm::H1_Cr_Ch] / fn;
+    if (double fn = fNorm[DarcyNorm::TOTAL_NORM_E]; fabs(fn) > 1.0e-16)
+      IFEM::cout <<"\n  Effectivity index eta^tot"<< utl::adjustRight(w-27,"")
+                 << rNorm[DarcyNorm::TOTAL_NORM_REC] / fn;
+  }
 }
 
 
@@ -456,95 +567,32 @@ void SIMDarcy<Dim>::printFinalNorms (const TimeStep& tp)
   if (!this->setMode(SIM::RECOVERY))
     return;
 
-  // Evaluate solution norms
+  // Evaluate solution norms and print to terminal
   Vectors gNorm;
   this->setQuadratureRule(Dim::opt.nGauss[1]);
-  if (!this->solutionNorms(tp.time,{solution.front()},proj,gNorm))
-    return;
-
-  // Print global norm summary to console
-  this->printNorms(gNorm, 36);
+  if (this->solutionNorms(tp.time,{solution.front()},proj,gNorm))
+    this->printNorms(gNorm,36);
 }
 
 
 template<class Dim>
 void SIMDarcy<Dim>::printNorms (const Vectors& gNorm, size_t w) const
 {
-  if (gNorm.empty()) return;
+  if (gNorm.empty())
+    return;
 
-  IFEM::cout << "\n>>> Norm summary <<<";
-  this->printSolNorms(gNorm.front(),w);
+  IFEM::cout <<"\n>>> Norm summary <<<";
+  printSolNorms(gNorm.front(),this->mixedProblem(),w);
 
   if (Dim::mySol)
-    this->printExactNorms(gNorm.front(),w);
+    printExactNorms(gNorm.front(),this->mixedProblem(),w);
 
   Vectors::const_iterator git = gNorm.begin();
   for (const SIMoptions::ProjectionMap::value_type& pit : Dim::opt.project)
     if (++git != gNorm.end())
-      this->printNormGroup(*git,gNorm.front(),pit.second);
+      printNormGroup(*git, gNorm.front(), pit.second, !Dim::mySol, w);
 
   IFEM::cout << std::endl;
-}
-
-template<class Dim>
-void SIMDarcy<Dim>::printExactNorms (const Vector& gNorm, size_t w) const
-{
-  if (!Dim::mySol)
-    return;
-
-  IFEM::cout << "\n  H1 norm |p| = a(p,p)^0.5"
-             << utl::adjustRight(w-26,"") << gNorm[DarcyNorm::H1_P];
-  IFEM::cout << "\n  H1 norm |e| = a(e,e)^0.5, e=p-p^h"
-             << utl::adjustRight(w-35,"") << gNorm[DarcyNorm::H1_E_Ph];
-  if (this->getNoFields() > 1) {
-    IFEM::cout << "\n  H1 norm |c| = a(c,c)^0.5"
-               << utl::adjustRight(w-26,"") << gNorm[DarcyNorm::H1_C];
-    IFEM::cout << "\n  H1 norm |e| = a(e,e)^0.5, e=c-c^h"
-               << utl::adjustRight(w-35,"") << gNorm[DarcyNorm::H1_E_Ch];
-    IFEM::cout << "\n  Exact relative error (%)"
-               << utl::adjustRight(w-26,"") << hypot(gNorm[DarcyNorm::H1_E_Ph],gNorm[DarcyNorm::H1_E_Ch])*100.0 /
-                                               hypot(gNorm[DarcyNorm::H1_P],gNorm[DarcyNorm::H1_C]);
-  } else
-    IFEM::cout << "\n  Exact relative error (%)"
-               << utl::adjustRight(w-26,"") << gNorm[DarcyNorm::H1_E_Ph]*100.0 /
-                                               gNorm[DarcyNorm::H1_P];
-}
-
-
-template<class Dim>
-void SIMDarcy<Dim>::printNormGroup (const Vector& rNorm,
-                                    const Vector& fNorm,
-                                    const std::string& name) const
-{
-  IFEM::cout << "\nError estimates based on >>> " << name << " <<<";
-  size_t w = 36;
-  if (name == "Pure residuals")
-    ; // TODO
-  else {
-    IFEM::cout << "\n  H1 norm |p^r-p^h|"
-               << utl::adjustRight(w-19,"") << rNorm[DarcyNorm::H1_Pr_Ph];
-    if (this->getNoFields() > 1)
-      IFEM::cout << "\n  H1 norm |c^r-c^h|"
-                 << utl::adjustRight(w-19,"") << rNorm[DarcyNorm::H1_Cr_Ch];
-    if (Dim::mySol) {
-      IFEM::cout << "\n  H1 norm |p^r-p|"
-                 << utl::adjustRight(w-17,"") << rNorm[DarcyNorm::H1_E_Pr];
-      if (this->getNoFields() > 1)
-        IFEM::cout << "\n  H1 norm |c^r-c|"
-                   << utl::adjustRight(w-17,"") << rNorm[DarcyNorm::H1_E_Cr];
-
-      IFEM::cout << "\n  Effectivity index eta^p"
-                 << utl::adjustRight(w-25,"")
-                 << rNorm[DarcyNorm::H1_Pr_Ph] / fNorm[DarcyNorm::H1_E_Ph];
-      if (this->getNoFields() > 1)
-        IFEM::cout << "\n  Effectivity index eta^c"
-                   << utl::adjustRight(w-25,"")
-                   << rNorm[DarcyNorm::H1_Cr_Ch] / fNorm[DarcyNorm::H1_E_Ch]
-                   << "\n  Effectivity index eta^tot"
-                   << utl::adjustRight(w-27,"")
-                   << rNorm[DarcyNorm::TOTAL_NORM_REC] / fNorm[DarcyNorm::TOTAL_NORM_E];
-    }
-  }
 }
 
 

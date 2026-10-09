@@ -145,18 +145,8 @@ public:
   //! \brief Print final solution norms to terminal.
   void printFinalNorms(const TimeStep& tp);
 
-  //! \brief Print solution solution norms to terminal.
-  void printSolNorms(const Vector& gNorm, size_t w) const;
-
-  //! \brief Print norms to screen during adaptive simulations.
-  void printExactNorms(const Vector& gNorm, size_t w = 36) const;
-
   //! \brief Print norms to screen during adaptive simulations.
   void printNorms(const Vectors& gNorm, size_t w = 36) const override;
-
-  //! \brief Prints a norm group to the log stream.
-  void printNormGroup(const Vector& rNorm, const Vector& fNorm,
-                      const std::string& name) const override;
 
   using Dim::savePoints;
   //! \brief Saves point results to output file for a given time step.
