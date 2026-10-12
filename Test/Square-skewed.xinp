@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
+<simulation>
+
+  <geometry dim="2">
+    <patchfile>SquareP2-8x8-distorted-25pct.g2</patchfile>
+    <topologysets>
+      <set name="Vertical" type="edge">
+        <item patch="1">1 2</item>
+      </set>
+      <set name="Horizontal" type="edge">
+        <item patch="1">3 4</item>
+      </set>
+    </topologysets>
+  </geometry>
+
+  <boundaryconditions>
+    <!-- Prescribed pressure enters weakly as the boundary term -(p,v.n) -->
+    <neumann set="Vertical" type="expression" direction="0">
+      -x-y-y
+    </neumann>
+    <!-- Prescribed normal flux is imposed strongly on the q_y coefficients -->
+    <dirichlet set="Horizontal" type="expression" basis="2" comp="1">
+      PI*sin(PI*x)*(y+y-1.0)-2.4
+    </dirichlet>
+  </boundaryconditions>
+
+  <darcy formulation="div-compatible">
+    <permeability type="matrix">
+      2.0 0.4
+      0.4 1.0
+    </permeability>
+    <source type="expression">
+      3.0*PI*PI*sin(PI*x)*sin(PI*y) - 0.8*PI*PI*cos(PI*x)*cos(PI*y)
+    </source>
+    <anasol type="expression">
+      <variables>
+        ax = PI*cos(PI*x)*sin(PI*y)+1.0;
+        ay = PI*sin(PI*x)*cos(PI*y)+2.0
+      </variables>
+      <primary>-2.0*ax-0.4*ay | -0.4*ax-ay</primary>
+      <scalarprimary>sin(PI*x)*sin(PI*y)+x+y+y</scalarprimary>
+    </anasol>
+  </darcy>
+
+</simulation>

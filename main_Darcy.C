@@ -65,7 +65,7 @@ int runSimulator(char* infile, const DarcyArgs& args)
   std::vector<unsigned char> fields;
   if (ASMmxBase::Type == ASMmxBase::DIV_COMPATIBLE)
   {
-    itg = std::make_unique<CompatibleDarcy>(Dim::dimension,torder);
+    itg = std::make_unique<CompatibleDarcy>(Dim::dimension,torder,args.usePiola);
     fields.resize(Dim::dimension+1,1);
   }
   else if (args.tracer)
@@ -162,8 +162,22 @@ int runCoupledSimulator(char* infile, const DarcyArgs& args)
 template<class Dim>
 int runSimulator1(char* infile, const DarcyArgs& args)
 {
+  if (args.usePiola && ASMmxBase::Type != ASMmxBase::DIV_COMPATIBLE)
+  {
+    std::cerr <<" *** Piola mapping requires the div-compatible formulation."
+              << std::endl;
+    return 1;
+  }
+
   if (ASMmxBase::Type == ASMmxBase::DIV_COMPATIBLE)
   {
+    if (args.usePiola && Dim::dimension != 2)
+    {
+      std::cerr <<" *** Piola mapping is currently supported in 2D only."
+                << std::endl;
+      return 1;
+    }
+
     if (args.scheduled || args.adap || args.tracer)
     {
       std::cerr <<" *** The div-compatible formulation does not support"
@@ -215,6 +229,7 @@ int runSimulator1(char* infile, const DarcyArgs& args)
   \arg -2D : Use two-parametric simulation driver
   \arg -adap : Use adaptive simulation driver with LR-splines discretization
   \arg -compatible : Use a div-compatible mixed basis
+  \arg -piola : Apply Piola mapping to the div-compatible flux basis
 */
 
 int main (int argc, char** argv)
@@ -246,7 +261,7 @@ int main (int argc, char** argv)
               <<" <inputfile> [-dense|-spr|-superlu[<nt>]|-samg|-petsc]\n"
               <<"       [-lag|-spec|-LR] [-2D] [-nGauss <n>] [-hdf5]\n"
               <<"       [-vtf <format> [-nviz <nviz>] [-nu <nu>] [-nv <nv>]"
-              <<" [-nw <nw>]]\n       [-adap] [-compatible]\n";
+              <<" [-nw <nw>]]\n       [-adap] [-compatible] [-piola]\n";
     return 0;
   }
 
@@ -256,7 +271,8 @@ int main (int argc, char** argv)
   IFEM::cout <<"\nInput file: "<< infile;
   IFEM::getOptions().print(IFEM::cout);
   if (ASMmxBase::Type == ASMmxBase::DIV_COMPATIBLE)
-    IFEM::cout <<"\nUsing a divergence-compatible Darcy formulation.";
+    IFEM::cout <<"\nUsing a divergence-compatible Darcy formulation"
+               << (args.usePiola ? " with Piola mapping." : ".");
   else if (args.tracer || args.scheduled)
     IFEM::cout <<"\nIncluding a tracer field.";
   if (args.timeMethod == TimeIntegration::BE)

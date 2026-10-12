@@ -30,15 +30,16 @@ namespace tinyxml2 { class XMLElement; }
 class DarcyArgs : public SIMargsBase
 {
 public:
-  TimeIntegration::Method timeMethod = TimeIntegration::NONE; //!< Time integration method
+  TimeIntegration::Method timeMethod; //!< Time integration method to use
   bool tracer = false; //!< Include a tracer field
-  bool scheduled = false; //!< If \e true, update pressure on a schedule, separate ad step
-  bool useAL = false; //!< If \e true, use the Augmented Lagrange approach
-  unsigned char mixed = 0; //!< If > 0, use a mixed formulation (correction)
-  DCY::AdaptationNorm adNorm = DCY::NO_ADAP; //!< Norm to adapt based on
+  bool scheduled = false; //!< Update pressure on a schedule, separate adv. step
+  bool usePiola = false; //!< Apply Piola mapping to a div-compatible flux
+  bool useAL = false; //!< Use the Augmented Lagrange approach
+  unsigned char mixed = 0; //!< Use a mixed formulation if &gt; 0
+  DCY::AdaptationNorm adNorm = DCY::NO_ADAP; //!< Norm for mesh adaptation
 
   //! \brief Default constructor.
-  DarcyArgs() : SIMargsBase("darcy") {}
+  DarcyArgs() : SIMargsBase("darcy") { timeMethod = TimeIntegration::NONE; }
 
   //! \brief Parses a command-line argument.
   bool parseArg(const char* argv) override;

@@ -119,6 +119,8 @@ ifem_add_regression_test(
     SimpleSquare2p.reg
     Square-Kmat.reg
     Square-divcomp.reg
+    Square-piola.reg
+    Square-skewed.reg
     Tracer.reg
     Tracer-be.reg
     Tracer-bdf2.reg

@@ -27,7 +27,9 @@ bool DarcyArgs::parseArg (const char* argv)
   else if (strcasecmp(argv, "-tracer") == 0)
     tracer = true;
   else if (strcasecmp(argv, "-compatible") == 0)
-    ASMmxBase::Type = ASMmxBase::DIV_COMPATIBLE;
+    mixed = ASMmxBase::Type = ASMmxBase::DIV_COMPATIBLE;
+  else if (strcasecmp(argv, "-piola") == 0)
+    usePiola = true;
   else if (strcmp(argv, "-mixed1") == 0)
     mixed = 1;
   else if (strcmp(argv, "-mixed") == 0)
@@ -79,17 +81,15 @@ bool DarcyArgs::parseArgComplex (int argc, char** argv, int& i)
 bool DarcyArgs::parse (const tinyxml2::XMLElement* elem)
 {
   if (!strcasecmp(elem->Value(),"timestepping")) {
-    std::string type;
-    if (utl::getAttribute(elem,"type",type))
+    if (std::string type; utl::getAttribute(elem,"type",type))
       timeMethod = TimeIntegration::get(type);
   }
   else if (!strcasecmp(elem->Value(),"darcy")) {
     utl::getAttribute(elem,"tracer",tracer);
-    ASMmxBase::Type = ASMmxBase::NONE;
-    std::string formulation;
-    utl::getAttribute(elem,"formulation",formulation);
-    if (formulation == "compatible" || formulation == "div-compatible")
-      ASMmxBase::Type = ASMmxBase::DIV_COMPATIBLE;
+    utl::getAttribute(elem,"piola",usePiola);
+    if (std::string form; utl::getAttribute(elem,"formulation",form))
+      if (form == "compatible" || form == "div-compatible")
+        mixed = ASMmxBase::Type = ASMmxBase::DIV_COMPATIBLE;
     if (const char* ad = elem->Attribute("adap"); ad) {
       if (strcasecmp(ad,"pressure") == 0)
         adNorm = DCY::PRESSURE_H1;

@@ -43,7 +43,11 @@ class CompatibleDarcy : public Darcy
 
 public:
   //! \brief The constructor initializes the integrand.
-  explicit CompatibleDarcy(unsigned short int n, int torder = 0);
+  explicit CompatibleDarcy(unsigned short int n, int torder = 0,
+                           bool piola = false);
+
+  //! \brief Returns the integrand flags.
+  int getIntegrandType() const override;
 
   using Darcy::getLocalIntegral;
   //! \brief Returns a mixed local integral container.
@@ -87,6 +91,10 @@ public:
   //! \brief Returns an integrand for compatible flux-pressure norms.
   NormBase* getNormIntegrand(AnaSol* asol) const override;
 
+  //! \brief Evaluates the physical Darcy flux at an integration point.
+  RealArray darcyFlux(const MxFiniteElement& fe, const Vectors& eV,
+                      size_t level = 0) const;
+
 protected:
   //! \brief Extracts element solution vectors for current element.
   bool getElementSol(const IntVec& MNPC,
@@ -95,6 +103,7 @@ protected:
 
 private:
   size_t scalarBasis; //!< Index of basis used for pressure
+  bool   usePiola;    //!< Whether or not to apply Piola mapping to the flux
 };
 
 
@@ -130,6 +139,9 @@ public:
 
   //! \brief Returns whether this norm has explicit boundary contributions.
   bool hasBoundaryTerms() const override { return true; }
+
+  //! \brief Returns the integrand flags.
+  int getIntegrandType() const override;
 
   //! \brief Returns the number of norm groups or size of a specified group.
   //! \param[in] group The norm group to return the size of

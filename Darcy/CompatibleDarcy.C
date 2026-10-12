@@ -22,17 +22,25 @@
 #include "Fields.h"
 #include "FiniteElement.h"
 #include "Function.h"
+#include "PiolaOperators.h"
 #include "TimeDomain.h"
 #include "Utilities.h"
 #include "Vec3Oper.h"
 
 
-CompatibleDarcy::CompatibleDarcy (unsigned short int n, int torder)
+CompatibleDarcy::CompatibleDarcy (unsigned short int n, int torder, bool piola)
   : Darcy(n,torder)
 {
   npv = n+1;
   Darcy::pp = pp;
   scalarBasis = n+1;
+  usePiola = piola;
+}
+
+
+int CompatibleDarcy::getIntegrandType () const
+{
+  return usePiola ? Integrand::PIOLA_MAPPING : Integrand::STANDARD;
 }
 
 
@@ -43,6 +51,8 @@ LocalIntegral* CompatibleDarcy::getLocalIntegral (const UintVec& nen,
   const size_t nBasis = 4;
   BlockElmMats* result = new BlockElmMats(nBlock,nBasis);
 
+  const bool hasKmat = mat && mat->getPermeability();
+
   size_t i = 0;
   result->resize(NMAT, NVEC);
   result->redim(qxqx, nen[i++], 1, 1);
@@ -50,22 +60,24 @@ LocalIntegral* CompatibleDarcy::getLocalIntegral (const UintVec& nen,
   result->redim(qzqz, nsd == 3 ? nen[i++] : 0, 1, 3);
 
   result->redim(pp, nen[i], 1, -4);
-  if (mat && mat->getPermeability())
+  if (usePiola || hasKmat)
   {
     result->redimOffDiag(qxqy, 0);
     result->redimOffDiag(qyqx, 0);
   }
   result->redimOffDiag(qxp, -1);
   result->redimOffDiag(qyp, -1);
-  if (nsd == 3 && mat && mat->getPermeability())
-  {
-    result->redimOffDiag(qxqz, 0);
-    result->redimOffDiag(qyqz, 0);
-    result->redimOffDiag(qzqx, 0);
-    result->redimOffDiag(qzqy, 0);
-  }
   if (nsd == 3)
+  {
+    if (usePiola || hasKmat)
+    {
+      result->redimOffDiag(qxqz, 0);
+      result->redimOffDiag(qyqz, 0);
+      result->redimOffDiag(qzqx, 0);
+      result->redimOffDiag(qzqy, 0);
+    }
     result->redimOffDiag(qzp, -1);
+  }
 
   result->finalize();
   result->withLHS = true;
@@ -147,27 +159,41 @@ bool CompatibleDarcy::evalIntMx (LocalIntegral& elmInt,
     }};
 
   using CompatibleOps = CompatibleOperators::Weak;
+  using PiolaOps      = PiolaOperators::Weak;
   using ScalarOps     = EqualOrderOperators::Weak;
 
   ElmMats& elMat = static_cast<ElmMats&>(elmInt);
 
-  Matrix Kinv;
-  const double mu = mat->getViscosity();
-  const Vec3 K = mat->getPermeability(X);
-  const bool hasKmat = mat->getPermeability(&Kinv);
-
   if (!elMat.A.empty() && calcMats)
   {
-    if (hasKmat)
+    Matrix Kinv;
+    if (usePiola)
+    {
+      if (!this->getInvPermeability(X,Kinv))
+        return false;
+      if (!PiolaOps::MassCoeff(elMat.A, Kinv, fe, fluxMatIdx))
+        return false;
+    }
+    else if (mat->getPermeability(&Kinv))
     {
       // The flux mass term is (mu K^-1 q, v), coupling the flux components
-      if (Kinv.inverse() <= 0.0) return false;
+      if (Kinv.inverse() <= 0.0)
+        return false;
+      const double mu = mat->getViscosity();
       CompatibleOps::MassCoeff(elMat.A, Kinv, fe, fluxMatIdx, mu);
     }
-    else for (size_t i = 0; i < nsd; ++i)
-      ScalarOps::Mass(elMat.A[fluxDiagIdx[i]], fe, mu/K[i], i);
+    else
+    {
+      const double mu = mat->getViscosity();
+      const Vec3 K = mat->getPermeability(X);
+      for (unsigned short int i = 0; i < nsd; ++i)
+        ScalarOps::Mass(elMat.A[fluxDiagIdx[i]], fe, mu/K[i], i);
+    }
 
-    CompatibleOps::Gradient(elMat.A, fe, { qxp, qyp, qzp });
+    if (usePiola)
+      PiolaOps::Gradient(elMat.A, fe, { qxp, qyp, qzp });
+    else
+      CompatibleOps::Gradient(elMat.A, fe, { qxp, qyp, qzp });
   }
 
   Vec3 body(gravity);
@@ -176,7 +202,10 @@ bool CompatibleDarcy::evalIntMx (LocalIntegral& elmInt,
   if (!body.isZero())
   {
     body *= this->getDensity(fe);
-    CompatibleOps::Source(elMat.b, fe, body, { Fqx, Fqy, Fqz });
+    if (usePiola)
+      PiolaOps::Source(elMat.b, fe, body, { Fqx, Fqy, Fqz }, 1.0);
+    else
+      CompatibleOps::Source(elMat.b, fe, body, { Fqx, Fqy, Fqz });
   }
 
   if (source)
@@ -203,8 +232,12 @@ bool CompatibleDarcy::evalBouMx (LocalIntegral& elmInt,
     return false;
   }
 
-  CompatibleOperators::Weak::Source(static_cast<ElmMats&>(elmInt).b,
-                                    fe, fluxVec, { Fqx, Fqy, Fqz });
+  if (usePiola)
+    PiolaOperators::Weak::Source(static_cast<ElmMats&>(elmInt).b,
+                                 fe,fluxVec,{ Fqx, Fqy, Fqz },1.0);
+  else
+    CompatibleOperators::Weak::Source(static_cast<ElmMats&>(elmInt).b,
+                                      fe,fluxVec,{ Fqx, Fqy, Fqz });
   return true;
 }
 
@@ -221,9 +254,7 @@ bool CompatibleDarcy::evalSol (Vector& s, const MxFiniteElement& fe,
     if (!this->getElementSol(MNPC,elem_sizes,basis_sizes,eV))
       return false;
 
-    s.resize(nsd);
-    for (size_t i = 0; i < nsd; ++i)
-      s[i] = eV[i].dot(fe.basis(i+1));
+    s = this->darcyFlux(fe,eV);
     return true;
   }
   else
@@ -241,6 +272,26 @@ bool CompatibleDarcy::evalSol (Vector& s, const MxFiniteElement& fe,
   }
 
   return true;
+}
+
+
+RealArray CompatibleDarcy::darcyFlux (const MxFiniteElement& fe,
+                                      const Vectors& eV, size_t level) const
+{
+  RealArray result(nsd);
+  size_t j = level*npv;
+  if (usePiola)
+  {
+    RealArray coefs;
+    for (unsigned short int i = 0; i < nsd; ++i, ++j)
+      coefs.insert(coefs.end(),eV[j].begin(),eV[j].end());
+    fe.P.multiply(coefs,result);
+  }
+  else
+    for (unsigned short int i = 0; i < nsd; ++i, ++j)
+      result[i] = eV[j].dot(fe.basis(1+i));
+
+  return result;
 }
 
 
@@ -292,6 +343,12 @@ CompatibleDarcyNorm::CompatibleDarcyNorm (CompatibleDarcy& p, AnaSol* a)
 }
 
 
+int CompatibleDarcyNorm::getIntegrandType () const
+{
+  return myProblem.getIntegrandType();
+}
+
+
 bool CompatibleDarcyNorm::evalIntMx (LocalIntegral& elmInt,
                                      const MxFiniteElement& fe,
                                      const Vec3& X) const
@@ -301,7 +358,7 @@ bool CompatibleDarcyNorm::evalIntMx (LocalIntegral& elmInt,
   constexpr int H1_E_Ph = DarcyNorm::H1_E_Ph;
   constexpr int EXTENER = DarcyNorm::EXT_ENERGY;
 
-  Darcy& problem = static_cast<Darcy&>(myProblem);
+  CompatibleDarcy& problem = static_cast<CompatibleDarcy&>(myProblem);
   ElmNorm& pnorm = static_cast<ElmNorm&>(elmInt);
   const size_t nsd = problem.getNoSpaceDim();
 
@@ -311,9 +368,7 @@ bool CompatibleDarcyNorm::evalIntMx (LocalIntegral& elmInt,
     return false;
 
   // Evaluate the finite element Darcy velocity field and the pressure field
-  Vector qh(nsd);
-  for (size_t i = 0; i < nsd; ++i)
-    qh[i] = pnorm.vec[i].dot(fe.basis(i+1));
+  const Vector qh = problem.darcyFlux(fe,pnorm.vec);
   const double ph = pnorm.vec[nsd].dot(fe.basis(nsd+1));
 
   // Integrate the energy norm a(q^h,q^h)

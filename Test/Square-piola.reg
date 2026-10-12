@@ -1,0 +1,72 @@
+Square-divcomp.xinp -piola
+
+Input file: Square-divcomp.xinp
+Equation solver: 2
+Number of Gauss points: 4
+Basis function values are precalculated but not cached
+Using a divergence-compatible Darcy formulation with Piola mapping.
+1. Darcy solver
+Parsing input file Square-divcomp.xinp
+Parsing <geometry>
+  Generating linear geometry on unit parameter domain \[0,1]^2
+  Parsing <raiseorder>
+  Parsing <refine>
+  Parsing <topologysets>
+	Topology sets: Horizontal (1,3,1D) (1,4,1D)
+	               Vertical (1,1,1D) (1,2,1D)
+  Parsing <raiseorder>
+	Raising order of P1 1 1
+  Parsing <refine>
+	Refining P1 7 7
+  Parsing <topologysets>
+Parsing <boundaryconditions>
+  Parsing <neumann>
+	Neumann code 1000000 direction 0 (expression): -x-y-y
+  Parsing <dirichlet>
+	Dirichlet code 1 (expression): PI\*sin(PI\*x)\*(y+y-1.0)-2.4
+Parsing <darcy>
+		Permeability matrix:
+Row 1: 2 0.4
+Row 2: 1
+  Parsing <source>
+	Source function: 3.0\*PI\*PI\*sin(PI\*x)\*sin(PI\*y) - 0.8\*PI\*PI\*cos(PI\*x)\*cos(PI\*y)
+  Parsing <anasol>
+	Variables: ax = PI\*cos(PI\*x)\*sin(PI\*y)+1.0; ay = PI\*sin(PI\*x)\*cos(PI\*y)+2.0;
+	Primary: -2.0\*ax-0.4\*ay | -0.4\*ax-ay
+	Scalar Primary: sin(PI\*x)\*sin(PI\*y)+x+y+y
+Parsing input file succeeded.
+11. Darcy solver
+Resolving Dirichlet boundary conditions
+	Constraining P1 E3 in direction(s) 1 code = 1 basis = 2
+	Constraining P1 E4 in direction(s) 1 code = 1 basis = 2
+ >>> SAM model summary <<<
+Number of elements    64
+Number of nodes       261
+Number of dofs        261
+Number of D-dofs      90
+Number of P-dofs      90
+Number of Q-dofs      81
+Number of constraints 18
+Number of unknowns    243
+Solving Darcy problem
+Processing integrand associated with code 0
+Assembling interior matrix terms for P1
+Assembling Neumann matrix terms for boundary 1 on P1
+Assembling Neumann matrix terms for boundary 2 on P1
+Done.
+Solving the equation system ...
+	Condition number: 1199.78
+>>> Primary solution summary <<<
+  L2-norm (q,p)  : 5.3133 1.98728
+  Max X-velocity : 9.17714
+  Max Y-velocity : 5.55169
+  Max pressure   : 3.00014
+>>> Norm summary <<<
+  H1 norm |q^h| = a(q^h,q^h)^0.5     : 3.87322
+  L2 norm |p^h| = (p^h,p^h)^0.5      : 2.03526
+  H1 norm |q| = a(q,q)^0.5           : 3.87327
+  H1 norm |e| = a(e,e)^0.5, e=q-q^h  : 0.0259781
+  L2 norm |p| = (p,p)^0.5            : 2.03286
+  L2 norm |e| = (e,e)^0.5, e=p-p^h   : 0.00526242
+  Exact relative error (in % of q)   : 0.670703
+  Exact relative error (in % of p)   : 0.258868
