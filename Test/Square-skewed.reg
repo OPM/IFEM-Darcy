@@ -60,6 +60,8 @@ Solving the equation system ...
   Max pressure   : 3.00012
 >>> Norm summary <<<
   H1 norm |q^h| = a(q^h,q^h)^0.5     : 3.87321
+  L2 norm |div q^h - f|              : 0.14736
+    in % of |f| = (f,f)^0.5          : 0.961771
   L2 norm |p^h| = (p^h,p^h)^0.5      : 2.03526
   H1 norm |q| = a(q,q)^0.5           : 3.87327
   H1 norm |e| = a(e,e)^0.5, e=q-q^h  : 0.0277647

@@ -95,6 +95,10 @@ public:
   RealArray darcyFlux(const MxFiniteElement& fe, const Vectors& eV,
                       size_t level = 0) const;
 
+  //! \brief Evaluates the physical Darcy flux gradient at an integration point.
+  RealArray darcyGrad(const MxFiniteElement& fe, const Vectors& eV,
+                      size_t level = 0) const;
+
 protected:
   //! \brief Extracts element solution vectors for current element.
   bool getElementSol(const IntVec& MNPC,
@@ -121,6 +125,8 @@ public:
     H1_Qh = DarcyNorm::NUM_NORM,
     H1_Q,
     H1_E_Qh,
+    L2_divQh,
+    L2_F,
     NUM_NORM
   };
 

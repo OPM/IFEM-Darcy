@@ -112,7 +112,7 @@ bool CompatibleDarcy::getElementSol (const IntVec& MNPC,
   {
     size_t ofs = 0;
     IntVec::const_iterator first = MNPC.begin();
-    for (size_t i = 0; i < nsd; ++i)
+    for (unsigned short int i = 0; i < nsd; ++i)
     {
       IntVec::const_iterator last = first + elem_sizes[i];
       ierr += utl::gather(IntVec(first,last), 0,1, primsol[level],
@@ -295,6 +295,30 @@ RealArray CompatibleDarcy::darcyFlux (const MxFiniteElement& fe,
 }
 
 
+RealArray CompatibleDarcy::darcyGrad (const MxFiniteElement& fe,
+                                      const Vectors& eV, size_t level) const
+{
+  RealArray result;
+  result.reserve(nsd*nsd);
+  size_t k = level*npv;
+  if (usePiola)
+  {
+    RealArray coefs;
+    for (unsigned short i = 0; i < nsd; ++i)
+      coefs.insert(coefs.end(),eV[k+i].begin(),eV[k+i].end());
+    Matrix dqdX;
+    dqdX.multiplyMat(fe.dPdX,coefs);
+    result.swap(dqdX);
+  }
+  else
+    for (unsigned short int j = 0; j < nsd; ++j)
+      for (unsigned short int i = 0; i < nsd; ++i)
+        result.push_back(eV[k+i].dot(fe.grad(1+i).getColumn(1+j)));
+
+  return result;
+}
+
+
 size_t CompatibleDarcy::getNoFields (int fld) const
 {
   if (fld < 2)
@@ -371,10 +395,19 @@ bool CompatibleDarcyNorm::evalIntMx (LocalIntegral& elmInt,
   const Vector qh = problem.darcyFlux(fe,pnorm.vec);
   const double ph = pnorm.vec[nsd].dot(fe.basis(nsd+1));
 
+  // Evaluate the divergence of the Darcy velocity field (should be zero)
+  const Vector dqh = problem.darcyGrad(fe,pnorm.vec);
+  const double src = problem.getPotential(X);
+  const double div = dqh.sum(0,nsd+1) - src;
+
   // Integrate the energy norm a(q^h,q^h)
   pnorm[H1_Qh] += qh.dot(Kinv*qh)*fe.detJxW;
   // Integrate the pressure L2-norm (p^h,p^h)
   pnorm[H1_Ph] += ph*ph*fe.detJxW;
+
+  // Integrate the L2-norm of the velocity divergence (div q^h,div q^h)
+  pnorm[L2_divQh] += div*div*fe.detJxW;
+  pnorm[L2_F]     += src*src*fe.detJxW;
 
   // Integrate the external energy (h,p^h)
   if (problem.extEner)
@@ -446,7 +479,9 @@ std::string CompatibleDarcyNorm::getName (size_t, size_t j,
     "(e,e)^0.5, e=(p,c)-(p,c)^h",
     "a(q^h,q^h)^0.5",
     "a(q,q)^0.5",
-    "a(e,e)^0.5, e=q-q^h"
+    "a(e,e)^0.5, e=q-q^h",
+    "(e,e)^0.5, e=div(q^h)-f",
+    "(f,f)^0.5"
   };
 
   if (!prefix)

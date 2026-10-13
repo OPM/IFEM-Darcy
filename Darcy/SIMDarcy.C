@@ -465,24 +465,34 @@ bool SIMDarcy<Dim>::solveSystem (Vector& solution, int printSol,
 
 namespace
 {
+  //! \brief Prints a norm value with proper alignment.
+  void printValue (const std::string& text, double value, size_t w)
+  {
+    IFEM::cout <<"\n  "<< text << utl::adjustRight(w-2-text.size(),"") << value;
+  }
+
   //! \brief Prints some solution norms to log stream.
   void printSolNorms (const Vector& gNorm, bool compatible, size_t w)
   {
     if (compatible)
+    {
       if (double gn = gNorm[CompatibleDarcyNorm::H1_Qh]; utl::trunc(gn) != 0.0)
-        IFEM::cout <<"\n  H1 norm |q^h| = a(q^h,q^h)^0.5"
-                   << utl::adjustRight(w-32,"") << gn;
+        printValue("H1 norm |q^h| = a(q^h,q^h)^0.5", gn, w);
+      if (double d = gNorm[CompatibleDarcyNorm::L2_divQh]; utl::trunc(d) != 0.0)
+      {
+        printValue("L2 norm |div q^h - f|", d, w);
+        if (double f = gNorm[CompatibleDarcyNorm::L2_F]; f > 1.0e-16)
+          printValue("  in % of |f| = (f,f)^0.5", 100.0*d/f, w);
+      }
+    }
     if (double gn = gNorm[DarcyNorm::H1_Ph]; utl::trunc(gn) != 0.0)
-      IFEM::cout << (compatible ?
-                     "\n  L2 norm |p^h| = (p^h,p^h)^0.5 " :
-                     "\n  H1 norm |p^h| = a(p^h,p^h)^0.5")
-                 << utl::adjustRight(w-32,"") << gn;
+      printValue(compatible ?
+                 "L2 norm |p^h| = (p^h,p^h)^0.5 " :
+                 "H1 norm |p^h| = a(p^h,p^h)^0.5", gn, w);
     if (double gn = gNorm[DarcyNorm::EXT_ENERGY]; utl::trunc(gn) != 0.0)
-      IFEM::cout <<"\n  External energy |(h,p^h)|^0.5"
-                 << utl::adjustRight(w-31,"") << gn;
+      printValue("External energy |(h,p^h)|^0.5", gn, w);
     if (double gn = gNorm[DarcyNorm::H1_Ch]; utl::trunc(gn) != 0.0)
-      IFEM::cout <<"\n  H1 norm |c^h| = a(c^h,c^h)^0.5"
-                 << utl::adjustRight(w-32,"") << gn;
+      printValue("H1 norm |c^h| = a(c^h,c^h)^0.5", gn, w);
   }
 
   //! \brief Prints some norms related to the exact solution to log stream.
@@ -496,34 +506,27 @@ namespace
     const double ech = gNorm[DarcyNorm::H1_E_Ch];
 
     if (compatible && utl::trunc(q) != 0.0)
-      IFEM::cout <<"\n  H1 norm |q| = a(q,q)^0.5"
-                 << utl::adjustRight(w-26,"") << q;
+      printValue("H1 norm |q| = a(q,q)^0.5", q, w);
     if (compatible && utl::trunc(eqh) != 0.0)
-      IFEM::cout <<"\n  H1 norm |e| = a(e,e)^0.5, e=q-q^h"
-                 << utl::adjustRight(w-35,"") << eqh;
+      printValue("H1 norm |e| = a(e,e)^0.5, e=q-q^h", eqh, w);
     if (utl::trunc(p) != 0.0)
-      IFEM::cout << (compatible ?
-                     "\n  L2 norm |p| = (p,p)^0.5 " :
-                     "\n  H1 norm |p| = a(p,p)^0.5")
-                 << utl::adjustRight(w-26,"") << p;
+      printValue(compatible ?
+                 "L2 norm |p| = (p,p)^0.5" :
+                 "H1 norm |p| = a(p,p)^0.5", p, w);
     if (utl::trunc(eph) != 0.0)
-      IFEM::cout << (compatible ?
-                     "\n  L2 norm |e| = (e,e)^0.5, e=p-p^h " :
-                     "\n  H1 norm |e| = a(e,e)^0.5, e=p-p^h")
-                 << utl::adjustRight(w-35,"") << eph;
+      printValue(compatible ?
+                 "L2 norm |e| = (e,e)^0.5, e=p-p^h" :
+                 "H1 norm |e| = a(e,e)^0.5, e=p-p^h", eph, w);
     if (utl::trunc(c) != 0.0)
-      IFEM::cout <<"\n  H1 norm |c| = a(c,c)^0.5"
-                 << utl::adjustRight(w-26,"") << c;
+      printValue("H1 norm |c| = a(c,c)^0.5", c, w);
     if (utl::trunc(ech) != 0.0)
-      IFEM::cout <<"\n  H1 norm |e| = a(e,e)^0.5, e=c-c^h"
-                 << utl::adjustRight(w-35,"") << ech;
+      printValue("H1 norm |e| = a(e,e)^0.5, e=c-c^h", ech, w);
     if (compatible && fabs(q) > 1.0e-16)
-      IFEM::cout <<"\n  Exact relative error (in % of q)"
-                 << utl::adjustRight(w-34,"") << 100.0*eqh / q;
+      printValue("Exact relative error (in % of q)", 100.0*eqh/q, w);
     if (double pc = hypot(p,c); pc > 1.0e-16)
-      IFEM::cout <<"\n  Exact relative error ("<< (compatible ? "in % of p":"%")
-                 <<")"<< utl::adjustRight(compatible ? w-34 : w-26, "")
-                 << 100.0*hypot(eph,ech) / pc;
+      printValue("Exact relative error ("+
+                 std::string(compatible ? "in % of p)":"%)"),
+                 100.0*hypot(eph,ech) / pc, w);
   }
 
   //! \brief Prints a norm group to the log stream.
@@ -532,27 +535,27 @@ namespace
   {
     IFEM::cout <<"\nError estimates based on >>> "<< name <<" <<<";
     if (double rn = rNorm[DarcyNorm::H1_Pr_Ph]; utl::trunc(rn) != 0.0)
-      IFEM::cout <<"\n  H1 norm |p^r-p^h|"<< utl::adjustRight(w-19,"") << rn;
+      printValue("H1 norm |p^r-p^h|", rn, w);
     if (double rn = rNorm[DarcyNorm::H1_Cr_Ch]; utl::trunc(rn) != 0.0)
-      IFEM::cout <<"\n  H1 norm |c^r-c^h|"<< utl::adjustRight(w-19,"") << rn;
+      printValue("H1 norm |c^r-c^h|", rn, w);
 
     if (noAnaSol)
       return;
 
     if (double rn = rNorm[DarcyNorm::H1_E_Pr]; utl::trunc(rn) != 0.0)
-      IFEM::cout <<"\n  H1 norm |p^r-p|"<< utl::adjustRight(w-17,"") << rn;
+      printValue("H1 norm |p^r-p|", rn, w);
     if (double rn = rNorm[DarcyNorm::H1_E_Cr]; utl::trunc(rn) != 0.0)
-      IFEM::cout <<"\n  H1 norm |c^r-c|"<< utl::adjustRight(w-17,"") << rn;
+      printValue("H1 norm |c^r-c|", rn, w);
 
     if (double fn = fNorm[DarcyNorm::H1_E_Ph]; fabs(fn) > 1.0e-16)
-      IFEM::cout <<"\n  Effectivity index eta^p"<< utl::adjustRight(w-25,"")
-                 << rNorm[DarcyNorm::H1_Pr_Ph] / fn;
+      printValue("Effectivity index eta^p",
+                 rNorm[DarcyNorm::H1_Pr_Ph] / fn, w);
     if (double fn = fNorm[DarcyNorm::H1_E_Ch]; fabs(fn) > 1.0e-16)
-      IFEM::cout <<"\n  Effectivity index eta^c"<< utl::adjustRight(w-25,"")
-                 << rNorm[DarcyNorm::H1_Cr_Ch] / fn;
+      printValue("Effectivity index eta^c",
+                 rNorm[DarcyNorm::H1_Cr_Ch] / fn, w);
     if (double fn = fNorm[DarcyNorm::TOTAL_NORM_E]; fabs(fn) > 1.0e-16)
-      IFEM::cout <<"\n  Effectivity index eta^tot"<< utl::adjustRight(w-27,"")
-                 << rNorm[DarcyNorm::TOTAL_NORM_REC] / fn;
+      printValue("Effectivity index eta^tot",
+                 rNorm[DarcyNorm::TOTAL_NORM_REC] / fn, w);
   }
 }
 
