@@ -70,6 +70,7 @@ ifem_add_vtf_test(
   TEST_FILES
     Wavefront_k10_p2_b20.vreg
     SimpleSquare-varyingK.vreg
+    Square-divcomp.vreg
 )
 
 ifem_add_vtf_test(

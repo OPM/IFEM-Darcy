@@ -250,8 +250,7 @@ bool SIMDarcy<Dim>::saveStep (const TimeStep& tp, int& nBlock)
       // Project the secondary solution onto the splines basis
       Vectors::iterator sit = proj.begin();
       for (const SIMoptions::ProjectionMap::value_type& pit : Dim::opt.project)
-        if (solVec != &solution.front() &&
-            !this->project(*sit,*solVec,pit.first))
+        if (this->isAdaptive() && !this->project(*sit,*solVec,pit.first))
           return false;
         else if (!this->writeGlvP(*sit,iDump,nBlock,100,pit.second.c_str()))
           return false;
@@ -273,8 +272,7 @@ template<class Dim>
 bool SIMDarcy<Dim>::init ()
 {
   this->initSolution(this->getNoDOFs(), 1 + drc.getOrder());
-
-  if (!solVec) solVec = &solution.front();
+  if (!solVec) solVec = solution.data();
   this->registerField(this->mixedProblem() ? "solution" : "pressure", *solVec);
 
   this->initSystem(Dim::opt.solver);
@@ -358,16 +356,27 @@ bool SIMDarcy<Dim>::solveStep (const TimeStep& tp)
     Dim::msgLevel = oldLevel; // in case it is used by other SIM's
   }
 
-  if (solVec == &solution.front()) // Not for adaptive simulations
-  {
-    // Project the secondary solution onto the splines basis
-    Vectors::iterator sit = proj.begin();
-    for (const SIMoptions::ProjectionMap::value_type& pit : Dim::opt.project)
-      if (!this->project(*sit,*solVec,pit.first))
-        return false;
-  }
+  if (this->isAdaptive() || !newSolution)
+    return newSolution; // Skip postprocessing in adaptive simulations
 
-  return newSolution;
+  if (!this->setMode(SIM::RECOVERY))
+    return false;
+
+  // Project the secondary solution onto the splines basis
+  Vectors::iterator sit = proj.begin();
+  for (const SIMoptions::ProjectionMap::value_type& pit : Dim::opt.project)
+    if (!this->project(*sit,*solVec,pit.first))
+      return false;
+
+  if (!Dim::opt.saveNorms)
+    return true;
+
+  // Evaluate solution norms
+  this->setQuadratureRule(Dim::opt.nGauss[1]);
+  bool ok = this->solutionNorms(tp.time,{*solVec},proj,gNorm,&eNorm);
+  if (ok) lastTime = tp.time.t;
+  this->setQuadratureRule(Dim::opt.nGauss[0]);
+  return ok;
 }
 
 
@@ -382,9 +391,8 @@ bool SIMDarcy<Dim>::advanceStep (TimeStep&)
 
 
 template<class Dim>
-void SIMDarcy<Dim>::printSolutionSummary (const Vector& solution,
-                                          int printSol, const char*,
-                                          std::streamsize outPrec)
+void SIMDarcy<Dim>::printSolutionSummary (const Vector& psol, int printSol,
+                                          const char*, std::streamsize outPrec)
 {
   if (this->mixedProblem())
   {
@@ -394,12 +402,12 @@ void SIMDarcy<Dim>::printSolutionSummary (const Vector& solution,
     size_t iMax[Dim::dimension+1];
     double dMax[Dim::dimension+1];
     char D = 'P';
-    double dNorm1 = this->solutionNorms(solution,dMax,iMax,1,'D');
-    double dNorm2 = this->solutionNorms(solution,dMax+1,iMax+1,1,D);
+    double dNorm1 = this->solutionNorms(psol,dMax,iMax,1,'D');
+    double dNorm2 = this->solutionNorms(psol,dMax+1,iMax+1,1,D);
     double dNormq = hypot(dNorm1,dNorm2);
     if (nsd == 3)
-      dNormq = hypot(dNormq,this->solutionNorms(solution,dMax+2,iMax+2,1,++D));
-    double dNormp = this->solutionNorms(solution,dMax+nsd,iMax+nsd,1,++D);
+      dNormq = hypot(dNormq,this->solutionNorms(psol,dMax+2,iMax+2,1,++D));
+    double dNormp = this->solutionNorms(psol,dMax+nsd,iMax+nsd,1,++D);
 
     int oldPrec = Dim::adm.cout.precision();
     if (outPrec > 0)
@@ -424,7 +432,7 @@ void SIMDarcy<Dim>::printSolutionSummary (const Vector& solution,
     // Compute and print solution norms
     size_t iMax[2];
     double dMax[2];
-    double dNorm = this->solutionNorms(solution,dMax,iMax);
+    double dNorm = this->solutionNorms(psol,dMax,iMax);
 
     int oldPrec = Dim::adm.cout.precision();
     if (outPrec > 0)
@@ -441,23 +449,22 @@ void SIMDarcy<Dim>::printSolutionSummary (const Vector& solution,
       Dim::adm.cout << std::setprecision(oldPrec);
   }
   else
-    this->SIMbase::printSolutionSummary(solution,printSol,"pressure",outPrec);
+    this->SIMbase::printSolutionSummary(psol,printSol,"pressure",outPrec);
 }
 
 
 template<class Dim>
-bool SIMDarcy<Dim>::solveSystem (Vector& solution, int printSol,
-                                 double* rCond, const char* compName,
-                                 size_t idxRHS)
+bool SIMDarcy<Dim>::solveSystem (Vector& psol, int printSol, double* rCond,
+                                 const char* compName, size_t idxRHS)
 {
-  if (!this->Dim::solveSystem(solution,printSol,rCond,compName,idxRHS))
+  if (!this->Dim::solveSystem(psol,printSol,rCond,compName,idxRHS))
     return false;
   else if (idxRHS > 0 || !this->haveReactions() || drc.extEner != 'R')
     return true;
 
   // Assemble the reaction forces. Strictly, we only need to assemble those
   // elements that have nodes on the Dirichlet boundaries, but...
-  return this->assembleForces({solution},0.0,&myReact);
+  return this->assembleForces({psol},0.0,&myReact);
 }
 
 
@@ -561,18 +568,19 @@ namespace
 template<class Dim>
 void SIMDarcy<Dim>::printFinalNorms (const TimeStep& tp)
 {
-  // Don't print final norms with adaptive simulations
-  if (solVec != &solution.front())
+  // Don't print final norms with adaptive simulations (they are printed before)
+  if (this->isAdaptive())
     return;
 
-  if (!this->setMode(SIM::RECOVERY))
-    return;
+  if (tp.time.t > lastTime)
+  {
+    this->setMode(SIM::RECOVERY);
+    this->setQuadratureRule(Dim::opt.nGauss[1]);
+    if (!this->solutionNorms(tp.time,{*solVec},proj,gNorm))
+      return;
+  }
 
-  // Evaluate solution norms and print to terminal
-  Vectors gNorm;
-  this->setQuadratureRule(Dim::opt.nGauss[1]);
-  if (this->solutionNorms(tp.time,{solution.front()},proj,gNorm))
-    this->printNorms(gNorm,36);
+  this->printNorms(gNorm,36);
 }
 
 
