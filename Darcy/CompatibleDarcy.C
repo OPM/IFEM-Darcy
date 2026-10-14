@@ -285,7 +285,7 @@ RealArray CompatibleDarcy::darcyFlux (const MxFiniteElement& fe,
     RealArray coefs;
     for (unsigned short int i = 0; i < nsd; ++i, ++j)
       coefs.insert(coefs.end(),eV[j].begin(),eV[j].end());
-    fe.P.multiply(coefs,result);
+    fe.P_contra.N.multiply(coefs,result);
   }
   else
     for (unsigned short int i = 0; i < nsd; ++i, ++j)
@@ -307,7 +307,7 @@ RealArray CompatibleDarcy::darcyGrad (const MxFiniteElement& fe,
     for (unsigned short i = 0; i < nsd; ++i)
       coefs.insert(coefs.end(),eV[k+i].begin(),eV[k+i].end());
     Matrix dqdX;
-    dqdX.multiplyMat(fe.dPdX,coefs);
+    dqdX.multiplyMat(fe.P_contra.dNdX,coefs);
     result.swap(dqdX);
   }
   else
