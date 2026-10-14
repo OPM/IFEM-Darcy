@@ -31,26 +31,26 @@
 
 
 template<class Dim>
-SIMDarcy<Dim>::SIMDarcy (Darcy& itg, unsigned char nf) :
-  SIMMultiPatchModelGen<Dim>(nf), drc(itg), solVec(nullptr)
+SIMDarcy<Dim>::SIMDarcy (Darcy* itg, unsigned char nf) :
+  SIMMultiPatchModelGen<Dim>(nf), drc(*itg), solVec(nullptr)
 {
-  this->initProblem();
+  this->initProblem(itg);
 }
 
 
 template<class Dim>
-SIMDarcy<Dim>::SIMDarcy (Darcy& itg, const CharVec& nf) :
-  SIMMultiPatchModelGen<Dim>(nf), drc(itg), solVec(nullptr)
+SIMDarcy<Dim>::SIMDarcy (Darcy* itg, const CharVec& nf) :
+  SIMMultiPatchModelGen<Dim>(nf), drc(*itg), solVec(nullptr)
 {
-  this->initProblem();
+  this->initProblem(itg);
 }
 
 
 template<class Dim>
-void SIMDarcy<Dim>::initProblem ()
+void SIMDarcy<Dim>::initProblem (Darcy* itg)
 {
   drc.setOwnerSim(this);
-  Dim::myProblem = &drc;
+  Dim::myProblem = itg;
   Dim::myHeading = "Darcy solver";
   aCode[0] = aCode[1] = 0;
 
@@ -62,8 +62,6 @@ void SIMDarcy<Dim>::initProblem ()
 template<class Dim>
 SIMDarcy<Dim>::~SIMDarcy ()
 {
-  Dim::myProblem = nullptr;
-  Dim::myInts.clear();
   // To prevent the SIMbase destructor try to delete already deleted functions
   if (aCode[0] > 0) Dim::myScalars.erase(aCode[0]);
   if (aCode[1] > 0) Dim::myVectors.erase(aCode[1]);

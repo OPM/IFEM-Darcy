@@ -29,21 +29,13 @@
 
 
 template<class Dim>
-SIMDarcyAdvection<Dim>::SIMDarcyAdvection (DarcyAdvection& itg) :
-  Dim(1), drc(itg)
+SIMDarcyAdvection<Dim>::SIMDarcyAdvection (DarcyAdvection* itg) :
+  Dim(1), drc(*itg)
 {
   drc.setOwnerSim(this);
-  Dim::myProblem = &drc;
+  Dim::myProblem = itg;
   Dim::myHeading = "Darcy advection solver";
   Dim::msgLevel  = 1;
-}
-
-
-template<class Dim>
-SIMDarcyAdvection<Dim>::~SIMDarcyAdvection ()
-{
-  Dim::myProblem = nullptr;
-  Dim::myInts.clear();
 }
 
 

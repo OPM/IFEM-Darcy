@@ -29,11 +29,11 @@
 
 
 template<class Dim>
-SIMDarcyTransportCorr<Dim>::SIMDarcyTransportCorr (IntegrandBase& itg,
+SIMDarcyTransportCorr<Dim>::SIMDarcyTransportCorr (IntegrandBase* itg,
                                                    const CharVec& nf,
                                                    bool AL) : Dim(nf)
 {
-  Dim::myProblem = &itg;
+  Dim::myProblem = itg;
   Dim::myHeading = "Darcy transport correction solver";
   Dim::lagMTOK = true; // can do multithreading with global Lagrange multipliers
   useAL = AL;
@@ -51,8 +51,6 @@ template<class Dim>
 SIMDarcyTransportCorr<Dim>::~SIMDarcyTransportCorr ()
 {
   Dim::myVectors.erase(vCode);
-  Dim::myProblem = nullptr;
-  Dim::myInts.clear();
 }
 
 

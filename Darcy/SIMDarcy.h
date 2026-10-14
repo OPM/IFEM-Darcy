@@ -38,12 +38,12 @@ public:
   //! \brief Default constructor.
   //! \param itg Integrand to use
   //! \param[in] nf Number of primary fields
-  explicit SIMDarcy(Darcy& itg, unsigned char nf = 1);
+  explicit SIMDarcy(Darcy* itg, unsigned char nf = 1);
 
   //! \brief Constructor for mixed-basis problems.
   //! \param itg Integrand to use
   //! \param[in] nf Number of primary fields on each basis
-  SIMDarcy(Darcy& itg, const CharVec& nf);
+  SIMDarcy(Darcy* itg, const CharVec& nf);
 
   //! \brief Destructor.
   virtual ~SIMDarcy();
@@ -175,15 +175,15 @@ public:
                              size_t adaptor, size_t inorm) const override;
 
 protected:
+  //! \brief Performs initialization common to standard and mixed constructors.
+  void initProblem(Darcy* itg);
+
   //! \brief Performs some pre-processing tasks on the FE model.
   bool preprocessA() override;
   //! \brief Performs some pre-processing tasks on the FE model.
   bool preprocessB() override;
 
 private:
-  //! \brief Performs initialization common to standard and mixed constructors.
-  void initProblem();
-
   Darcy& drc; //!< Reference to the Darcy integrand
 
   DCY::AdaptationNorm adNorm = DCY::NO_ADAP; //!< Norm to adapt based on

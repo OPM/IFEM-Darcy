@@ -33,10 +33,7 @@ class SIMDarcyAdvection : public Dim, public SIMsolution
 public:
   //! \brief Default constructor.
   //! \param itg Integrand to use
-  explicit SIMDarcyAdvection(DarcyAdvection& itg);
-
-  //! \brief Destructor.
-  virtual ~SIMDarcyAdvection();
+  explicit SIMDarcyAdvection(DarcyAdvection* itg);
 
   using Dim::parse;
   //! \brief Parses a data section from an XML element.
@@ -55,9 +52,8 @@ public:
 
   //! \brief Initialize simulator.
   bool init();
-
   //! \brief Initialize time-dependent simulator.
-  bool init(const TimeStep&) { return init(); }
+  bool init(const TimeStep&) { return this->init(); }
 
   //! \brief Computes the solution for the current time step.
   bool solveStep(const TimeStep& tp, bool forceNewTangent = false);

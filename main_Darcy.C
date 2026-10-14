@@ -57,29 +57,29 @@ public:
 */
 
 template<class Dim, template<class T> class Solver>
-int runSimulator(char* infile, const DarcyArgs& args)
+int runSimulator (char* infile, const DarcyArgs& args)
 {
   const int torder = TimeIntegration::Order(args.timeMethod);
 
-  std::unique_ptr<Darcy> itg;
+  Darcy* itg = nullptr;
   std::vector<unsigned char> fields;
   if (ASMmxBase::Type == ASMmxBase::DIV_COMPATIBLE)
   {
-    itg = std::make_unique<CompatibleDarcy>(Dim::dimension,torder,args.usePiola);
+    itg = new CompatibleDarcy(Dim::dimension,torder,args.usePiola);
     fields.resize(Dim::dimension+1,1);
   }
   else if (args.tracer)
   {
-    itg = std::make_unique<DarcyTransport>(Dim::dimension,torder);
+    itg = new DarcyTransport(Dim::dimension,torder);
     fields.resize(1,2);
   }
   else
   {
-    itg = std::make_unique<Darcy>(Dim::dimension,torder);
+    itg = new Darcy(Dim::dimension,torder);
     fields.resize(1,1);
   }
 
-  SIMDarcy<Dim> darcy(*itg,fields);
+  SIMDarcy<Dim> darcy(itg,fields);
   darcy.setAdaptiveNorm(args.adNorm);
   Solver solver(darcy);
 
@@ -113,30 +113,28 @@ int runSimulator(char* infile, const DarcyArgs& args)
 */
 
 template<class Dim>
-int runCoupledSimulator(char* infile, const DarcyArgs& args)
+int runCoupledSimulator (char* infile, const DarcyArgs& args)
 {
   const int torder = TimeIntegration::Order(args.timeMethod);
 
-  Darcy          dcy(Dim::dimension);
-  DarcyAdvection dcya(Dim::dimension,torder);
-  SIMDarcy<Dim>          darcy(dcy);
-  SIMDarcyAdvection<Dim> darcya(dcya);
-  SIMDarcySchedule<Dim>  schedule(darcy, darcya);
+  SIMDarcy<Dim>          darcy(new Darcy(Dim::dimension));
+  SIMDarcyAdvection<Dim> dcadv(new DarcyAdvection(Dim::dimension,torder));
+  SIMDarcySchedule<Dim>  schedule(darcy,dcadv);
   SIMSolver solver(schedule);
 
   utl::profiler->start("Model input");
 
-  if (!darcy.read(infile) || !darcya.read(infile) ||
+  if (!darcy.read(infile) || !dcadv.read(infile) ||
       !schedule.read(infile) || !solver.read(infile))
     return 1;
 
   utl::profiler->stop("Model input");
 
-  if (!darcy.preprocess() || ! darcya.preprocess())
+  if (!darcy.preprocess() || ! dcadv.preprocess())
     return 2;
 
   darcy.init();
-  darcya.init();
+  dcadv.init();
   schedule.setupDependencies();
 
   if (darcy.opt.dumpHDF5(infile))
@@ -160,7 +158,7 @@ int runCoupledSimulator(char* infile, const DarcyArgs& args)
 */
 
 template<class Dim>
-int runSimulator1(char* infile, const DarcyArgs& args)
+int runSimulator1 (char* infile, const DarcyArgs& args)
 {
   if (args.usePiola && ASMmxBase::Type != ASMmxBase::DIV_COMPATIBLE)
   {
