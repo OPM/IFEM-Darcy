@@ -122,24 +122,10 @@ int main (int argc, char** argv)
   Profiler prof(argv[0]);
   utl::profiler->start("Initialization");
 
-  char* infile = nullptr;
-  DarcyArgs args;
-
   IFEM::Init(argc,argv,"Darcy transport correction solver");
-  for (int i = 1; i < argc; i++)
-    if (argv[i] == infile || args.parseArg(argv[i]))
-      ; // ignore the input file on the second pass
-    else if (SIMoptions::ignoreOldOptions(argc,argv,i))
-      ; // ignore the obsolete option
-    else if (!infile) {
-      infile = argv[i];
-      if (!args.readXML(infile,false))
-        return 1;
-      i = 0;
-    }
-    else
-      std::cerr <<"  ** Unknown option ignored: "<< argv[i] << std::endl;
 
+  DarcyArgs args;
+  char* infile = args.preParse(argc,argv);
   if (!infile)
   {
     std::cout <<"usage: "<< argv[0]

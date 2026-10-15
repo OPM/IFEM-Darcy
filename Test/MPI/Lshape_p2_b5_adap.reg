@@ -1,4 +1,4 @@
-../Lshape_p2_b5.xinp -petsc -adap recovery_press
+../Lshape_p2_b5.xinp -petsc -adap-recovery_press
 
 Equation solver: 4
 LR-spline basis functions are used

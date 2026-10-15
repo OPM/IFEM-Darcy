@@ -120,7 +120,7 @@ int runCoupledSimulator (char* infile, const DarcyArgs& args)
   SIMDarcy<Dim>          darcy(new Darcy(Dim::dimension));
   SIMDarcyAdvection<Dim> dcadv(new DarcyAdvection(Dim::dimension,torder));
   SIMDarcySchedule<Dim>  schedule(darcy,dcadv);
-  SIMSolver solver(schedule);
+  SIMSolver              solver(schedule);
 
   utl::profiler->start("Model input");
 
@@ -176,10 +176,10 @@ int runSimulator1 (char* infile, const DarcyArgs& args)
       return 1;
     }
 
-    if (args.scheduled || args.adap || args.tracer)
+    if (args.scheduled || args.tracer)
     {
       std::cerr <<" *** The div-compatible formulation does not support"
-                <<" scheduled, adaptive and/or tracer simulations."
+                <<" scheduled and/or tracer simulations."
                 << std::endl;
       return 1;
     }
@@ -235,24 +235,10 @@ int main (int argc, char** argv)
   Profiler prof(argv[0]);
   utl::profiler->start("Initialization");
 
-  char* infile = nullptr;
-  DarcyArgs args;
-
   IFEM::Init(argc,argv,"Darcy solver");
-  for (int i = 1; i < argc; i++)
-    if (argv[i] == infile || args.parseArgComplex(argc,argv,i))
-      ; // ignore the input file on the second pass
-    else if (SIMoptions::ignoreOldOptions(argc,argv,i))
-      ; // ignore the obsolete option
-    else if (!infile) {
-      infile = argv[i];
-      if (!args.readXML(infile,false))
-        return 1;
-      i = 0;
-    }
-    else
-      std::cerr <<"  ** Unknown option ignored: "<< argv[i] << std::endl;
 
+  DarcyArgs args;
+  char* infile = args.preParse(argc,argv);
   if (!infile)
   {
     std::cout <<"usage: "<< argv[0]
