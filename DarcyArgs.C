@@ -30,13 +30,15 @@ bool DarcyArgs::parseArg (const char* argv)
     else if (strcasecmp(argv, "-recovery_press") == 0)
       norm = DCY::RECOVERY_PRESSURE;
     else if (strcasecmp(argv, "-concentration") == 0)
-      norm = DCY::CONCENTRATION_H1;
+      norm = DCY::CONCENTR_H1;
     else if (strcasecmp(argv, "-recovery_conc") == 0)
-      norm = DCY::RECOVERY_CONCENTRATION;
+      norm = DCY::RECOVERY_CONCENTR;
     else if (strcasecmp(argv, "-total") == 0)
       norm = DCY::TOTAL_H1;
     else if (strcasecmp(argv, "-recovery") == 0)
       norm = DCY::RECOVERY;
+    else if (strcasecmp(argv, "-flux") == 0)
+      norm = DCY::FLUX_H1;
     else
       norm = DCY::PRESSURE_H1;
     return true;
@@ -87,12 +89,14 @@ bool DarcyArgs::parse (const tinyxml2::XMLElement* elem)
     if (const char* ad = elem->Attribute("adap"); ad) {
       if (strcasecmp(ad,"pressure") == 0)
         adNorm = DCY::PRESSURE_H1;
+      else if (strcasecmp(ad,"flux") == 0)
+        adNorm = DCY::FLUX_H1;
       else if (strcasecmp(ad,"recovery_press") == 0)
         adNorm = DCY::RECOVERY_PRESSURE;
       else if (strcasecmp(ad,"concentration") == 0)
-        adNorm = DCY::CONCENTRATION_H1;
+        adNorm = DCY::CONCENTR_H1;
       else if (strcasecmp(ad,"recovery_conc") == 0)
-        adNorm = DCY::RECOVERY_CONCENTRATION;
+        adNorm = DCY::RECOVERY_CONCENTR;
       else if (strcasecmp(ad,"total") == 0)
         adNorm = DCY::TOTAL_H1;
       else if (strcasecmp(ad,"recovery") == 0)

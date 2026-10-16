@@ -80,7 +80,9 @@ int runSimulator (char* infile, const DarcyArgs& args)
   }
 
   SIMDarcy<Dim> darcy(itg,fields);
-  darcy.setAdaptiveNorm(args.adNorm);
+  if (!darcy.setAdaptiveNorm(args.adNorm))
+    return 1;
+
   Solver solver(darcy);
 
   utl::profiler->start("Model input");
