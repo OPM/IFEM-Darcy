@@ -335,8 +335,8 @@ size_t CompatibleDarcy::getNoFields (int fld) const
 
 std::string CompatibleDarcy::getField1Name (size_t i, const char* pfx) const
 {
-  if (i == 11)
-    return nsd == 2 ? "q_x&&q_y&&p" : "q_x&&q_y&&q_z&&p";
+  if (i > 10)
+    i -= 11;
   if (i >= npv)
     return "";
 
