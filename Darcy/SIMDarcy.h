@@ -160,9 +160,9 @@ public:
   }
 
   //! \brief Sets the norm to base the mesh adaptation on.
-  void setAdaptiveNorm(DCY::AdaptationNorm norm) { adNorm = norm; }
+  bool setAdaptiveNorm(DCY::AdaptationNorm norm);
   //! \brief Returns the norm to base the mesh adaptation on.
-  DCY::AdaptationNorm getAdaptiveNorm() const { return adNorm; }
+  unsigned int getAdaptiveNorm() const { return adNorm; }
 
   //! \brief Returns the reference norm value to base mesh adaptation upon.
   //! \param[in] gNorm The calculated global norms
@@ -188,7 +188,7 @@ protected:
 private:
   Darcy& drc; //!< Reference to the Darcy integrand
 
-  DCY::AdaptationNorm adNorm = DCY::NO_ADAP; //!< Norm to adapt based on
+  unsigned int  adNorm; //!< Index to error norm to adapt based on
   const Vector* solVec; //!< Pointer to the solution vector used
   RealArray myReact;    //!< Nodal reaction forces
   int aCode[2];         //!< Analytical BC code (used by destructor)

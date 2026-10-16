@@ -52,7 +52,7 @@ void SIMDarcy<Dim>::initProblem (Darcy* itg)
   drc.setOwnerSim(this);
   Dim::myProblem = itg;
   Dim::myHeading = "Darcy solver";
-  aCode[0] = aCode[1] = 0;
+  aCode[0] = aCode[1] = adNorm = 0;
 
   if (drc.getOrder() > 0) // transient problem
     Dim::msgLevel = 1; // prints primary solution summary only
@@ -663,29 +663,77 @@ bool SIMDarcy<Dim>::preprocessB ()
 
 
 template<class Dim>
+bool SIMDarcy<Dim>::setAdaptiveNorm (DCY::AdaptationNorm norm)
+{
+  switch (norm) {
+  case DCY::TOTAL_H1:
+    if (!this->mixedProblem())
+      adNorm = 1 + DarcyNorm::TOTAL_NORM_E;
+    break;
+  case DCY::PRESSURE_H1:
+    adNorm = 1 + DarcyNorm::H1_E_Ph;
+    break;
+  case DCY::CONCENTR_H1:
+    if (drc.getNoFields(1) == 2)
+      adNorm = 1 + DarcyNorm::H1_E_Ch;
+    break;
+  case DCY::FLUX_H1:
+    if (this->mixedProblem())
+      adNorm = 1 + CompatibleDarcyNorm::H1_E_Qh;
+    break;
+  case DCY::RECOVERY:
+    if (!this->mixedProblem())
+      adNorm = 101 + DarcyNorm::TOTAL_NORM_REC;
+    break;
+  case DCY::RECOVERY_PRESSURE:
+    if (!this->mixedProblem())
+      adNorm = 101 + DarcyNorm::H1_Pr_Ph;
+    break;
+  case DCY::RECOVERY_CONCENTR:
+    if (drc.getNoFields(1) == 2)
+      adNorm = 101 + DarcyNorm::H1_Cr_Ch;
+    break;
+  case DCY::NO_ADAP:
+    return true;
+  }
+  if (adNorm > 0) return true;
+
+  std::cerr <<" *** SIMDarcy::setAdaptiveNorm(): The norm "<< norm
+	    <<" is not available as mesh adaptation norm in this run."
+            << std::endl;
+  return false;
+}
+
+
+template<class Dim>
 double SIMDarcy<Dim>::getReferenceNorm (const Vectors& gNorm,
                                         size_t adaptor) const
 {
-  if (adaptor == 0) {
-    if (adNorm == DCY::PRESSURE_H1)
-      return gNorm[0][DarcyNorm::H1_P];
-    else if (adNorm == DCY::CONCENTRATION_H1)
-      return gNorm[0][DarcyNorm::H1_C];
-    else
-      return hypot(gNorm[0][DarcyNorm::H1_P], gNorm[0][DarcyNorm::H1_C]);
-  }
+  const int iNorm = adNorm%100 - 1;
 
-  if (this->haveAnaSol()) {
-    if (adNorm == DCY::RECOVERY_PRESSURE)
+  if (adaptor == 0)
+    switch (iNorm) {
+    case DarcyNorm::H1_E_Ph:
       return gNorm[0][DarcyNorm::H1_P];
-    else if (adNorm == DCY::RECOVERY_CONCENTRATION)
+    case DarcyNorm::H1_E_Ch:
       return gNorm[0][DarcyNorm::H1_C];
-    else
+    case CompatibleDarcyNorm::H1_E_Qh:
+      return gNorm[0][CompatibleDarcyNorm::H1_Q];
+    default:
       return hypot(gNorm[0][DarcyNorm::H1_P], gNorm[0][DarcyNorm::H1_C]);
-  }
-
-  return hypot(hypot(gNorm[0][DarcyNorm::H1_Ph], gNorm[0][DarcyNorm::H1_Ch]),
-               hypot(gNorm[1][DarcyNorm::H1_Pr_Ph], gNorm[1][DarcyNorm::H1_Cr_Ch]));
+    }
+  else if (this->haveAnaSol())
+    switch (iNorm) {
+    case DarcyNorm::H1_Pr_Ph:
+      return gNorm[0][DarcyNorm::H1_P];
+    case DarcyNorm::H1_Cr_Ch:
+      return gNorm[0][DarcyNorm::H1_C];
+    default:
+      return hypot(gNorm[0][DarcyNorm::H1_P], gNorm[0][DarcyNorm::H1_C]);
+    }
+  double u = hypot(gNorm[0][DarcyNorm::H1_Ph],   gNorm[0][DarcyNorm::H1_Ch]);
+  double e = hypot(gNorm[1][DarcyNorm::H1_Pr_Ph],gNorm[1][DarcyNorm::H1_Cr_Ch]);
+  return hypot(u,e);
 }
 
 
@@ -694,10 +742,9 @@ double SIMDarcy<Dim>::getEffectivityIndex (const Vectors& gNorm,
                                            size_t adaptor,
                                            size_t inorm) const
 {
-  if (adNorm == DCY::RECOVERY_PRESSURE)
+  if (adNorm%100 == 1+DarcyNorm::H1_Pr_Ph)
     return gNorm[adaptor](inorm) / gNorm[0][DarcyNorm::H1_E_Ph];
-
-  if (adNorm == DCY::RECOVERY_CONCENTRATION)
+  if (adNorm%100 == 1+DarcyNorm::H1_Cr_Ch)
     return gNorm[adaptor](inorm) / gNorm[0][DarcyNorm::H1_E_Ch];
 
   return gNorm[adaptor](inorm) / gNorm[0][DarcyNorm::TOTAL_NORM_E];
