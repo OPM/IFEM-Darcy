@@ -36,7 +36,7 @@ public:
   //! \param itg The integrand to use
   //! \param[in] nf Number of fields on each basis
   //! \param[in] AL If \e true, use the Augmented Lagrange formulation
-  SIMDarcyTransportCorr(IntegrandBase& itg, const CharVec& nf, bool AL = false);
+  SIMDarcyTransportCorr(IntegrandBase* itg, const CharVec& nf, bool AL = false);
   //! \brief Destructor.
   ~SIMDarcyTransportCorr() override;
 

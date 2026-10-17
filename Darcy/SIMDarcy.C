@@ -31,28 +31,28 @@
 
 
 template<class Dim>
-SIMDarcy<Dim>::SIMDarcy (Darcy& itg, unsigned char nf) :
-  SIMMultiPatchModelGen<Dim>(nf), drc(itg), solVec(nullptr)
+SIMDarcy<Dim>::SIMDarcy (Darcy* itg, unsigned char nf) :
+  SIMMultiPatchModelGen<Dim>(nf), drc(*itg), solVec(nullptr)
 {
-  this->initProblem();
+  this->initProblem(itg);
 }
 
 
 template<class Dim>
-SIMDarcy<Dim>::SIMDarcy (Darcy& itg, const CharVec& nf) :
-  SIMMultiPatchModelGen<Dim>(nf), drc(itg), solVec(nullptr)
+SIMDarcy<Dim>::SIMDarcy (Darcy* itg, const CharVec& nf) :
+  SIMMultiPatchModelGen<Dim>(nf), drc(*itg), solVec(nullptr)
 {
-  this->initProblem();
+  this->initProblem(itg);
 }
 
 
 template<class Dim>
-void SIMDarcy<Dim>::initProblem ()
+void SIMDarcy<Dim>::initProblem (Darcy* itg)
 {
   drc.setOwnerSim(this);
-  Dim::myProblem = &drc;
+  Dim::myProblem = itg;
   Dim::myHeading = "Darcy solver";
-  aCode[0] = aCode[1] = 0;
+  aCode[0] = aCode[1] = adNorm = 0;
 
   if (drc.getOrder() > 0) // transient problem
     Dim::msgLevel = 1; // prints primary solution summary only
@@ -62,8 +62,6 @@ void SIMDarcy<Dim>::initProblem ()
 template<class Dim>
 SIMDarcy<Dim>::~SIMDarcy ()
 {
-  Dim::myProblem = nullptr;
-  Dim::myInts.clear();
   // To prevent the SIMbase destructor try to delete already deleted functions
   if (aCode[0] > 0) Dim::myScalars.erase(aCode[0]);
   if (aCode[1] > 0) Dim::myVectors.erase(aCode[1]);
@@ -252,8 +250,7 @@ bool SIMDarcy<Dim>::saveStep (const TimeStep& tp, int& nBlock)
       // Project the secondary solution onto the splines basis
       Vectors::iterator sit = proj.begin();
       for (const SIMoptions::ProjectionMap::value_type& pit : Dim::opt.project)
-        if (solVec != &solution.front() &&
-            !this->project(*sit,*solVec,pit.first))
+        if (this->isAdaptive() && !this->project(*sit,*solVec,pit.first))
           return false;
         else if (!this->writeGlvP(*sit,iDump,nBlock,100,pit.second.c_str()))
           return false;
@@ -275,8 +272,7 @@ template<class Dim>
 bool SIMDarcy<Dim>::init ()
 {
   this->initSolution(this->getNoDOFs(), 1 + drc.getOrder());
-
-  if (!solVec) solVec = &solution.front();
+  if (!solVec) solVec = solution.data();
   this->registerField(this->mixedProblem() ? "solution" : "pressure", *solVec);
 
   this->initSystem(Dim::opt.solver);
@@ -360,16 +356,27 @@ bool SIMDarcy<Dim>::solveStep (const TimeStep& tp)
     Dim::msgLevel = oldLevel; // in case it is used by other SIM's
   }
 
-  if (solVec == &solution.front()) // Not for adaptive simulations
-  {
-    // Project the secondary solution onto the splines basis
-    Vectors::iterator sit = proj.begin();
-    for (const SIMoptions::ProjectionMap::value_type& pit : Dim::opt.project)
-      if (!this->project(*sit,*solVec,pit.first))
-        return false;
-  }
+  if (this->isAdaptive() || !newSolution)
+    return newSolution; // Skip postprocessing in adaptive simulations
 
-  return newSolution;
+  if (!this->setMode(SIM::RECOVERY))
+    return false;
+
+  // Project the secondary solution onto the splines basis
+  Vectors::iterator sit = proj.begin();
+  for (const SIMoptions::ProjectionMap::value_type& pit : Dim::opt.project)
+    if (!this->project(*sit,*solVec,pit.first))
+      return false;
+
+  if (!Dim::opt.saveNorms)
+    return true;
+
+  // Evaluate solution norms
+  this->setQuadratureRule(Dim::opt.nGauss[1]);
+  bool ok = this->solutionNorms(tp.time,{*solVec},proj,gNorm,&eNorm);
+  if (ok) lastTime = tp.time.t;
+  this->setQuadratureRule(Dim::opt.nGauss[0]);
+  return ok;
 }
 
 
@@ -384,9 +391,8 @@ bool SIMDarcy<Dim>::advanceStep (TimeStep&)
 
 
 template<class Dim>
-void SIMDarcy<Dim>::printSolutionSummary (const Vector& solution,
-                                          int printSol, const char*,
-                                          std::streamsize outPrec)
+void SIMDarcy<Dim>::printSolutionSummary (const Vector& psol, int printSol,
+                                          const char*, std::streamsize outPrec)
 {
   if (this->mixedProblem())
   {
@@ -396,12 +402,12 @@ void SIMDarcy<Dim>::printSolutionSummary (const Vector& solution,
     size_t iMax[Dim::dimension+1];
     double dMax[Dim::dimension+1];
     char D = 'P';
-    double dNorm1 = this->solutionNorms(solution,dMax,iMax,1,'D');
-    double dNorm2 = this->solutionNorms(solution,dMax+1,iMax+1,1,D);
+    double dNorm1 = this->solutionNorms(psol,dMax,iMax,1,'D');
+    double dNorm2 = this->solutionNorms(psol,dMax+1,iMax+1,1,D);
     double dNormq = hypot(dNorm1,dNorm2);
     if (nsd == 3)
-      dNormq = hypot(dNormq,this->solutionNorms(solution,dMax+2,iMax+2,1,++D));
-    double dNormp = this->solutionNorms(solution,dMax+nsd,iMax+nsd,1,++D);
+      dNormq = hypot(dNormq,this->solutionNorms(psol,dMax+2,iMax+2,1,++D));
+    double dNormp = this->solutionNorms(psol,dMax+nsd,iMax+nsd,1,++D);
 
     int oldPrec = Dim::adm.cout.precision();
     if (outPrec > 0)
@@ -426,7 +432,7 @@ void SIMDarcy<Dim>::printSolutionSummary (const Vector& solution,
     // Compute and print solution norms
     size_t iMax[2];
     double dMax[2];
-    double dNorm = this->solutionNorms(solution,dMax,iMax);
+    double dNorm = this->solutionNorms(psol,dMax,iMax);
 
     int oldPrec = Dim::adm.cout.precision();
     if (outPrec > 0)
@@ -443,23 +449,22 @@ void SIMDarcy<Dim>::printSolutionSummary (const Vector& solution,
       Dim::adm.cout << std::setprecision(oldPrec);
   }
   else
-    this->SIMbase::printSolutionSummary(solution,printSol,"pressure",outPrec);
+    this->SIMbase::printSolutionSummary(psol,printSol,"pressure",outPrec);
 }
 
 
 template<class Dim>
-bool SIMDarcy<Dim>::solveSystem (Vector& solution, int printSol,
-                                 double* rCond, const char* compName,
-                                 size_t idxRHS)
+bool SIMDarcy<Dim>::solveSystem (Vector& psol, int printSol, double* rCond,
+                                 const char* compName, size_t idxRHS)
 {
-  if (!this->Dim::solveSystem(solution,printSol,rCond,compName,idxRHS))
+  if (!this->Dim::solveSystem(psol,printSol,rCond,compName,idxRHS))
     return false;
   else if (idxRHS > 0 || !this->haveReactions() || drc.extEner != 'R')
     return true;
 
   // Assemble the reaction forces. Strictly, we only need to assemble those
   // elements that have nodes on the Dirichlet boundaries, but...
-  return this->assembleForces({solution},0.0,&myReact);
+  return this->assembleForces({psol},0.0,&myReact);
 }
 
 
@@ -563,18 +568,19 @@ namespace
 template<class Dim>
 void SIMDarcy<Dim>::printFinalNorms (const TimeStep& tp)
 {
-  // Don't print final norms with adaptive simulations
-  if (solVec != &solution.front())
+  // Don't print final norms with adaptive simulations (they are printed before)
+  if (this->isAdaptive())
     return;
 
-  if (!this->setMode(SIM::RECOVERY))
-    return;
+  if (tp.time.t > lastTime)
+  {
+    this->setMode(SIM::RECOVERY);
+    this->setQuadratureRule(Dim::opt.nGauss[1]);
+    if (!this->solutionNorms(tp.time,{*solVec},proj,gNorm))
+      return;
+  }
 
-  // Evaluate solution norms and print to terminal
-  Vectors gNorm;
-  this->setQuadratureRule(Dim::opt.nGauss[1]);
-  if (this->solutionNorms(tp.time,{solution.front()},proj,gNorm))
-    this->printNorms(gNorm,36);
+  this->printNorms(gNorm,36);
 }
 
 
@@ -657,29 +663,77 @@ bool SIMDarcy<Dim>::preprocessB ()
 
 
 template<class Dim>
+bool SIMDarcy<Dim>::setAdaptiveNorm (DCY::AdaptationNorm norm)
+{
+  switch (norm) {
+  case DCY::TOTAL_H1:
+    if (!this->mixedProblem())
+      adNorm = 1 + DarcyNorm::TOTAL_NORM_E;
+    break;
+  case DCY::PRESSURE_H1:
+    adNorm = 1 + DarcyNorm::H1_E_Ph;
+    break;
+  case DCY::CONCENTR_H1:
+    if (drc.getNoFields(1) == 2)
+      adNorm = 1 + DarcyNorm::H1_E_Ch;
+    break;
+  case DCY::FLUX_H1:
+    if (this->mixedProblem())
+      adNorm = 1 + CompatibleDarcyNorm::H1_E_Qh;
+    break;
+  case DCY::RECOVERY:
+    if (!this->mixedProblem())
+      adNorm = 101 + DarcyNorm::TOTAL_NORM_REC;
+    break;
+  case DCY::RECOVERY_PRESSURE:
+    if (!this->mixedProblem())
+      adNorm = 101 + DarcyNorm::H1_Pr_Ph;
+    break;
+  case DCY::RECOVERY_CONCENTR:
+    if (drc.getNoFields(1) == 2)
+      adNorm = 101 + DarcyNorm::H1_Cr_Ch;
+    break;
+  case DCY::NO_ADAP:
+    return true;
+  }
+  if (adNorm > 0) return true;
+
+  std::cerr <<" *** SIMDarcy::setAdaptiveNorm(): The norm "<< norm
+	    <<" is not available as mesh adaptation norm in this run."
+            << std::endl;
+  return false;
+}
+
+
+template<class Dim>
 double SIMDarcy<Dim>::getReferenceNorm (const Vectors& gNorm,
                                         size_t adaptor) const
 {
-  if (adaptor == 0) {
-    if (adNorm == DCY::PRESSURE_H1)
-      return gNorm[0][DarcyNorm::H1_P];
-    else if (adNorm == DCY::CONCENTRATION_H1)
-      return gNorm[0][DarcyNorm::H1_C];
-    else
-      return hypot(gNorm[0][DarcyNorm::H1_P], gNorm[0][DarcyNorm::H1_C]);
-  }
+  const int iNorm = adNorm%100 - 1;
 
-  if (this->haveAnaSol()) {
-    if (adNorm == DCY::RECOVERY_PRESSURE)
+  if (adaptor == 0)
+    switch (iNorm) {
+    case DarcyNorm::H1_E_Ph:
       return gNorm[0][DarcyNorm::H1_P];
-    else if (adNorm == DCY::RECOVERY_CONCENTRATION)
+    case DarcyNorm::H1_E_Ch:
       return gNorm[0][DarcyNorm::H1_C];
-    else
+    case CompatibleDarcyNorm::H1_E_Qh:
+      return gNorm[0][CompatibleDarcyNorm::H1_Q];
+    default:
       return hypot(gNorm[0][DarcyNorm::H1_P], gNorm[0][DarcyNorm::H1_C]);
-  }
-
-  return hypot(hypot(gNorm[0][DarcyNorm::H1_Ph], gNorm[0][DarcyNorm::H1_Ch]),
-               hypot(gNorm[1][DarcyNorm::H1_Pr_Ph], gNorm[1][DarcyNorm::H1_Cr_Ch]));
+    }
+  else if (this->haveAnaSol())
+    switch (iNorm) {
+    case DarcyNorm::H1_Pr_Ph:
+      return gNorm[0][DarcyNorm::H1_P];
+    case DarcyNorm::H1_Cr_Ch:
+      return gNorm[0][DarcyNorm::H1_C];
+    default:
+      return hypot(gNorm[0][DarcyNorm::H1_P], gNorm[0][DarcyNorm::H1_C]);
+    }
+  double u = hypot(gNorm[0][DarcyNorm::H1_Ph],   gNorm[0][DarcyNorm::H1_Ch]);
+  double e = hypot(gNorm[1][DarcyNorm::H1_Pr_Ph],gNorm[1][DarcyNorm::H1_Cr_Ch]);
+  return hypot(u,e);
 }
 
 
@@ -688,10 +742,9 @@ double SIMDarcy<Dim>::getEffectivityIndex (const Vectors& gNorm,
                                            size_t adaptor,
                                            size_t inorm) const
 {
-  if (adNorm == DCY::RECOVERY_PRESSURE)
+  if (adNorm%100 == 1+DarcyNorm::H1_Pr_Ph)
     return gNorm[adaptor](inorm) / gNorm[0][DarcyNorm::H1_E_Ph];
-
-  if (adNorm == DCY::RECOVERY_CONCENTRATION)
+  if (adNorm%100 == 1+DarcyNorm::H1_Cr_Ch)
     return gNorm[adaptor](inorm) / gNorm[0][DarcyNorm::H1_E_Ch];
 
   return gNorm[adaptor](inorm) / gNorm[0][DarcyNorm::TOTAL_NORM_E];

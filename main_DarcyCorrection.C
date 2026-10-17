@@ -30,7 +30,7 @@
 */
 
 template<class Dim, template<class T> class Solver>
-int runSimulator(char* infile, const DarcyArgs& args)
+int runSimulator (char* infile, const DarcyArgs& args)
 {
   if (args.mixed > 10)
     ASMmxBase::Type = ASMmxBase::FULL_CONT_RAISE_BASIS1;
@@ -41,14 +41,13 @@ int runSimulator(char* infile, const DarcyArgs& args)
   // a mixed field interpolation is used, but with zero nodal components
   // for the second basis, such that the Lagrange multiplier fields only
   // exist on the element level. The code 99 is used to flag this.
-  DarcyTransportCorr dtc(Dim::dimension,
-                         args.useAL ? 99 : args.mixed%10);
-
+  const unsigned char n2 = args.useAL ? 99 : args.mixed%10;
   SIMinput::CharVec fields = { Dim::dimension };
   if (args.mixed)
     fields.push_back(args.useAL ? 0 : args.mixed%10);
-  SIMDarcyTransportCorr<Dim> model(dtc, fields, args.useAL);
 
+  SIMDarcyTransportCorr<Dim> model(new DarcyTransportCorr(Dim::dimension,n2),
+                                   fields, args.useAL);
   Solver solver(model);
 
   utl::profiler->start("Model input");
@@ -83,7 +82,7 @@ int runSimulator(char* infile, const DarcyArgs& args)
 */
 
 template<class Dim>
-int runSimulator1(char* infile, const DarcyArgs& args)
+int runSimulator1 (char* infile, const DarcyArgs& args)
 {
   if (args.timeMethod == TimeIntegration::NONE)
     return runSimulator<Dim,SIMSolverStat>(infile,args);
@@ -123,24 +122,10 @@ int main (int argc, char** argv)
   Profiler prof(argv[0]);
   utl::profiler->start("Initialization");
 
-  char* infile = nullptr;
-  DarcyArgs args;
-
   IFEM::Init(argc,argv,"Darcy transport correction solver");
-  for (int i = 1; i < argc; i++)
-    if (argv[i] == infile || args.parseArg(argv[i]))
-      ; // ignore the input file on the second pass
-    else if (SIMoptions::ignoreOldOptions(argc,argv,i))
-      ; // ignore the obsolete option
-    else if (!infile) {
-      infile = argv[i];
-      if (!args.readXML(infile,false))
-        return 1;
-      i = 0;
-    }
-    else
-      std::cerr <<"  ** Unknown option ignored: "<< argv[i] << std::endl;
 
+  DarcyArgs args;
+  char* infile = args.preParse(argc,argv);
   if (!infile)
   {
     std::cout <<"usage: "<< argv[0]

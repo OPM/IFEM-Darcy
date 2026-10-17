@@ -57,30 +57,32 @@ public:
 */
 
 template<class Dim, template<class T> class Solver>
-int runSimulator(char* infile, const DarcyArgs& args)
+int runSimulator (char* infile, const DarcyArgs& args)
 {
   const int torder = TimeIntegration::Order(args.timeMethod);
 
-  std::unique_ptr<Darcy> itg;
+  Darcy* itg = nullptr;
   std::vector<unsigned char> fields;
   if (ASMmxBase::Type == ASMmxBase::DIV_COMPATIBLE)
   {
-    itg = std::make_unique<CompatibleDarcy>(Dim::dimension,torder,args.usePiola);
+    itg = new CompatibleDarcy(Dim::dimension,torder,args.usePiola);
     fields.resize(Dim::dimension+1,1);
   }
   else if (args.tracer)
   {
-    itg = std::make_unique<DarcyTransport>(Dim::dimension,torder);
+    itg = new DarcyTransport(Dim::dimension,torder);
     fields.resize(1,2);
   }
   else
   {
-    itg = std::make_unique<Darcy>(Dim::dimension,torder);
+    itg = new Darcy(Dim::dimension,torder);
     fields.resize(1,1);
   }
 
-  SIMDarcy<Dim> darcy(*itg,fields);
-  darcy.setAdaptiveNorm(args.adNorm);
+  SIMDarcy<Dim> darcy(itg,fields);
+  if (!darcy.setAdaptiveNorm(args.adNorm))
+    return 1;
+
   Solver solver(darcy);
 
   utl::profiler->start("Model input");
@@ -113,30 +115,28 @@ int runSimulator(char* infile, const DarcyArgs& args)
 */
 
 template<class Dim>
-int runCoupledSimulator(char* infile, const DarcyArgs& args)
+int runCoupledSimulator (char* infile, const DarcyArgs& args)
 {
   const int torder = TimeIntegration::Order(args.timeMethod);
 
-  Darcy          dcy(Dim::dimension);
-  DarcyAdvection dcya(Dim::dimension,torder);
-  SIMDarcy<Dim>          darcy(dcy);
-  SIMDarcyAdvection<Dim> darcya(dcya);
-  SIMDarcySchedule<Dim>  schedule(darcy, darcya);
-  SIMSolver solver(schedule);
+  SIMDarcy<Dim>          darcy(new Darcy(Dim::dimension));
+  SIMDarcyAdvection<Dim> dcadv(new DarcyAdvection(Dim::dimension,torder));
+  SIMDarcySchedule<Dim>  schedule(darcy,dcadv);
+  SIMSolver              solver(schedule);
 
   utl::profiler->start("Model input");
 
-  if (!darcy.read(infile) || !darcya.read(infile) ||
+  if (!darcy.read(infile) || !dcadv.read(infile) ||
       !schedule.read(infile) || !solver.read(infile))
     return 1;
 
   utl::profiler->stop("Model input");
 
-  if (!darcy.preprocess() || ! darcya.preprocess())
+  if (!darcy.preprocess() || ! dcadv.preprocess())
     return 2;
 
   darcy.init();
-  darcya.init();
+  dcadv.init();
   schedule.setupDependencies();
 
   if (darcy.opt.dumpHDF5(infile))
@@ -160,7 +160,7 @@ int runCoupledSimulator(char* infile, const DarcyArgs& args)
 */
 
 template<class Dim>
-int runSimulator1(char* infile, const DarcyArgs& args)
+int runSimulator1 (char* infile, const DarcyArgs& args)
 {
   if (args.usePiola && ASMmxBase::Type != ASMmxBase::DIV_COMPATIBLE)
   {
@@ -178,10 +178,10 @@ int runSimulator1(char* infile, const DarcyArgs& args)
       return 1;
     }
 
-    if (args.scheduled || args.adap || args.tracer)
+    if (args.scheduled || args.tracer)
     {
       std::cerr <<" *** The div-compatible formulation does not support"
-                <<" scheduled, adaptive and/or tracer simulations."
+                <<" scheduled and/or tracer simulations."
                 << std::endl;
       return 1;
     }
@@ -237,24 +237,10 @@ int main (int argc, char** argv)
   Profiler prof(argv[0]);
   utl::profiler->start("Initialization");
 
-  char* infile = nullptr;
-  DarcyArgs args;
-
   IFEM::Init(argc,argv,"Darcy solver");
-  for (int i = 1; i < argc; i++)
-    if (argv[i] == infile || args.parseArgComplex(argc,argv,i))
-      ; // ignore the input file on the second pass
-    else if (SIMoptions::ignoreOldOptions(argc,argv,i))
-      ; // ignore the obsolete option
-    else if (!infile) {
-      infile = argv[i];
-      if (!args.readXML(infile,false))
-        return 1;
-      i = 0;
-    }
-    else
-      std::cerr <<"  ** Unknown option ignored: "<< argv[i] << std::endl;
 
+  DarcyArgs args;
+  char* infile = args.preParse(argc,argv);
   if (!infile)
   {
     std::cout <<"usage: "<< argv[0]

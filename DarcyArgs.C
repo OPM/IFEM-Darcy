@@ -22,10 +22,34 @@
 
 bool DarcyArgs::parseArg (const char* argv)
 {
+  // Lambda function for parsing the adaptation norm from a command-line option.
+  auto parseAdapNorm = [&norm=adNorm](const char* argv)
+  {
+    if (strcasecmp(argv, "-pressure") == 0)
+      norm = DCY::PRESSURE_H1;
+    else if (strcasecmp(argv, "-recovery_press") == 0)
+      norm = DCY::RECOVERY_PRESSURE;
+    else if (strcasecmp(argv, "-concentration") == 0)
+      norm = DCY::CONCENTR_H1;
+    else if (strcasecmp(argv, "-recovery_conc") == 0)
+      norm = DCY::RECOVERY_CONCENTR;
+    else if (strcasecmp(argv, "-total") == 0)
+      norm = DCY::TOTAL_H1;
+    else if (strcasecmp(argv, "-recovery") == 0)
+      norm = DCY::RECOVERY;
+    else if (strcasecmp(argv, "-flux") == 0)
+      norm = DCY::FLUX_H1;
+    else
+      norm = DCY::PRESSURE_H1;
+    return true;
+  };
+
   if (argv[0] != '-')
     return false;
   else if (strcasecmp(argv, "-tracer") == 0)
     tracer = true;
+  else if (strncasecmp(argv, "-adap", 5) == 0)
+    adap = parseAdapNorm(argv+5);
   else if (strcasecmp(argv, "-compatible") == 0)
     mixed = ASMmxBase::Type = ASMmxBase::DIV_COMPATIBLE;
   else if (strcasecmp(argv, "-piola") == 0)
@@ -50,34 +74,6 @@ bool DarcyArgs::parseArg (const char* argv)
 }
 
 
-bool DarcyArgs::parseArgComplex (int argc, char** argv, int& i)
-{
-  if (strcasecmp(argv[i],"-adap"))
-    return this->parseArg(argv[i]);
-
-  adap = true;
-  int j = i+1;
-  if (j >= argc || argv[j][0] == '-')
-    adNorm = DCY::PRESSURE_H1;
-  else if (strcasecmp(argv[j], "pressure") == 0)
-    adNorm = DCY::PRESSURE_H1, ++i;
-  else if (strcasecmp(argv[j], "recovery_press") == 0)
-    adNorm = DCY::RECOVERY_PRESSURE, ++i;
-  else if (strcasecmp(argv[j], "concentration") == 0)
-    adNorm = DCY::CONCENTRATION_H1, ++i;
-  else if (strcasecmp(argv[j], "recovery_conc") == 0)
-    adNorm = DCY::RECOVERY_CONCENTRATION, ++i;
-  else if (strcasecmp(argv[j], "total") == 0)
-    adNorm = DCY::TOTAL_H1, ++i;
-  else if (strcasecmp(argv[j], "recovery") == 0)
-    adNorm = DCY::RECOVERY, ++i;
-  else
-    adNorm = DCY::PRESSURE_H1;
-
-  return true;
-}
-
-
 bool DarcyArgs::parse (const tinyxml2::XMLElement* elem)
 {
   if (!strcasecmp(elem->Value(),"timestepping")) {
@@ -93,12 +89,14 @@ bool DarcyArgs::parse (const tinyxml2::XMLElement* elem)
     if (const char* ad = elem->Attribute("adap"); ad) {
       if (strcasecmp(ad,"pressure") == 0)
         adNorm = DCY::PRESSURE_H1;
+      else if (strcasecmp(ad,"flux") == 0)
+        adNorm = DCY::FLUX_H1;
       else if (strcasecmp(ad,"recovery_press") == 0)
         adNorm = DCY::RECOVERY_PRESSURE;
       else if (strcasecmp(ad,"concentration") == 0)
-        adNorm = DCY::CONCENTRATION_H1;
+        adNorm = DCY::CONCENTR_H1;
       else if (strcasecmp(ad,"recovery_conc") == 0)
-        adNorm = DCY::RECOVERY_CONCENTRATION;
+        adNorm = DCY::RECOVERY_CONCENTR;
       else if (strcasecmp(ad,"total") == 0)
         adNorm = DCY::TOTAL_H1;
       else if (strcasecmp(ad,"recovery") == 0)

@@ -1,4 +1,4 @@
-Tracer-adap.xinp -adap recovery_conc
+Tracer-adap.xinp -adap-recovery_conc
 
 Input file: Tracer-adap.xinp
 LR-spline basis functions are used

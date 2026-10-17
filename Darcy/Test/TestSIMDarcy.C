@@ -20,8 +20,7 @@
 
 TEST_CASE("TestSIMDarcy.Parse")
 {
-  Darcy itg(2);
-  SIMDarcy<SIM2D> sim(itg);
+  SIMDarcy<SIM2D> sim(new Darcy(2));
   REQUIRE(sim.read("Wavefront_k10_p2_b20.xinp"));
 
   const Darcy& darcy = static_cast<const Darcy&>(*sim.getProblem());

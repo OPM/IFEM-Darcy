@@ -38,12 +38,12 @@ public:
   //! \brief Default constructor.
   //! \param itg Integrand to use
   //! \param[in] nf Number of primary fields
-  explicit SIMDarcy(Darcy& itg, unsigned char nf = 1);
+  explicit SIMDarcy(Darcy* itg, unsigned char nf = 1);
 
   //! \brief Constructor for mixed-basis problems.
   //! \param itg Integrand to use
   //! \param[in] nf Number of primary fields on each basis
-  SIMDarcy(Darcy& itg, const CharVec& nf);
+  SIMDarcy(Darcy* itg, const CharVec& nf);
 
   //! \brief Destructor.
   virtual ~SIMDarcy();
@@ -72,6 +72,8 @@ public:
   void setSol(const Vector* sol) { solVec = sol; }
   //! \brief Returns a const reference to the solution vector.
   const Vector& getSolution(int) const override { return *solVec; }
+  //! \brief Returns whether an external solution vector has been set or not.
+  bool isAdaptive() const { return solVec != solution.data(); }
 
   //! \brief Registers fields for data export.
   void registerFields(DataExporter& exporter);
@@ -101,16 +103,16 @@ public:
   //! \brief Advances the time stepping.
   bool advanceStep(TimeStep&);
 
-  //! \brief Prints a summary of the calculated solution to std::cout.
-  //! \param[in] solution The solution vector
+  //! \brief Prints a summary of the calculated solution to terminal.
+  //! \param[in] psol Global primary solution vector
   //! \param[in] printSol Print solution only if size is less than this value
   //! \param[in] outPrec Number of digits after the decimal point in norm print
-  void printSolutionSummary(const Vector& solution, int printSol, const char*,
+  void printSolutionSummary(const Vector& psol, int printSol, const char*,
                             std::streamsize outPrec) override;
 
   using Dim::solveSystem;
   //! \brief Solves the assembled linear system of equations for a given load.
-  //! \param[out] solution Global primary solution vector
+  //! \param[out] psol Global primary solution vector
   //! \param[in] printSol Print solution if its size is less than \a printSol
   //! \param[out] rCond Reciprocal condition number
   //! \param[in] compName Solution name to be used in norm output
@@ -119,7 +121,7 @@ public:
   //! \details This overloaded version also computes the reaction forces along
   //! a given boundary. This requires an additional assembly loop calculating
   //! the internal forces only, since we only are doing a linear solve here.
-  bool solveSystem(Vector& solution, int printSol, double* rCond,
+  bool solveSystem(Vector& psol, int printSol, double* rCond,
                    const char* compName, size_t idxRHS) override;
 
   //! \brief Returns current reaction force container.
@@ -142,11 +144,11 @@ public:
     return this->restoreSolution(data,this->getName());
   }
 
-  //! \brief Print final solution norms to terminal.
+  //! \brief Computes and prints the final solution norms to terminal.
   void printFinalNorms(const TimeStep& tp);
 
   //! \brief Print norms to screen during adaptive simulations.
-  void printNorms(const Vectors& gNorm, size_t w = 36) const override;
+  void printNorms(const Vectors& gNorm, size_t w) const override;
 
   using Dim::savePoints;
   //! \brief Saves point results to output file for a given time step.
@@ -158,9 +160,9 @@ public:
   }
 
   //! \brief Sets the norm to base the mesh adaptation on.
-  void setAdaptiveNorm(DCY::AdaptationNorm norm) { adNorm = norm; }
+  bool setAdaptiveNorm(DCY::AdaptationNorm norm);
   //! \brief Returns the norm to base the mesh adaptation on.
-  DCY::AdaptationNorm getAdaptiveNorm() const { return adNorm; }
+  unsigned int getAdaptiveNorm() const { return adNorm; }
 
   //! \brief Returns the reference norm value to base mesh adaptation upon.
   //! \param[in] gNorm The calculated global norms
@@ -175,28 +177,30 @@ public:
                              size_t adaptor, size_t inorm) const override;
 
 protected:
+  //! \brief Performs initialization common to standard and mixed constructors.
+  void initProblem(Darcy* itg);
+
   //! \brief Performs some pre-processing tasks on the FE model.
   bool preprocessA() override;
   //! \brief Performs some pre-processing tasks on the FE model.
   bool preprocessB() override;
 
 private:
-  //! \brief Performs initialization common to standard and mixed constructors.
-  void initProblem();
-
   Darcy& drc; //!< Reference to the Darcy integrand
 
-  DCY::AdaptationNorm adNorm = DCY::NO_ADAP; //!< Norm to adapt based on
-  const Vector* solVec; //!< Pointer to solution vector
+  unsigned int  adNorm; //!< Index to error norm to adapt based on
+  const Vector* solVec; //!< Pointer to the solution vector used
   RealArray myReact;    //!< Nodal reaction forces
   int aCode[2];         //!< Analytical BC code (used by destructor)
-  Matrix eNorm;         //!< Element wise norms
   Vectors proj;         //!< Projected solution vectors
+  Vectors gNorm;        //!< Global norms
+  Matrix eNorm;         //!< Element-wise norms
 
   std::vector<DarcyMaterial> mVec; //!< Vector of patchwise material data
 
   int    maxCycle = -1;   //!< Max number of sub-iterations
   double cycleTol = 1e-6; //!< Convergence tolerance in sub-iterations
+  double lastTime = -1.0; //!< Time of the last solution norm computation
 
   bool newTangent  = true;  //!< True to assemble element matrices
   bool newSolution = false; //!< True if a new solution has been computed

@@ -1,0 +1,24 @@
+Square-divcomp.xinp
+
+Step 1
+  Element block 1
+    81 nodes
+    64 elements
+    Displacement: 'Solution'
+    Displacement: 'Exact Solution'
+    Scalar: 'q_x'
+    Scalar: 'q_y'
+    Scalar: 'p'
+    Scalar: 'Exact q_x'
+    Scalar: 'Exact q_y'
+    Scalar: 'Exact p'
+    Scalar: 'source'
+    Scalar: '(p^h,p^h)^0.5'
+    Scalar: '(p,p)^0.5'
+    Scalar: '(e,e)^0.5, e=p-p^h'
+    Scalar: 'a(q^h,q^h)^0.5'
+    Scalar: 'a(q,q)^0.5'
+    Scalar: 'a(e,e)^0.5, e=q-q^h'
+    Scalar: '(e,e)^0.5, e=div(q^h)-f'
+    Scalar: '(f,f)^0.5'
+    Vector: 'velocity'

@@ -44,9 +44,6 @@ public:
   //! \brief Parses a command-line argument.
   bool parseArg(const char* argv) override;
 
-  //! \brief Parses a command-line argument with parameters.
-  bool parseArgComplex(int argc, char** argv, int& i);
-
 protected:
   //! \brief Parse an element from the input file
   bool parse(const tinyxml2::XMLElement* elem) override;
