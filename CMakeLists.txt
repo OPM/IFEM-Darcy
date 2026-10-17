@@ -80,6 +80,7 @@ ifem_add_vtf_test(
     LRSpline_FOUND
   TEST_FILES
     Lshape_p2_b5_adap.vreg
+    Square-adap-flux.vreg
 )
 
 ifem_add_regression_test(
@@ -136,6 +137,8 @@ ifem_add_regression_test(
     LRSpline_FOUND
   TEST_FILES
     Lshape_p2_b5_adap.reg
+    Square-adap-flux.reg
+    Square-adap-pressure.reg
 )
 
 foreach(adap pressure concentration total recovery recovery_press recovery_conc)

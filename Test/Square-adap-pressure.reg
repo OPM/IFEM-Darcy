@@ -1,0 +1,230 @@
+Square-adap.xinp -piola -adap-pressure
+
+Input file: Square-adap.xinp
+Equation solver: 2
+Number of Gauss points: 4
+LR-spline basis functions are used
+Basis function values are precalculated but not cached
+Using a divergence-compatible Darcy formulation with Piola mapping.
+1. Darcy solver
+Parsing input file Square-adap.xinp
+Parsing <geometry>
+  Parsing <patch>
+	Reading inlined patch geometry definition
+	Reading patch 1
+  Parsing <refine>
+  Parsing <topologysets>
+	Topology sets: Horizontal (1,3,1D) (1,4,1D)
+	               Vertical (1,1,1D) (1,2,1D)
+  Parsing <patch>
+  Parsing <refine>
+	Refining P1 1 1
+  Parsing <topologysets>
+Parsing <boundaryconditions>
+  Parsing <neumann>
+	Neumann code 1000000 direction 0 (expression): -x-y-y
+  Parsing <dirichlet>
+	Dirichlet code 1 (expression): PI\*sin(PI\*x)\*(y+y-1.0)-2.4
+Parsing <darcy>
+		Permeability matrix:
+Row 1: 2 0.4
+Row 2: 1
+  Parsing <source>
+	Source function: 3.0\*PI\*PI\*sin(PI\*x)\*sin(PI\*y) - 0.8\*PI\*PI\*cos(PI\*x)\*cos(PI\*y)
+  Parsing <anasol>
+	Variables: ax = PI\*cos(PI\*x)\*sin(PI\*y)+1.0; ay = PI\*sin(PI\*x)\*cos(PI\*y)+2.0;
+	Primary: -2.0\*ax-0.4\*ay | -0.4\*ax-ay
+	Scalar Primary: sin(PI\*x)\*sin(PI\*y)+x+y+y
+Parsing <adaptive>
+Parsing input file succeeded.
+Parsing input file Square-adap.xinp
+Parsing <geometry>
+Parsing <boundaryconditions>
+Parsing <darcy>
+Parsing <adaptive>
+	Refinement percentage: 2 type=6 (eps = 1e-06)
+	Refinement scheme: 2
+Parsing input file succeeded.
+11. Darcy solver
+Resolving Dirichlet boundary conditions
+	Constraining P1 E3 in direction(s) 1 code = 1 basis = 2
+	Constraining P1 E4 in direction(s) 1 code = 1 basis = 2
+ >>> SAM model summary <<<
+Number of elements    4
+Number of nodes       33
+Number of dofs        33
+Number of D-dofs      12
+Number of P-dofs      12
+Number of Q-dofs      9
+Number of constraints 6
+Number of unknowns    27
+ >>> Starting adaptive simulation based on exact errors (norm index 5) <<<
+Adaptive step 1
+Processing integrand associated with code 0
+Assembling interior matrix terms for P1
+Assembling Neumann matrix terms for boundary 1 on P1
+Assembling Neumann matrix terms for boundary 2 on P1
+Done.
+Solving the equation system ...
+	Condition number: 292.617
+>>> Primary solution summary <<<
+  L2-norm (q,p)  : 5.70487 2.02672
+  Max X-velocity : 10.088
+  Max Y-velocity : 6.03944
+  Max pressure   : 3.07115
+>>> Norm summary <<<
+  H1 norm |q^h| = a(q^h,q^h)^0.5     : 3.81786
+  L2 norm |div q^h - f|              : 2.98682
+    in % of |f| = (f,f)^0.5          : 19.4941
+  L2 norm |p^h| = (p^h,p^h)^0.5      : 2.03513
+  H1 norm |q| = a(q,q)^0.5           : 3.87327
+  H1 norm |e| = a(e,e)^0.5, e=q-q^h  : 0.377813
+  L2 norm |p| = (p,p)^0.5            : 2.03286
+  L2 norm |e| = (e,e)^0.5, e=p-p^h   : 0.0911141
+  Exact relative error (in % of q)   : 9.75437
+  Exact relative error (in % of p)   : 4.48207
+Root mean square (RMS) of error      : 0.247698
+Min element error                    : 0.0314359
+Max element error                    : 0.0613808
+Average element error                : 0.0442207
+Refining 4 basis functions with errors in range \[0.176883,0.176883] 25% of all basis functions
+Adaptive step 2
+2. Darcy solver
+Parsing input file Square-adap.xinp
+Parsing <geometry>
+  Parsing <patch>
+  Parsing <refine>
+  Parsing <topologysets>
+	Topology sets: Horizontal (1,3,1D) (1,4,1D)
+	               Vertical (1,1,1D) (1,2,1D)
+  Parsing <patch>
+  Parsing <refine>
+  Parsing <topologysets>
+Parsing <boundaryconditions>
+  Parsing <neumann>
+	Neumann code 1000000 direction 0 (expression): -x-y-y
+  Parsing <dirichlet>
+	Dirichlet code 1 (expression): PI\*sin(PI\*x)\*(y+y-1.0)-2.4
+Parsing <darcy>
+		Permeability matrix:
+Row 1: 2 0.4
+Row 2: 1
+  Parsing <source>
+	Source function: 3.0\*PI\*PI\*sin(PI\*x)\*sin(PI\*y) - 0.8\*PI\*PI\*cos(PI\*x)\*cos(PI\*y)
+  Parsing <anasol>
+	Variables: ax = PI\*cos(PI\*x)\*sin(PI\*y)+1.0; ay = PI\*sin(PI\*x)\*cos(PI\*y)+2.0;
+	Primary: -2.0\*ax-0.4\*ay | -0.4\*ax-ay
+	Scalar Primary: sin(PI\*x)\*sin(PI\*y)+x+y+y
+Parsing <adaptive>
+Parsing input file succeeded.
+12. Darcy solver
+Resolving Dirichlet boundary conditions
+	Constraining P1 E3 in direction(s) 1 code = 1 basis = 2
+	Constraining P1 E4 in direction(s) 1 code = 1 basis = 2
+ >>> SAM model summary <<<
+Number of elements    16
+Number of nodes       85
+Number of dofs        85
+Number of D-dofs      30
+Number of P-dofs      30
+Number of Q-dofs      25
+Number of constraints 10
+Number of unknowns    75
+Processing integrand associated with code 0
+Assembling interior matrix terms for P1
+Assembling Neumann matrix terms for boundary 1 on P1
+Assembling Neumann matrix terms for boundary 2 on P1
+Done.
+Solving the equation system ...
+	Condition number: 707.469
+>>> Primary solution summary <<<
+  L2-norm (q,p)  : 5.22841 2.00841
+  Max X-velocity : 9.42384
+  Max Y-velocity : 5.71072
+  Max pressure   : 3.00504
+>>> Norm summary <<<
+  H1 norm |q^h| = a(q^h,q^h)^0.5     : 3.87038
+  L2 norm |div q^h - f|              : 0.693514
+    in % of |f| = (f,f)^0.5          : 4.52634
+  L2 norm |p^h| = (p^h,p^h)^0.5      : 2.03266
+  H1 norm |q| = a(q,q)^0.5           : 3.87327
+  H1 norm |e| = a(e,e)^0.5, e=q-q^h  : 0.0836886
+  L2 norm |p| = (p,p)^0.5            : 2.03286
+  L2 norm |e| = (e,e)^0.5, e=p-p^h   : 0.0219222
+  Exact relative error (in % of q)   : 2.16067
+  Exact relative error (in % of p)   : 1.07839
+Root mean square (RMS) of error      : 0.526934
+Min element error                    : 0.00185168
+Max element error                    : 0.0107201
+Average element error                : 0.00484861
+Refining 1 basis functions with errors in range \[0.0601067,0.0601067] 2.77778% of all basis functions
+Adaptive step 3
+3. Darcy solver
+Parsing input file Square-adap.xinp
+Parsing <geometry>
+  Parsing <patch>
+  Parsing <refine>
+  Parsing <topologysets>
+	Topology sets: Horizontal (1,3,1D) (1,4,1D)
+	               Vertical (1,1,1D) (1,2,1D)
+  Parsing <patch>
+  Parsing <refine>
+  Parsing <topologysets>
+Parsing <boundaryconditions>
+  Parsing <neumann>
+	Neumann code 1000000 direction 0 (expression): -x-y-y
+  Parsing <dirichlet>
+	Dirichlet code 1 (expression): PI\*sin(PI\*x)\*(y+y-1.0)-2.4
+Parsing <darcy>
+		Permeability matrix:
+Row 1: 2 0.4
+Row 2: 1
+  Parsing <source>
+	Source function: 3.0\*PI\*PI\*sin(PI\*x)\*sin(PI\*y) - 0.8\*PI\*PI\*cos(PI\*x)\*cos(PI\*y)
+  Parsing <anasol>
+	Variables: ax = PI\*cos(PI\*x)\*sin(PI\*y)+1.0; ay = PI\*sin(PI\*x)\*cos(PI\*y)+2.0;
+	Primary: -2.0\*ax-0.4\*ay | -0.4\*ax-ay
+	Scalar Primary: sin(PI\*x)\*sin(PI\*y)+x+y+y
+Parsing <adaptive>
+Parsing input file succeeded.
+13. Darcy solver
+Resolving Dirichlet boundary conditions
+	Constraining P1 E3 in direction(s) 1 code = 1 basis = 2
+	Constraining P1 E4 in direction(s) 1 code = 1 basis = 2
+ >>> SAM model summary <<<
+Number of elements    43
+Number of nodes       166
+Number of dofs        166
+Number of D-dofs      57
+Number of P-dofs      57
+Number of Q-dofs      52
+Number of constraints 13
+Number of unknowns    153
+Processing integrand associated with code 0
+Assembling interior matrix terms for P1
+Assembling Neumann matrix terms for boundary 1 on P1
+Assembling Neumann matrix terms for boundary 2 on P1
+Done.
+Solving the equation system ...
+	Condition number: 2394.4
+>>> Primary solution summary <<<
+  L2-norm (q,p)  : 5.842 1.88921
+  Max X-velocity : 9.17389
+  Max Y-velocity : 5.58425
+  Max pressure   : 3.00404
+>>> Norm summary <<<
+  H1 norm |q^h| = a(q^h,q^h)^0.5     : 3.87296
+  L2 norm |div q^h - f|              : 0.295411
+    in % of |f| = (f,f)^0.5          : 1.92805
+  L2 norm |p^h| = (p^h,p^h)^0.5      : 2.03309
+  H1 norm |q| = a(q,q)^0.5           : 3.87327
+  H1 norm |e| = a(e,e)^0.5, e=q-q^h  : 0.0565522
+  L2 norm |p| = (p,p)^0.5            : 2.03286
+  L2 norm |e| = (e,e)^0.5, e=p-p^h   : 0.00873851
+  Exact relative error (in % of q)   : 1.46007
+  Exact relative error (in % of p)   : 0.429863
+Root mean square (RMS) of error      : 0.517304
+Min element error                    : 0.000105879
+Max element error                    : 0.00266977
+Average element error                : 0.00118362
+   \* Stopping the adaptive cycles as error tolerance 1 was reached.
