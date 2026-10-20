@@ -40,7 +40,7 @@ CompatibleDarcy::CompatibleDarcy (unsigned short int n, int torder, bool piola)
 
 int CompatibleDarcy::getIntegrandType () const
 {
-  return usePiola ? Integrand::PIOLA_MAPPING : Integrand::STANDARD;
+  return usePiola ? Integrand::CONTRAVARIANT : Integrand::STANDARD;
 }
 
 
