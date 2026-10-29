@@ -224,7 +224,7 @@ bool Darcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   {
     // Integrate the internal forces based on current solution
     Vector q;
-    if (!this->evalDarcyVel(q,elmInt.vec,fe,X))
+    if (!this->darcyFlux(q,elmInt.vec,fe,X))
       return false;
     if (!fe.dNdX.multiply(q,elMat.b.front(),fe.detJxW,1.0)) // b += dNdX * q
       return false;
@@ -267,7 +267,7 @@ bool Darcy::evalSol2 (Vector& s, const Vectors& eV,
 {
   s.clear();
   s.reserve(2+2*nsd);
-  if (!this->evalDarcyVel(s,eV,fe,X))
+  if (!this->darcyFlux(s,eV,fe,X))
     return false;
   else if (fluxOnly)
     return true;
@@ -287,8 +287,8 @@ bool Darcy::evalSol2 (Vector& s, const Vectors& eV,
 }
 
 
-bool Darcy::evalDarcyVel (Vector& q, const Vectors& eV,
-                          const FiniteElement& fe, const Vec3& X) const
+bool Darcy::darcyFlux (Vector& q, const Vectors& eV,
+                       const FiniteElement& fe, const Vec3& X, size_t) const
 {
   const double rho = this->getDensity(fe);
   if (rho <= 0.0) return false;
@@ -433,7 +433,7 @@ bool DarcyNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
 
   // Evaluate the finite element Darcy velocity field
   Vector dPh, dP, error;
-  if (!problem.evalDarcyVel(dPh,pnorm.vec,fe,X))
+  if (!problem.darcyFlux(dPh,pnorm.vec,fe,X))
     return false;
 
   // Integrate the energy norm a(p^h,p^h)

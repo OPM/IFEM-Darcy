@@ -189,7 +189,7 @@ bool DarcyTransport::evalSol (Vector& s, const FiniteElement& fe,
   if (!this->getElementSol(MNPC,eV))
     return false;
 
-  if (!this->evalDarcyVel(s,eV,fe,X))
+  if (!this->darcyFlux(s,eV,fe,X))
     return false;
   else if (fluxOnly)
     return true;

@@ -91,6 +91,14 @@ public:
   //! \brief Returns an integrand for compatible flux-pressure norms.
   NormBase* getNormIntegrand(AnaSol* asol) const override;
 
+  //! \brief Evaluates the darcy flux vector in a point.
+  //! \param[out] q Darcy flux vector
+  //! \param[in] eV Element solution vectors
+  //! \param[in] fe Finite element data at current point
+  //! \param[in] level Time level to evaluate at (0-based index)
+  bool darcyFlux(Vector& q, const Vectors& eV, const FiniteElement& fe,
+                 const Vec3& = {}, size_t level = 0) const override;
+
   //! \brief Evaluates the physical Darcy flux at an integration point.
   RealArray darcyFlux(const MxFiniteElement& fe, const Vectors& eV,
                       size_t level = 0) const;

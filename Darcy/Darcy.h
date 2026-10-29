@@ -117,25 +117,26 @@ public:
   //! returned pointer value.
   NormBase* getNormIntegrand(AnaSol* asol) const override;
 
-  //! \brief Returns pressure in a point.
+  //! \brief Returns the pressure in a point.
   //! \param[out] eV Element solution vectors
   //! \param[in] fe Finite element data at current point
-  //! \param[in] level Time level to evaluate at
+  //! \param[in] level Time level to evaluate at (0-based index)
   virtual double pressure(const Vectors& eV, const FiniteElement& fe,
-                          size_t level) const;
+                          size_t level = 0) const;
 
-  //! \brief Returns pressure gradient in a point.
+  //! \brief Returns the pressure gradient in a point.
   //! \param[in] eV Element solution vectors
   //! \param[in] fe Finite element data at current point
   Vec3 pressureGradient(const Vectors& eV, const FiniteElement& fe) const;
 
-  //! \brief Returns the darcy velocity in a point.
-  //! \param[out] q Darcy velocity vector
+  //! \brief Evaluates the darcy flux vector in a point.
+  //! \param[out] q Darcy flux vector
   //! \param[in] eV Element solution vectors
   //! \param[in] fe Finite element data at current point
   //! \param[in] X Cartesian coordinates of current point
-  bool evalDarcyVel(Vector& q, const Vectors& eV,
-                    const FiniteElement& fe, const Vec3& X) const;
+  virtual bool darcyFlux(Vector& q, const Vectors& eV,
+                         const FiniteElement& fe, const Vec3& X,
+                         size_t = 0) const;
 
   //! \brief Returns the fluid mass density in a point.
   //! \param[in] fe Finite element data at current point

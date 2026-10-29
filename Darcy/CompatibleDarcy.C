@@ -254,8 +254,7 @@ bool CompatibleDarcy::evalSol (Vector& s, const MxFiniteElement& fe,
     if (!this->getElementSol(MNPC,elem_sizes,basis_sizes,eV))
       return false;
 
-    s = this->darcyFlux(fe,eV);
-    return true;
+    return this->darcyFlux(s,eV,fe);
   }
   else
     s.reserve(2+nsd);
@@ -278,20 +277,30 @@ bool CompatibleDarcy::evalSol (Vector& s, const MxFiniteElement& fe,
 RealArray CompatibleDarcy::darcyFlux (const MxFiniteElement& fe,
                                       const Vectors& eV, size_t level) const
 {
-  RealArray result(nsd);
+  Vector result;
+  this->darcyFlux(result,eV,fe,Vec3(),level);
+  return result;
+}
+
+
+bool CompatibleDarcy::darcyFlux (Vector& q, const Vectors& eV,
+                                 const FiniteElement& fe, const Vec3&,
+                                 size_t level) const
+{
   size_t j = level*npv;
   if (usePiola)
   {
     RealArray coefs;
     for (unsigned short int i = 0; i < nsd; ++i, ++j)
       coefs.insert(coefs.end(),eV[j].begin(),eV[j].end());
-    fe.P_contra.N.multiply(coefs,result);
+    return fe.P_contra.N.multiply(coefs,q);
   }
-  else
-    for (unsigned short int i = 0; i < nsd; ++i, ++j)
-      result[i] = eV[j].dot(fe.basis(1+i));
 
-  return result;
+  q.resize(nsd);
+  for (unsigned short int i = 0; i < nsd; ++i, ++j)
+    q[i] = eV[j].dot(fe.basis(1+i));
+
+  return true;
 }
 
 
