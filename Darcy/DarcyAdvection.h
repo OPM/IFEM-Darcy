@@ -19,6 +19,7 @@
 #include <memory>
 
 class Field;
+class Fields;
 class RealFunc;
 class VecFunc;
 
@@ -75,12 +76,16 @@ public:
   //! returned pointer value.
   NormBase* getNormIntegrand(AnaSol*) const override;
 
-  //! \brief Set a field from a dependency.
+  //! \brief Sets a vector field from a dependency.
+  void setNamedFields(const std::string& name, Fields* field) override;
+  //! \brief Sets a scalar field from a dependency.
   void setNamedField(const std::string& name, Field* field) override;
 
 protected:
   std::unique_ptr<RealFunc> source; //!< Tracer source function
+  std::unique_ptr<Fields>   fField; //!< Darcy flux field (on mixed basis)
   std::unique_ptr<Field>    pField; //!< Pressure field
+  Vector                    sVec;   //!< Mixed solution vector
   Vector                    pVec;   //!< Pressure values
 
   friend class DarcyAdvectionNorm;

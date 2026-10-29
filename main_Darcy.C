@@ -119,7 +119,20 @@ int runCoupledSimulator (char* infile, const DarcyArgs& args)
 {
   const int torder = TimeIntegration::Order(args.timeMethod);
 
-  SIMDarcy<Dim>          darcy(new Darcy(Dim::dimension));
+  Darcy* flow = nullptr;
+  std::vector<unsigned char> fields;
+  if (ASMmxBase::Type == ASMmxBase::DIV_COMPATIBLE)
+  {
+    flow = new CompatibleDarcy(Dim::dimension,0,args.usePiola);
+    fields.resize(Dim::dimension+1,1);
+  }
+  else
+  {
+    flow = new Darcy(Dim::dimension);
+    fields.resize(1,1);
+  }
+
+  SIMDarcy<Dim>          darcy(flow,fields);
   SIMDarcyAdvection<Dim> dcadv(new DarcyAdvection(Dim::dimension,torder));
   SIMDarcySchedule<Dim>  schedule(darcy,dcadv);
   SIMSolver              solver(schedule);
@@ -178,14 +191,14 @@ int runSimulator1 (char* infile, const DarcyArgs& args)
       return 1;
     }
 
-    if (args.scheduled || args.tracer)
+    if (args.tracer && !args.scheduled)
     {
       std::cerr <<" *** The div-compatible formulation does not support"
-                <<" scheduled and/or tracer simulations."
+                <<" monolithic tracer simulations."
                 << std::endl;
       return 1;
     }
-    else if (args.timeMethod != TimeIntegration::NONE)
+    else if (!args.scheduled && args.timeMethod != TimeIntegration::NONE)
     {
       std::cerr <<" *** The div-compatible formulation is not yet"
                 <<" implemented for transient simulations."<< std::endl;

@@ -46,8 +46,20 @@ bool SIMDarcySchedule<Dim>::solveStep (TimeStep& tp, bool)
 template<class Dim>
 void SIMDarcySchedule<Dim>::setupDependencies ()
 {
-  this->S1.registerDependency(&this->S2,"tracer"  ,1,this->S2.getFEModel(),1);
-  this->S2.registerDependency(&this->S1,"pressure",1,this->S1.getFEModel(),1);
+  // Concentration is a scalar field on the advection basis
+  this->S1.registerDependency(&this->S2,"tracer",1,this->S2.getFEModel(),1);
+  if (this->S1.mixedProblem())
+  {
+    // Compatible flux components occupy separate bases in the flow model
+    const short int nsd = this->S1.getNoSpaceDim();
+    const char fluxBases = nsd == 2 ? 12 : 123;
+    this->S2.registerDependency(&this->S1,"solution",nsd,
+                                this->S1.getFEModel(),fluxBases);
+  }
+  else
+    // Pressure is the scalar field on the Darcy flow basis
+    this->S2.registerDependency(&this->S1,"pressure",1,
+                                this->S1.getFEModel(),1);
 }
 
 
