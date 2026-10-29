@@ -119,7 +119,20 @@ int runCoupledSimulator (char* infile, const DarcyArgs& args)
 {
   const int torder = TimeIntegration::Order(args.timeMethod);
 
-  SIMDarcy<Dim>          darcy(new Darcy(Dim::dimension));
+  Darcy* flow = nullptr;
+  std::vector<unsigned char> fields;
+  if (ASMmxBase::Type == ASMmxBase::DIV_COMPATIBLE)
+  {
+    flow = new CompatibleDarcy(Dim::dimension,0,args.usePiola);
+    fields.resize(Dim::dimension+1,1);
+  }
+  else
+  {
+    flow = new Darcy(Dim::dimension);
+    fields.resize(1,1);
+  }
+
+  SIMDarcy<Dim>          darcy(flow,fields);
   SIMDarcyAdvection<Dim> dcadv(new DarcyAdvection(Dim::dimension,torder));
   SIMDarcySchedule<Dim>  schedule(darcy,dcadv);
   SIMSolver              solver(schedule);
@@ -162,38 +175,38 @@ int runCoupledSimulator (char* infile, const DarcyArgs& args)
 template<class Dim>
 int runSimulator1 (char* infile, const DarcyArgs& args)
 {
-  if (args.usePiola && ASMmxBase::Type != ASMmxBase::DIV_COMPATIBLE)
-  {
-    std::cerr <<" *** Piola mapping requires the div-compatible formulation."
-              << std::endl;
-    return 1;
-  }
-
+  bool invalid = true;
   if (ASMmxBase::Type == ASMmxBase::DIV_COMPATIBLE)
   {
-    if (args.usePiola && Dim::dimension != 2)
+    if (args.scheduled)
     {
-      std::cerr <<" *** Piola mapping is currently supported in 2D only."
-                << std::endl;
-      return 1;
+      if (args.adap)
+        std::cerr <<" *** Scheduled div-compatible simulations do not"
+                  <<" support adaptive refinement."<< std::endl;
+      else if (args.usePiola && Dim::dimension != 2)
+        std::cerr <<" *** Scheduled Piola simulations are not yet"
+                  <<" supported in 3D."<< std::endl;
+      else
+        invalid = false;
     }
-
-    if (args.scheduled || args.tracer)
-    {
+    else if (args.tracer)
       std::cerr <<" *** The div-compatible formulation does not support"
-                <<" scheduled and/or tracer simulations."
-                << std::endl;
-      return 1;
-    }
+                <<" monolithic tracer simulations."<< std::endl;
     else if (args.timeMethod != TimeIntegration::NONE)
-    {
       std::cerr <<" *** The div-compatible formulation is not yet"
                 <<" implemented for transient simulations."<< std::endl;
-      return 1;
-    }
+    else
+      invalid = false;
   }
+  else if (args.usePiola)
+    std::cerr <<" *** Piola mapping requires the div-compatible formulation."
+              << std::endl;
+  else
+    invalid = false;
 
-  if (args.adap)
+  if (invalid)
+    return 1;
+  else if (args.adap)
     return runSimulator<Dim,SIMDarcyAdap>(infile,args);
   else if (args.scheduled)
     return runCoupledSimulator<Dim>(infile,args);
