@@ -187,7 +187,15 @@ bool CompatibleDarcy::evalIntMx (LocalIntegral& elmInt,
       const double mu = mat->getViscosity();
       const Vec3 K = mat->getPermeability(X);
       for (unsigned short int i = 0; i < nsd; ++i)
-        ScalarOps::Mass(elMat.A[fluxDiagIdx[i]], fe, mu/K[i], i);
+        if (K[i] > 0.0)
+          ScalarOps::Mass(elMat.A[fluxDiagIdx[i]], fe, mu/K[i], 1+i);
+        else
+        {
+          std::cerr <<" *** CompatibleDarcy::evalIntMx:"
+                    <<" Non-positive permeability K_"<< char('x'+i) <<"="<< K[i]
+                    <<" detected at point "<< X << std::endl;
+          return false;
+        }
     }
 
     if (usePiola)
@@ -228,7 +236,7 @@ bool CompatibleDarcy::evalBouMx (LocalIntegral& elmInt,
     fluxVec = (*tflux)(X,normal);
   else
   {
-    std::cerr <<" *** CompatibleDarcy::evalBou: No fluxes."<< std::endl;
+    std::cerr <<" *** CompatibleDarcy::evalBouMx: No fluxes."<< std::endl;
     return false;
   }
 
