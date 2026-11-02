@@ -38,14 +38,11 @@ protected:
 public:
   //! \brief The constructor initializes all pointers to zero.
   explicit Darcy(unsigned short int n, int torder = 0);
-  //! \brief The destructor deletes \ref reacInt and \ref bodyforce.
+  //! \brief The destructor deletes #reacInt.
   virtual ~Darcy();
 
   //! \brief Parses a data section from an XML element.
   bool parse(const tinyxml2::XMLElement* elem) override;
-
-  //! \brief Returns the body force vector at a given point.
-  Vec3 getBodyForce(const Vec3& X) const;
 
   //! \brief Defines the concentration source function.
   virtual void setCSource(RealFunc*) {}
@@ -146,7 +143,6 @@ public:
   void set2ndFluxOnly(bool onOff) { fluxOnly = onOff; }
 
 protected:
-  VecFunc*      bodyforce; //!< Body force function
   RealFunc*     flux;      //!< Flux function
   VecFunc*      vflux;     //!< Flux vector function
   TractionFunc* tflux;     //!< Flux traction function

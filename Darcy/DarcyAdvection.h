@@ -32,7 +32,7 @@ class DarcyAdvection : public DarcyBase
 public:
   //! \brief The constructor initializes all pointers to zero.
   explicit DarcyAdvection(unsigned short int n, int torder = 0);
-  //! \brief The destructor deletes the \ref bodyforce.
+  //! \brief Empty destructor.
   virtual ~DarcyAdvection();
 
   //! \brief Parses a data section from an XML element.
@@ -79,8 +79,6 @@ public:
   void setNamedField(const std::string& name, Field* field) override;
 
 protected:
-  VecFunc* bodyforce; //!< Body force function
-
   std::unique_ptr<RealFunc> source; //!< Tracer source function
   std::unique_ptr<Field>    pField; //!< Pressure field
   Vector                    pVec;   //!< Pressure values

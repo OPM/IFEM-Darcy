@@ -15,14 +15,60 @@
 #include "DarcyMaterial.h"
 
 #include "ElmMats.h"
+#include "ExprFunctions.h"
 #include "FiniteElement.h"
+#include "Functions.h"
+#include "Utilities.h"
+#include "tinyxml2.h"
+#include <cstring>
 
 
 DarcyBase::DarcyBase (unsigned short int n, int torder)
   : HasGravityBase(n), bdf(torder)
 {
-  ownerSim = nullptr;
-  mat = nullptr;
+  ownerSim  = nullptr;
+  mat       = nullptr;
+  bodyforce = nullptr;
+}
+
+
+DarcyBase::~DarcyBase ()
+{
+  delete bodyforce;
+}
+
+
+bool DarcyBase::parse (const tinyxml2::XMLElement* elem)
+{
+  const char* input = bodyforce ? nullptr : utl::getValue(elem,"bodyforce");
+  if (!input) return this->HasGravityBase::parse(elem);
+
+  if (strstr(input,"|"))
+  {
+    ExprEval::numError = 0;
+    VecFunc* bf = new VecFuncExpr(input);
+    if (ExprEval::numError > 0)
+      delete bf;
+    else
+      bodyforce = bf;
+  }
+  else
+  {
+    Vec3 bf;
+    char* ff = strdup(input);
+    char* ss = strtok(ff," \t\r\n");
+    for (int i = 0; i < 3 && ss; i++, ss = strtok(nullptr," \t\r\n"))
+      bf[i] = atof(ss);
+    free(ff);
+    bodyforce = new ConstVecFunc(bf);
+  }
+  return true;
+}
+
+
+Vec3 DarcyBase::getBodyForce (const Vec3& X) const
+{
+  return bodyforce ? (*bodyforce)(X) : Vec3();
 }
 
 

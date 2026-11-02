@@ -30,10 +30,18 @@ class DarcyBase : public HasGravityBase
 protected:
   //! \brief The constructor is protected to allow sub-class instances only.
   DarcyBase(unsigned short int n, int torder);
+  //! \brief The destructor deletes #bodyforce.
+  virtual ~DarcyBase();
 
 public:
   //! \brief Assigns the owner simulator.
   void setOwnerSim(SIMbase* sim) { ownerSim = sim; }
+
+  //! \brief Parses a data section from an XML element.
+  bool parse(const tinyxml2::XMLElement* elem) override;
+
+  //! \brief Returns the body force vector at a given point.
+  Vec3 getBodyForce(const Vec3& X) const;
 
   //! \brief Returns the inverse permeability matrix at specified point.
   bool getInvPermeability(const Vec3& X, Matrix& Kinv) const;
@@ -95,9 +103,9 @@ public:
   void setMaterial(DarcyMaterial& newMat) { mat = &newMat; }
 
 protected:
-  SIMbase* ownerSim; //!< The simulator that owns this integrand
-
+  SIMbase*  ownerSim; //!< The simulator that owns this integrand
   DarcyMaterial* mat; //!< Material properties
+  VecFunc* bodyforce; //!< Body force function
 
   TimeIntegration::BDF bdf; //!< Time integration parameters
 

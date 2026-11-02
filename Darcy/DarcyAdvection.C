@@ -34,23 +34,17 @@ DarcyAdvection::DarcyAdvection (unsigned short int n, int torder)
   : DarcyBase(n,torder)
 {
   this->registerVector("pressure",&pVec);
-
-  bodyforce = nullptr;
 }
 
 
 DarcyAdvection::~DarcyAdvection ()
 {
-  delete bodyforce;
 }
 
 
 bool DarcyAdvection::parse (const tinyxml2::XMLElement* elem)
 {
-  const char* input = nullptr;
-  if (!bodyforce && (input = utl::getValue(elem,"bodyforce")))
-    bodyforce = new VecFuncExpr(input);
-  else if ((input = utl::getValue(elem,"source")))
+  if (const char* input = utl::getValue(elem,"source"); input)
   {
     std::string type;
     utl::getAttribute(elem,"type",type);

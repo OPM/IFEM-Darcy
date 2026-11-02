@@ -39,7 +39,7 @@ Darcy::Darcy (unsigned short int n, int torder) : DarcyBase(n,torder)
   this->registerVector("tracer",&cVec);
 
   flux = nullptr;
-  vflux = bodyforce = nullptr;
+  vflux = nullptr;
   tflux = nullptr;
   reacInt = nullptr;
   extEner = fluxOnly = false;
@@ -49,7 +49,6 @@ Darcy::Darcy (unsigned short int n, int torder) : DarcyBase(n,torder)
 Darcy::~Darcy ()
 {
   delete reacInt;
-  delete bodyforce;
 }
 
 
@@ -57,9 +56,7 @@ bool Darcy::parse (const tinyxml2::XMLElement* elem)
 {
   char sourceType = 0;
   const char* input = nullptr;
-  if (!bodyforce && (input = utl::getValue(elem,"bodyforce")))
-    bodyforce = new VecFuncExpr(input);
-  else if ((input = utl::getValue(elem,"source")))
+  if ((input = utl::getValue(elem,"source")))
     sourceType = 'a';
   else if ((input = utl::getValue(elem,"source_c")))
     sourceType = 'c';
@@ -368,16 +365,6 @@ NormBase* Darcy::getNormIntegrand (AnaSol* asol) const
 {
   return new DarcyNorm(*const_cast<Darcy*>(this),
                        asol ? asol->getScalarSecSol() : nullptr);
-}
-
-
-Vec3 Darcy::getBodyForce (const Vec3& X) const
-{
-  Vec3 result;
-  if (bodyforce)
-    result = (*bodyforce)(X);
-
-  return result;
 }
 
 

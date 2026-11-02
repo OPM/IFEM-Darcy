@@ -26,7 +26,7 @@
   <!-- Problem-specific block !-->
   <darcy>
     <gravity y="-1.0"/>
-    <bodyforce>0.0 | 1.0</bodyforce>
+    <bodyforce>0.0 1.0</bodyforce>
     <permeability type="matrix">
       10.0 0.0
        0.0 1.0
