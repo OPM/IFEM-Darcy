@@ -84,7 +84,10 @@ bool DarcyMaterial::parse (const tinyxml2::XMLElement* elem)
   {
     IFEM::cout <<"\t\tPermeability";
     if (type == "diag" || type == "diagonal" || type == "vector")
-      permvalues.reset(utl::parseVecFunc(value));
+    {
+      type = strchr(value,'|') ? "expression" : "constant";
+      permvalues.reset(utl::parseVecFunc(value,type));
+    }
     else if (type != "matrix")
       permeability.reset(utl::parseRealFunc(value,type));
     else
