@@ -75,31 +75,25 @@ bool DarcyTransportCorr::parse (const tinyxml2::XMLElement* elem)
   {
     std::string type;
     utl::getAttribute(elem,"type",type);
-    IFEM::cout <<"\tObserved concentration function: "<< input << std::endl;
-    if (type == "expression")
-      observed_C.reset(utl::parseExprRealFunc(input,true));
-    else
-      observed_C.reset(utl::parseRealFunc(input));
+    IFEM::cout <<"\tObserved concentration function ("<< type <<")";
+    observed_C.reset(utl::parseRealFunc(input,type,true,true));
+    IFEM::cout << std::endl;
   }
   else if ((input = utl::getValue(elem,"input_source")))
   {
     std::string type;
     utl::getAttribute(elem,"type",type);
-    IFEM::cout <<"\tInput source: "<< input << std::endl;
-    if (type == "expression")
-      input_source = std::make_unique<EvalFunction>(input);
-    else
-      input_source.reset(utl::parseRealFunc(input));
+    IFEM::cout <<"\tInput source ("<< type <<")";
+    input_source.reset(utl::parseRealFunc(input,type,true));
+    IFEM::cout << std::endl;
   }
   else if ((input = utl::getValue(elem,"input_velocity")))
   {
     std::string type;
     utl::getAttribute(elem,"type",type);
-    IFEM::cout <<"\tInput velocity function: "<< input << std::endl;
-    if (type == "expression")
-      input_q.reset(utl::parseExprVecFunc(input,true));
-    else
-      input_q = std::make_unique<VecFuncExpr>(input);
+    IFEM::cout <<"\tInput velocity function ("<< type <<")";
+    input_q.reset(utl::parseVecFunc(input,type,"",true));
+    IFEM::cout << std::endl;
   }
   else if (!strcasecmp(elem->Value(),"penalty"))
   {
