@@ -18,7 +18,7 @@
 #include "ElmMats.h"
 #include "ElmNorm.h"
 #include "EqualOrderOperators.h"
-#include "ExprFunctions.h"
+#include "Functions.h"
 #include "Fields.h"
 #include "Field.h"
 #include "FiniteElement.h"
@@ -50,15 +50,10 @@ bool DarcyAdvection::parse (const tinyxml2::XMLElement* elem)
   {
     std::string type;
     utl::getAttribute(elem,"type",type);
-    IFEM::cout <<"\tSource function:";
+    IFEM::cout <<"\tSource function";
 
     RealFunc* src = nullptr;
-    if (type == "expression")
-    {
-      IFEM::cout <<" "<< input << std::endl;
-      src = new EvalFunction(input);
-    }
-    else if (type == "diracsum")
+    if (type == "diracsum")
     {
       double tol = 1e-2;
       utl::getAttribute(elem,"pointTol",tol);
@@ -66,6 +61,12 @@ bool DarcyAdvection::parse (const tinyxml2::XMLElement* elem)
     }
     else if (type == "elementsum" && ownerSim->createFEMmodel('y'))
       src = new ElementSteps(input,*ownerSim,nsd);
+    else
+    {
+      IFEM::cout <<" ("<< type <<")";
+      src = utl::parseRealFunc(input,type,true);
+      IFEM::cout << std::endl;
+    }
 
     if (src)
       source.reset(src);
