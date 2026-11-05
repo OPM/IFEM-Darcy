@@ -26,7 +26,7 @@ Parsing <boundaryconditions>
 	Dirichlet code 1: (fixed)
 Parsing <darcy>
   Parsing <source>
-	Source function: -2.0\*(x\*x-x+y\*y-y)
+	Source function (expression): -2.0\*(x\*x-x+y\*y-y)
   Parsing <gravity>
 	Gravitation vector: 0 -1
 		Permeability: 1
@@ -61,7 +61,18 @@ Parsing <darcy>
 		Dispersivity: 1
 		Fluid viscosity: 1
 Parsing <darcyadvection>
-	Source function: h=t; dh=1; c=(x\*x-x)\*(y\*y-y)\*h; ct=(x\*x-x)\*(y\*y-y)\*dh; px=(2\*x-1)\*(y\*y-y)\*h; py=(x\*x-x)\*(2\*y-1)\*h; cx=px; cy=py; p2x=2\*(y\*y-y)\*h; p2y=2\*(x\*x-x)\*h; ct - (cx\*px + c\*p2x + cy\*py + c\*p2y + p2x + p2y)
+	Source function (expression):
+		h=t;
+		dh=1;
+		c=(x\*x-x)\*(y\*y-y)\*h;
+		ct=(x\*x-x)\*(y\*y-y)\*dh;
+		px=(2\*x-1)\*(y\*y-y)\*h;
+		py=(x\*x-x)\*(2\*y-1)\*h;
+		cx=px;
+		cy=py;
+		p2x=2\*(y\*y-y)\*h;
+		p2y=2\*(x\*x-x)\*h;
+		ct - (cx\*px + c\*p2x + cy\*py + c\*p2y + p2x + p2y);
 Parsing <timestepping>
 Parsing input file succeeded.
 Parsing input file Tracer-coupled.xinp

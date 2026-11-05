@@ -25,9 +25,9 @@ Parsing <darcycorrection>
 	Dirichlet code 1 (expression): 1-y-4\*y^3
   Parsing <dirichlet>
 	Dirichlet code 2 (expression): x+4\*x^3
-	Input velocity function: 1-4\*y\*(x^2+y^2)|4\*x\*(x^2+y^2)
-	Observed concentration function: 1-(x-t)^2
-	Input source: 8\*y\*(x^2+y^2)\*(x-t)
+	Input velocity function (expression): 1-4\*y\*(x^2+y^2)|4\*x\*(x^2+y^2)
+	Observed concentration function (expression): 1-(x-t)^2
+	Input source (expression): 8\*y\*(x^2+y^2)\*(x-t)
 Parsing <timestepping>
 Parsing input file succeeded.
 2. Time integration driver
