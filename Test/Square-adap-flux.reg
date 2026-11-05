@@ -30,7 +30,7 @@ Parsing <darcy>
 Row 1: 2 0.4
 Row 2: 1
   Parsing <source>
-	Source function: 3.0\*PI\*PI\*sin(PI\*x)\*sin(PI\*y) - 0.8\*PI\*PI\*cos(PI\*x)\*cos(PI\*y)
+	Source function (expression): 3.0\*PI\*PI\*sin(PI\*x)\*sin(PI\*y) - 0.8\*PI\*PI\*cos(PI\*x)\*cos(PI\*y)
   Parsing <anasol>
 	Variables: ax = PI\*cos(PI\*x)\*sin(PI\*y)+1.0; ay = PI\*sin(PI\*x)\*cos(PI\*y)+2.0;
 	Primary: -2.0\*ax-0.4\*ay | -0.4\*ax-ay
@@ -90,37 +90,7 @@ Average element error                : 0.18431
 Refining 4 basis functions with errors in range \[0.737241,0.737241] 25% of all basis functions
 Adaptive step 2
 2. Darcy solver
-Parsing input file Square-adap.xinp
-Parsing <geometry>
-  Parsing <patch>
-  Parsing <refine>
-  Parsing <topologysets>
-	Topology sets: Horizontal (1,3,1D) (1,4,1D)
-	               Vertical (1,1,1D) (1,2,1D)
-  Parsing <patch>
-  Parsing <refine>
-  Parsing <topologysets>
-Parsing <boundaryconditions>
-  Parsing <neumann>
-	Neumann code 1000000 direction 0 (expression): -x-y-y
-  Parsing <dirichlet>
-	Dirichlet code 1 (expression): PI\*sin(PI\*x)\*(y+y-1.0)-2.4
-Parsing <darcy>
-		Permeability matrix:
-Row 1: 2 0.4
-Row 2: 1
-  Parsing <source>
-	Source function: 3.0\*PI\*PI\*sin(PI\*x)\*sin(PI\*y) - 0.8\*PI\*PI\*cos(PI\*x)\*cos(PI\*y)
-  Parsing <anasol>
-	Variables: ax = PI\*cos(PI\*x)\*sin(PI\*y)+1.0; ay = PI\*sin(PI\*x)\*cos(PI\*y)+2.0;
-	Primary: -2.0\*ax-0.4\*ay | -0.4\*ax-ay
-	Scalar Primary: sin(PI\*x)\*sin(PI\*y)+x+y+y
-Parsing <adaptive>
-Parsing input file succeeded.
 12. Darcy solver
-Resolving Dirichlet boundary conditions
-	Constraining P1 E3 in direction(s) 1 code = 1 basis = 2
-	Constraining P1 E4 in direction(s) 1 code = 1 basis = 2
  >>> SAM model summary <<<
 Number of elements    16
 Number of nodes       85
@@ -160,37 +130,7 @@ Average element error                : 0.0200506
 Refining 1 basis functions with errors in range \[0.196039,0.196039] 2.77778% of all basis functions
 Adaptive step 3
 3. Darcy solver
-Parsing input file Square-adap.xinp
-Parsing <geometry>
-  Parsing <patch>
-  Parsing <refine>
-  Parsing <topologysets>
-	Topology sets: Horizontal (1,3,1D) (1,4,1D)
-	               Vertical (1,1,1D) (1,2,1D)
-  Parsing <patch>
-  Parsing <refine>
-  Parsing <topologysets>
-Parsing <boundaryconditions>
-  Parsing <neumann>
-	Neumann code 1000000 direction 0 (expression): -x-y-y
-  Parsing <dirichlet>
-	Dirichlet code 1 (expression): PI\*sin(PI\*x)\*(y+y-1.0)-2.4
-Parsing <darcy>
-		Permeability matrix:
-Row 1: 2 0.4
-Row 2: 1
-  Parsing <source>
-	Source function: 3.0\*PI\*PI\*sin(PI\*x)\*sin(PI\*y) - 0.8\*PI\*PI\*cos(PI\*x)\*cos(PI\*y)
-  Parsing <anasol>
-	Variables: ax = PI\*cos(PI\*x)\*sin(PI\*y)+1.0; ay = PI\*sin(PI\*x)\*cos(PI\*y)+2.0;
-	Primary: -2.0\*ax-0.4\*ay | -0.4\*ax-ay
-	Scalar Primary: sin(PI\*x)\*sin(PI\*y)+x+y+y
-Parsing <adaptive>
-Parsing input file succeeded.
 13. Darcy solver
-Resolving Dirichlet boundary conditions
-	Constraining P1 E3 in direction(s) 1 code = 1 basis = 2
-	Constraining P1 E4 in direction(s) 1 code = 1 basis = 2
  >>> SAM model summary <<<
 Number of elements    43
 Number of nodes       166
@@ -230,37 +170,7 @@ Average element error                : 0.00638726
 Refining 2 basis functions with errors in range \[0.138036,0.175412] 3.1746% of all basis functions
 Adaptive step 4
 4. Darcy solver
-Parsing input file Square-adap.xinp
-Parsing <geometry>
-  Parsing <patch>
-  Parsing <refine>
-  Parsing <topologysets>
-	Topology sets: Horizontal (1,3,1D) (1,4,1D)
-	               Vertical (1,1,1D) (1,2,1D)
-  Parsing <patch>
-  Parsing <refine>
-  Parsing <topologysets>
-Parsing <boundaryconditions>
-  Parsing <neumann>
-	Neumann code 1000000 direction 0 (expression): -x-y-y
-  Parsing <dirichlet>
-	Dirichlet code 1 (expression): PI\*sin(PI\*x)\*(y+y-1.0)-2.4
-Parsing <darcy>
-		Permeability matrix:
-Row 1: 2 0.4
-Row 2: 1
-  Parsing <source>
-	Source function: 3.0\*PI\*PI\*sin(PI\*x)\*sin(PI\*y) - 0.8\*PI\*PI\*cos(PI\*x)\*cos(PI\*y)
-  Parsing <anasol>
-	Variables: ax = PI\*cos(PI\*x)\*sin(PI\*y)+1.0; ay = PI\*sin(PI\*x)\*cos(PI\*y)+2.0;
-	Primary: -2.0\*ax-0.4\*ay | -0.4\*ax-ay
-	Scalar Primary: sin(PI\*x)\*sin(PI\*y)+x+y+y
-Parsing <adaptive>
-Parsing input file succeeded.
 14. Darcy solver
-Resolving Dirichlet boundary conditions
-	Constraining P1 E3 in direction(s) 1 code = 1 basis = 2
-	Constraining P1 E4 in direction(s) 1 code = 1 basis = 2
  >>> SAM model summary <<<
 Number of elements    61
 Number of nodes       244

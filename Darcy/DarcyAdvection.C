@@ -18,7 +18,8 @@
 #include "ElmMats.h"
 #include "ElmNorm.h"
 #include "EqualOrderOperators.h"
-#include "ExprFunctions.h"
+#include "Functions.h"
+#include "Fields.h"
 #include "Field.h"
 #include "FiniteElement.h"
 #include "IFEM.h"
@@ -33,6 +34,7 @@
 DarcyAdvection::DarcyAdvection (unsigned short int n, int torder)
   : DarcyBase(n,torder)
 {
+  this->registerVector("solution",&sVec);
   this->registerVector("pressure",&pVec);
 }
 
@@ -48,15 +50,10 @@ bool DarcyAdvection::parse (const tinyxml2::XMLElement* elem)
   {
     std::string type;
     utl::getAttribute(elem,"type",type);
-    IFEM::cout <<"\tSource function:";
+    IFEM::cout <<"\tSource function";
 
     RealFunc* src = nullptr;
-    if (type == "expression")
-    {
-      IFEM::cout <<" "<< input << std::endl;
-      src = new EvalFunction(input);
-    }
-    else if (type == "diracsum")
+    if (type == "diracsum")
     {
       double tol = 1e-2;
       utl::getAttribute(elem,"pointTol",tol);
@@ -64,6 +61,12 @@ bool DarcyAdvection::parse (const tinyxml2::XMLElement* elem)
     }
     else if (type == "elementsum" && ownerSim->createFEMmodel('y'))
       src = new ElementSteps(input,*ownerSim,nsd);
+    else
+    {
+      IFEM::cout <<" ("<< type <<")";
+      src = utl::parseRealFunc(input,type,true);
+      IFEM::cout << std::endl;
+    }
 
     if (src)
       source.reset(src);
@@ -78,40 +81,51 @@ bool DarcyAdvection::parse (const tinyxml2::XMLElement* elem)
 bool DarcyAdvection::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
                               const TimeDomain& time, const Vec3& X) const
 {
-  using WeakOps = EqualOrderOperators::Weak;
+  using Weak = EqualOrderOperators::Weak;
 
   ElmMats& elMat = static_cast<ElmMats&>(elmInt);
 
   if (!elMat.A.empty() && calcMats)
   {
-    Matrix Kmat;
-    const Vec3 K = mat->getPermeability(X);
-    const bool hasKmat = mat->getPermeability(&Kmat);
-    const double D = mat->getDispersivity(X);
-    const double mu = mat->getViscosity();
+    Vector qVec(nsd);
+    if (pField)
+    {
+      Matrix Kmat;
+      const bool hasKmat = mat->getPermeability(&Kmat);
+      const Vec3 Kvec = mat->getPermeability(X);
+      const double mu = mat->getViscosity();
 
-    // Evaluate the Darcy velocity, q = -K/mu * (grad(p) - rho*(g + bf))
-    Vector dP;
-    pField->gradFE(fe,dP);
-    Vec3 q(gravity);
-    if (bodyforce)
-      q += (*bodyforce)(X);
-    if (!q.isZero())
-      dP.add(q.vec(nsd),-mat->getDensity(elmInt.vec.front().dot(fe.N)));
-    if (!hasKmat)
-      for (size_t i = 0; i < nsd; i++)
-        q[i] = -(K[i]/mu)*dP[i];
-    else if (Vector qVec; Kmat.multiply(dP,qVec,-1.0/mu))
-      q = Vec3(qVec);
+      // Evaluate the Darcy velocity, q = -K/mu * (grad(p) - rho*(g + bf))
+      Vector dP;
+      pField->gradFE(fe,dP);
+      Vec3 q(gravity);
+      if (bodyforce)
+        q += (*bodyforce)(X);
+      if (!q.isZero())
+        dP.add(q.vec(nsd),-mat->getDensity(elmInt.vec.front().dot(fe.N)));
+      if (!hasKmat)
+        for (size_t i = 0; i < nsd; i++)
+          qVec[i] = -(Kvec[i]/mu)*dP[i];
+      else if (!Kmat.multiply(dP,qVec,-1.0/mu))
+        return false;
+    }
+    else if (fField)
+      fField->valueFE(fe,qVec);
     else
+    {
+      std::cerr <<" *** DarcyAdvection::evalInt: Neither a pressure nor\n"
+                <<"     a flux field has been assigned,"
+                <<" can't calculate advection terms."<< std::endl;
       return false;
+    }
 
-    WeakOps::Laplacian(elMat.A.front(), fe, D, false);
-    WeakOps::Advection(elMat.A.front(), fe, q, 1.0, WeakOperators::CONSERVATIVE);
+    Vec3 q(qVec);
+    Weak::Laplacian(elMat.A.front(), fe, mat->getDispersivity(X), false);
+    Weak::Advection(elMat.A.front(), fe, q, 1.0, WeakOperators::CONSERVATIVE);
   }
 
   if (source)
-    WeakOps::Source(elMat.b.front(), fe, (*source)(X), 1);
+    Weak::Source(elMat.b.front(), fe, (*source)(X), 1);
 
   if (bdf.getActualOrder() > 0)
   {
@@ -121,9 +135,9 @@ bool DarcyAdvection::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
     for (int t = 1; t <= bdf.getOrder(); t++)
       c -= elmInt.vec[t].dot(fe.N) * phi * bdf[t] / time.dt;
 
-    WeakOps::Source(elMat.b.front(), fe, c, 1);
+    Weak::Source(elMat.b.front(), fe, c, 1);
     if (!elMat.A.empty() && calcMats)
-      WeakOps::Mass(elMat.A.front(), fe, phi*bdf[0] / time.dt);
+      Weak::Mass(elMat.A.front(), fe, phi*bdf[0] / time.dt);
   }
 
   return true;
@@ -178,6 +192,15 @@ bool DarcyAdvection::evalSol2 (Vector& s, const Vectors& eV,
   s.push_back(dCh.begin(),dCh.end());
 
   return true;
+}
+
+
+void DarcyAdvection::setNamedFields (const std::string& name, Fields* field)
+{
+  if (name == "flux" || name == "solution")
+    fField.reset(field);
+  else
+    delete field;
 }
 
 

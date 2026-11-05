@@ -22,9 +22,9 @@ Parsing <darcycorrection>
 	Dirichlet code 1 (expression): 1-2\*y
   Parsing <dirichlet>
 	Dirichlet code 2 (expression): 2\*x
-	Input velocity function: 1-2\*y|2\*x
-	Observed concentration function: 1-(x-t)^2
-	Input source: 4\*y\*(x-t)
+	Input velocity function (expression): 1-2\*y|2\*x
+	Observed concentration function (expression): 1-(x-t)^2
+	Input source (expression): 4\*y\*(x-t)
 Parsing <timestepping>
 Parsing input file succeeded.
 2. Time integration driver

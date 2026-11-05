@@ -17,9 +17,25 @@ Parsing <geometry>
 Parsing <darcycorrection>
   Parsing <dirichlet>
 	Dirichlet code 12: (fixed)
-	Input velocity function: 4\*pow(x-x\*x,2)\*8\*(y-1)\*y\*(2\*y-1) | -8\*(x-1)\*x\*(2\*x-1)\*4\*pow(y-y\*y,2)
-	Observed concentration function: x\*(x-1)\*y\*(y-1)
-	Input source: c=x\*(x-1)\*y\*(y-1); cx=(2\*x-1)\*y\*(y-1); cy=x\*(x-1)\*(2\*y-1); f = 4\*pow(x-x\*x,2); fp = 8\*(x-1)\*x\*(2\*x-1); f2p = 8\*(6\*x\*x-6\*x+1); g = 4\*pow(y-y\*y,2); gp = 8\*(y-1)\*y\*(2\*y-1); g2p = 8\*(6\*y\*y-6\*y+1); px=f\*gp; py=-fp\*g; p2x=fp\*gp; p2y=-fp\*gp; -(cx\*px + c\*p2x + cy\*py + c\*p2y)
+	Input velocity function (expression):
+		4\*pow(x-x\*x,2)\*8\*(y-1)\*y\*(2\*y-1)
+		-8\*(x-1)\*x\*(2\*x-1)\*4\*pow(y-y\*y,2)
+	Observed concentration function (expression): x\*(x-1)\*y\*(y-1)
+	Input source (expression):
+		c=x\*(x-1)\*y\*(y-1);
+		cx=(2\*x-1)\*y\*(y-1);
+		cy=x\*(x-1)\*(2\*y-1);
+		f = 4\*pow(x-x\*x,2);
+		fp = 8\*(x-1)\*x\*(2\*x-1);
+		f2p = 8\*(6\*x\*x-6\*x+1);
+		g = 4\*pow(y-y\*y,2);
+		gp = 8\*(y-1)\*y\*(2\*y-1);
+		g2p = 8\*(6\*y\*y-6\*y+1);
+		px=f\*gp;
+		py=-fp\*g;
+		p2x=fp\*gp;
+		p2y=-fp\*gp;
+		-(cx\*px + c\*p2x + cy\*py + c\*p2y);
 Parsing input file succeeded.
 11. Darcy transport correction solver
 Resolving Dirichlet boundary conditions
