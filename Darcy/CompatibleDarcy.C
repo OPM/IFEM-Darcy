@@ -28,8 +28,7 @@
 #include "Vec3Oper.h"
 
 
-CompatibleDarcy::CompatibleDarcy (unsigned short int n, int torder, bool piola)
-  : Darcy(n,torder)
+CompatibleDarcy::CompatibleDarcy (unsigned short int n, bool piola) : Darcy(n)
 {
   npv = n+1;
   Darcy::pp = pp;

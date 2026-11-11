@@ -65,7 +65,7 @@ int runSimulator (char* infile, const DarcyArgs& args)
   std::vector<unsigned char> fields;
   if (ASMmxBase::Type == ASMmxBase::DIV_COMPATIBLE)
   {
-    itg = new CompatibleDarcy(Dim::dimension,torder,args.usePiola);
+    itg = new CompatibleDarcy(Dim::dimension,args.usePiola);
     fields.resize(Dim::dimension+1,1);
   }
   else if (args.tracer)
@@ -73,9 +73,14 @@ int runSimulator (char* infile, const DarcyArgs& args)
     itg = new DarcyTransport(Dim::dimension,torder);
     fields.resize(1,2);
   }
+  else if (torder > 0)
+  {
+    itg = new DarcyTransient(Dim::dimension,torder);
+    fields.resize(1,1);
+  }
   else
   {
-    itg = new Darcy(Dim::dimension,torder);
+    itg = new Darcy(Dim::dimension);
     fields.resize(1,1);
   }
 
@@ -123,7 +128,7 @@ int runCoupledSimulator (char* infile, const DarcyArgs& args)
   std::vector<unsigned char> fields;
   if (ASMmxBase::Type == ASMmxBase::DIV_COMPATIBLE)
   {
-    flow = new CompatibleDarcy(Dim::dimension,0,args.usePiola);
+    flow = new CompatibleDarcy(Dim::dimension,args.usePiola);
     fields.resize(Dim::dimension+1,1);
   }
   else
@@ -272,7 +277,7 @@ int main (int argc, char** argv)
   if (ASMmxBase::Type == ASMmxBase::DIV_COMPATIBLE)
     IFEM::cout <<"\nUsing a divergence-compatible Darcy formulation"
                << (args.usePiola ? " with Piola mapping." : ".");
-  else if (args.tracer || args.scheduled)
+  if (args.tracer || args.scheduled)
     IFEM::cout <<"\nIncluding a tracer field.";
   if (args.timeMethod == TimeIntegration::BE)
     IFEM::cout <<"\nUsing Backward-Euler time stepping.";
@@ -280,7 +285,7 @@ int main (int argc, char** argv)
     IFEM::cout <<"\nUsing BDF2 time stepping.";
   if (args.scheduled)
     IFEM::cout <<"\nUpdating pressure according to a schedule.";
-   IFEM::cout << std::endl;
+  IFEM::cout << std::endl;
 
   utl::profiler->stop("Initialization");
 

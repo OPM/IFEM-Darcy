@@ -21,7 +21,7 @@
   \brief Class representing the integrand of the Darcy transport problem.
 */
 
-class DarcyTransport : public Darcy
+class DarcyTransport : public DarcyTransient
 {
 public:
   //! \brief The constructor initializes all pointers to zero.

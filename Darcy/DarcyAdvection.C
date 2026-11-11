@@ -32,7 +32,7 @@
 
 
 DarcyAdvection::DarcyAdvection (unsigned short int n, int torder)
-  : DarcyBase(n,torder)
+  : DarcyBase(n), bdf(torder)
 {
   this->registerVector("solution",&sVec);
   this->registerVector("pressure",&pVec);

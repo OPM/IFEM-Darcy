@@ -30,7 +30,7 @@
 
 
 DarcyTransport::DarcyTransport (unsigned short int n, int torder) :
-  Darcy(n, torder)
+  DarcyTransient(n,torder)
 {
   pp = 1;
   cc = 2;
@@ -42,7 +42,8 @@ DarcyTransport::DarcyTransport (unsigned short int n, int torder) :
 DarcyTransport::~DarcyTransport() = default;
 
 
-LocalIntegral* DarcyTransport::getLocalIntegral (size_t nen, size_t, bool neumann) const
+LocalIntegral* DarcyTransport::getLocalIntegral (size_t nen, size_t,
+                                                 bool neumann) const
 {
   BlockElmMats* result = new BlockElmMats(2, 1);
 

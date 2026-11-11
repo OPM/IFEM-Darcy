@@ -15,7 +15,6 @@
 #define _DARCY_BASE_H_
 
 #include "HasGravityBase.h"
-#include "BDF.h"
 
 class DarcyMaterial;
 class SIMbase;
@@ -29,9 +28,9 @@ class DarcyBase : public HasGravityBase
 {
 protected:
   //! \brief The constructor is protected to allow sub-class instances only.
-  DarcyBase(unsigned short int n, int torder);
+  explicit DarcyBase(unsigned short int n);
   //! \brief The destructor deletes #bodyforce.
-  virtual ~DarcyBase();
+  ~DarcyBase() override;
 
 public:
   //! \brief Assigns the owner simulator.
@@ -53,9 +52,6 @@ public:
   //! \brief Defines the solution mode before the element assembly is started.
   //! \param[in] mode The solution mode to use
   void setMode(SIM::SolutionMode mode) override;
-
-  //! \brief Update time stepping scheme (BE -> BDF2 transition).
-  bool advanceStep() override { return bdf.advanceStep();  }
 
   using HasGravityBase::getLocalIntegral;
   //! \brief Returns a local integral contribution object for given element.
@@ -84,8 +80,8 @@ public:
   bool finalizeElement(LocalIntegral& elmInt, const FiniteElement& fe,
                        const TimeDomain& time, size_t iGP) override;
 
-  //! \brief Returns order of time integration.
-  int getOrder() const { return bdf.getActualOrder(); }
+  //! \brief Returns order of time integration for transient problems.
+  virtual int getOrder() const { return 0; }
 
   //! \brief Initializes and toggles the use of left-hand-side matrix buffers.
   //! \param[in] nEl Number of elements in the model/toggle.
@@ -106,8 +102,6 @@ protected:
   SIMbase*  ownerSim; //!< The simulator that owns this integrand
   DarcyMaterial* mat; //!< Material properties
   VecFunc* bodyforce; //!< Body force function
-
-  TimeIntegration::BDF bdf; //!< Time integration parameters
 
   Matrices myKmats; //!< Cached element matrices
 

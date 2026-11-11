@@ -23,8 +23,7 @@
 #include <cstring>
 
 
-DarcyBase::DarcyBase (unsigned short int n, int torder)
-  : HasGravityBase(n), bdf(torder)
+DarcyBase::DarcyBase (unsigned short int n) : HasGravityBase(n)
 {
   ownerSim  = nullptr;
   mat       = nullptr;
@@ -115,7 +114,7 @@ void DarcyBase::setMode (SIM::SolutionMode mode)
   if (mode >= SIM::RECOVERY)
     primsol.resize(1);
   else
-    primsol.resize(1+bdf.getActualOrder());
+    primsol.resize(1+this->getOrder());
 }
 
 

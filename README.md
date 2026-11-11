@@ -47,7 +47,8 @@ graph TD;
     IFEM2 --> DarcyBase
     DarcyBase --> Darcy
     DarcyBase --> DarcyAdvection
-    Darcy --> DarcyTransport
+    Darcy --> DarcyTransient
+    DarcyTransient --> DarcyTransport
     Darcy --> CompatibleDarcy
     IFEM1 --> DarcyTransportCorr
 ```
