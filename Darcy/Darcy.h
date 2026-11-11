@@ -15,6 +15,7 @@
 #define _DARCY_H_
 
 #include "DarcyBase.h"
+#include "BDF.h"
 
 #include <memory>
 
@@ -37,9 +38,9 @@ protected:
 
 public:
   //! \brief The constructor initializes all pointers to zero.
-  explicit Darcy(unsigned short int n, int torder = 0);
+  explicit Darcy(unsigned short int n);
   //! \brief The destructor deletes #reacInt.
-  virtual ~Darcy();
+  ~Darcy() override;
 
   //! \brief Parses a data section from an XML element.
   bool parse(const tinyxml2::XMLElement* elem) override;
@@ -157,6 +158,35 @@ protected:
 
 public:
   char extEner; //!< If \e true, external energy is to be computed
+};
+
+
+/*!
+  \brief Class representing the integrand of a transient Darcy problem.
+*/
+
+class DarcyTransient : public Darcy
+{
+public:
+  //! \brief The constructor forwards to the parent class constructor.
+  DarcyTransient(unsigned short int n, int torder) : Darcy(n), bdf(torder) {}
+
+  //! \brief Update time stepping scheme (BE -> BDF2 transition).
+  bool advanceStep() override { return bdf.advanceStep();  }
+
+  //! \brief Returns order of time integration.
+  int getOrder() const override { return bdf.getActualOrder(); }
+
+  //! \brief Evaluates the integrand at an interior point.
+  //! \param elmInt The local integral object to receive the contributions
+  //! \param[in] fe Finite element data of current integration point
+  //! \param[in] time Time stepping parameters
+  //! \param[in] X Cartesian coordinates of current integration point
+  bool evalInt(LocalIntegral& elmInt, const FiniteElement& fe,
+               const TimeDomain& time, const Vec3& X) const override;
+
+protected:
+  TimeIntegration::BDF bdf; //!< Time integration parameters
 };
 
 

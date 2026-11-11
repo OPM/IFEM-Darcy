@@ -34,7 +34,7 @@
 #include "tinyxml2.h"
 
 
-Darcy::Darcy (unsigned short int n, int torder) : DarcyBase(n,torder)
+Darcy::Darcy (unsigned short int n) : DarcyBase(n)
 {
   this->registerVector("tracer",&cVec);
 
@@ -203,16 +203,6 @@ bool Darcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
     WeakOps::Source(elMat.b[pp], fe, src);
   }
 
-  if (bdf.getActualOrder() > 0 && elmInt.vec.size() > 1 && pp == 0)
-  {
-    // Add time-dependent terms (currently unused, TODO: verify this)
-    double p = 0.0;
-    for (int t = 1; t <= bdf.getOrder(); t++)
-      p -= this->pressure(elmInt.vec, fe, t) * bdf[t] / time.dt;
-    WeakOps::Source(elMat.b[pp], fe, p);
-    if (!elMat.A.empty() && calcMats)
-      WeakOps::Mass(elMat.A[pp], fe, bdf[0] / time.dt);
-  }
 #if INT_DEBUG > 3
   std::cout << std::endl;
 #endif
@@ -226,6 +216,31 @@ bool Darcy::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
     if (!fe.dNdX.multiply(q,elMat.b.front(),fe.detJxW,1.0)) // b += dNdX * q
       return false;
   }
+
+  return true;
+}
+
+
+bool DarcyTransient::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
+                              const TimeDomain& time, const Vec3& X) const
+{
+  if (!this->Darcy::evalInt(elmInt, fe, time, X))
+    return false;
+  else if (bdf.getActualOrder() < 1 || elmInt.vec.size() < 2)
+    return true; // no transient terms
+
+  using WeakOps = EqualOrderOperators::Weak;
+
+  ElmMats& elMat = static_cast<ElmMats&>(elmInt);
+
+  // Add the time-dependent terms
+  double p = 0.0;
+  for (int t = 1; t <= bdf.getOrder(); t++)
+    p -= this->pressure(elmInt.vec, fe, t) * bdf[t] / time.dt;
+
+  WeakOps::Source(elMat.b[pp], fe, p);
+  if (!elMat.A.empty() && calcMats)
+    WeakOps::Mass(elMat.A[pp], fe, bdf[0] / time.dt);
 
   return true;
 }
