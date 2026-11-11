@@ -15,6 +15,7 @@
 #define _DARCY_ADVECTION_H_
 
 #include "DarcyBase.h"
+#include "BDF.h"
 
 #include <memory>
 
@@ -33,11 +34,17 @@ class DarcyAdvection : public DarcyBase
 public:
   //! \brief The constructor initializes all pointers to zero.
   explicit DarcyAdvection(unsigned short int n, int torder = 0);
-  //! \brief Empty destructor.
-  virtual ~DarcyAdvection();
+  //! \brief Default destructor.
+  ~DarcyAdvection() override;
 
   //! \brief Parses a data section from an XML element.
   bool parse(const tinyxml2::XMLElement* elem) override;
+
+  //! \brief Update time stepping scheme (BE -> BDF2 transition).
+  bool advanceStep() override { return bdf.advanceStep();  }
+
+  //! \brief Returns order of time integration.
+  int getOrder() const override { return bdf.getActualOrder(); }
 
   using DarcyBase::evalInt;
   //! \brief Evaluates the integrand at an interior point.
@@ -87,6 +94,8 @@ protected:
   std::unique_ptr<Field>    pField; //!< Pressure field
   Vector                    sVec;   //!< Mixed solution vector
   Vector                    pVec;   //!< Pressure values
+
+  TimeIntegration::BDF bdf; //!< Time integration parameters
 
   friend class DarcyAdvectionNorm;
 };

@@ -43,8 +43,7 @@ class CompatibleDarcy : public Darcy
 
 public:
   //! \brief The constructor initializes the integrand.
-  explicit CompatibleDarcy(unsigned short int n, int torder = 0,
-                           bool piola = false);
+  explicit CompatibleDarcy(unsigned short int n, bool piola = false);
 
   //! \brief Returns the integrand flags.
   int getIntegrandType() const override;
