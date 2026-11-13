@@ -34,7 +34,7 @@ Row 2: 1
   Parsing <anasol>
 	Variables: ax = PI\*cos(PI\*x)\*sin(PI\*y)+1.0; ay = PI\*sin(PI\*x)\*cos(PI\*y)+2.0;
 	Primary: -2.0\*ax-0.4\*ay | -0.4\*ax-ay
-	Scalar Primary: sin(PI\*x)\*sin(PI\*y)+x+y+y
+	Primary: sin(PI\*x)\*sin(PI\*y)+x+y+y
 Parsing <adaptive>
 Parsing input file succeeded.
 Parsing input file Square-adap.xinp
