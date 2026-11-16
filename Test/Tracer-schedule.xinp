@@ -34,10 +34,12 @@
     <viscosity>1.0</viscosity>
     <anasol type="expression">
       <variables>h=1</variables>
+      <!-- pressure solution -->
       <primary>x*(x-1)*y*(y-1)*h</primary>
       <secondary>-(2*x-1)*y*(y-1)*h | -x*(x-1)*(2*y-1)*h</secondary>
-      <scalarprimary>x*(x-1)*y*(y-1)*h</scalarprimary>
-      <scalarsecondary>(2*x-1)*y*(y-1)*h | x*(x-1)*(2*y-1)*h</scalarsecondary>
+      <!-- concentration solution -->
+      <primary>x*(x-1)*y*(y-1)*h</primary>
+      <secondary>(2*x-1)*y*(y-1)*h | x*(x-1)*(2*y-1)*h</secondary>
     </anasol>
     <schedule>
       <update time="0.5"/>

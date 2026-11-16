@@ -39,10 +39,12 @@
     <dispersivity type="constant">1.0</dispersivity>
     <subiterations max="50" tol="1e-10"/>
     <anasol type="expression">
+      <!-- pressure solution -->
       <primary>x*(x-1)*y*(y-1)</primary>
       <secondary>-(2*x-1)*y*(y-1) | -x*(x-1)*(2*y-1)</secondary>
-      <scalarprimary>x*(x-1)*y*(y-1)</scalarprimary>
-      <scalarsecondary>(2*x-1)*y*(y-1) | x*(x-1)*(2*y-1)</scalarsecondary>
+      <!-- concentration solution -->
+      <primary>x*(x-1)*y*(y-1)</primary>
+      <secondary>(2*x-1)*y*(y-1) | x*(x-1)*(2*y-1)</secondary>
     </anasol>
   </darcy>
 
