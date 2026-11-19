@@ -96,9 +96,14 @@ bool DarcyBase::getInvPermeability (const Vec3& X, Matrix& Kinv) const
 }
 
 
-double DarcyBase::getDispersivity (const Vec3& X) const
+Vec3 DarcyBase::getDispersivity (const Vec3& X) const
 {
-  return mat ? mat->getDispersivity(X) : 0.0;
+  if (!mat) return Vec3();
+
+  if (double D = mat->getDispersivity(X); D > 0.0)
+    return Vec3(D,D,D); // isotropic, but potentially with spatial variation
+  else // anisotropic, but constant
+    return mat->getDispersivity();
 }
 
 

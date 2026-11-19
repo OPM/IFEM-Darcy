@@ -15,15 +15,15 @@
 #include "Functions.h"
 #include "IFEM.h"
 #include "Utilities.h"
-#include "Vec3.h"
+#include "Vec3Oper.h"
 #include "tinyxml2.h"
 #include <cstring>
 
 
 DarcyMaterial::DarcyMaterial (const tinyxml2::XMLElement* elem)
 {
-  const tinyxml2::XMLElement* child = elem->FirstChildElement();
-  for (; child; child = child->NextSiblingElement())
+  for (const tinyxml2::XMLElement* child = elem->FirstChildElement();
+       child; child = child->NextSiblingElement())
     this->parse(child);
 }
 
@@ -52,6 +52,8 @@ DarcyMaterial::DarcyMaterial (DarcyMaterial&& tmp)
     viscosity = tmp.viscosity;
   else if (tmp.viscosity < 0.0)
     viscosity = tmp.viscosity; // invalid properties
+
+  aniDispersivity = std::move(tmp.aniDispersivity);
 }
 
 
@@ -72,6 +74,7 @@ bool DarcyMaterial::parse (const tinyxml2::XMLElement* elem)
   std::string type;
   utl::getAttribute(elem,"type",type);
 
+  const char* sep = " \t\r\n";
   const char* value = nullptr;
   if (utl::getValue(elem,"permvalues"))
   {
@@ -94,7 +97,7 @@ bool DarcyMaterial::parse (const tinyxml2::XMLElement* elem)
     {
       std::vector<double> values;
       char* strtmp = strdup(value);
-      for (char* s = strtok(strtmp," \t\r\n"); s; s = strtok(nullptr," \t\r\n"))
+      for (char* s = strtok(strtmp,sep); s; s = strtok(nullptr,sep))
         values.push_back(atof(s));
       free(strtmp);
       size_t ndim = static_cast<size_t>(sqrt(values.size()));
@@ -126,7 +129,20 @@ bool DarcyMaterial::parse (const tinyxml2::XMLElement* elem)
   else if ((value = utl::getValue(elem,"dispersivity")))
   {
     IFEM::cout <<"\t\tDispersivity";
-    dispersivity.reset(utl::parseRealFunc(value,type));
+    if (type == "anisotropic")
+    {
+      int i = 0;
+      char* strtmp = strdup(value);
+      for (char* s = strtok(strtmp,sep); s; s = strtok(nullptr,sep))
+        if (i < 3)
+          aniDispersivity(++i) = atof(s);
+        else
+          break;
+      free(strtmp);
+      IFEM::cout <<": "<< aniDispersivity;
+    }
+    else
+      dispersivity.reset(utl::parseRealFunc(value,type));
     IFEM::cout << std::endl;
   }
   else if ((value = utl::getValue(elem,"density")))

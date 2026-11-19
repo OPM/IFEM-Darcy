@@ -110,10 +110,14 @@ bool DarcyTransport::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
   ElmMats& elMat = static_cast<ElmMats&>(elmInt);
 
   const double D = mat->getDispersivity(X);
+  const Vec3& aD = mat->getDispersivity();
   const double phiDt = mat->getPorosity(X) / time.dt;
 
   if (!elMat.A.empty() && calcMats) {
-    WeakOps::Laplacian(elMat.A[cc], fe, D, false);
+    if (D > 0.0)
+      WeakOps::Laplacian(elMat.A[cc], fe, D);
+    else
+      WeakOps::LaplacianCoeff(elMat.A[cc], aD, fe);
 
     Matrix Kmat;
     double cn = this->concentration(elmInt.vec, fe, 0);
@@ -155,12 +159,15 @@ bool DarcyTransport::evalBou (LocalIntegral& elmInt, const FiniteElement& fe,
   ElmMats& elMat = static_cast<ElmMats&>(elmInt);
 
   const double D = mat->getDispersivity(X);
+  const Vec3& aD = mat->getDispersivity();
   const Vec3 K = mat->getPermeability(X);
 
   for (size_t i = 1; i <= fe.N.size(); ++i)
     for (size_t j = 1; j <= fe.N.size(); ++j)
       for (int k = 1; k <= nsd; ++k)
-        elMat.A[cp](i,j) += (fe.N(j)*K(k)*fe.dNdX(j,k)*normal(k) - D*fe.dNdX(j,k))*fe.N(i)*fe.detJxW;
+        elMat.A[cp](i,j) += ((fe.N(j)*K(k)*fe.dNdX(j,k)*normal(k) -
+                              (D > 0.0 ? D : aD(k))*fe.dNdX(j,k)) *
+                             fe.N(i)) * fe.detJxW;
 
   return true;
 }
@@ -327,21 +334,24 @@ bool DarcyTransportNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe
 
   ElmNorm& pnorm = static_cast<ElmNorm&>(elmInt);
   const DarcyTransport& problem = static_cast<const DarcyTransport&>(myProblem);
-  const double D = problem.getDispersivity(X);
+  const Vec3 D = problem.getDispersivity(X);
+
+  // Lambda function evaluating D*c component-wise.
+  auto sigma = [&D](const Vec3& c) { return Vec3(D.x*c.x,D.y*c.y,D.z*c.z); };
 
   // Evaluate the concentration field gradient
   Vec3 dCh = problem.concentrationGradient(elmInt.vec, fe, 0);
 
-  pnorm[H1_Ch] += D*dCh*dCh*fe.detJxW;
+  pnorm[H1_Ch] += dCh*sigma(dCh)*fe.detJxW;
 
   double E = 0.0;
   Vec3 dC, dCr, error;
   if (anac)
   {
     dC = (*anac)(X);
-    pnorm[H1_C] += D*dC*dC*fe.detJxW;
+    pnorm[H1_C] += dC*sigma(dC)*fe.detJxW;
     error = dC - dCh;
-    E = D*error*error*fe.detJxW;
+    E = error*sigma(error)*fe.detJxW;
     pnorm[H1_E_Ch] += E;
     pnorm[TOTAL_NORM_E] += E;
   }
@@ -363,10 +373,10 @@ bool DarcyTransportNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe
           dCr[i] = pnorm.psol[k].dot(fe.N,nsd+i,nrcmp);
 
       // Integrate the energy norm a(c^r,c^r)
-      pnorm[ip+H1_Cr] += D*dCr*dCr*fe.detJxW;
+      pnorm[ip+H1_Cr] += dCr*sigma(dCr)*fe.detJxW;
       // Integrate the estimated error in energy norm a(c^r-c^h,c^r-c^h)
       error = dCr - dCh;
-      E = D*error*error*fe.detJxW;
+      E = error*sigma(error)*fe.detJxW;
       pnorm[ip+H1_Cr_Ch] += E;
       pnorm[ip+TOTAL_NORM_REC] += E;
 
@@ -374,7 +384,7 @@ bool DarcyTransportNorm::evalInt (LocalIntegral& elmInt, const FiniteElement& fe
       {
         // Integrate the error in the projected solution a(c-c^r,c-c^r)
         error = dC - dCr;
-        E = D*error*error*fe.detJxW;
+        E = error*sigma(error)*fe.detJxW;
         pnorm[ip+H1_E_Cr] += E;
         pnorm[ip+TOTAL_E_REC] += E;
       }

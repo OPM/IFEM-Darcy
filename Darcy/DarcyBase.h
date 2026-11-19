@@ -45,7 +45,7 @@ public:
   //! \brief Returns the inverse permeability matrix at specified point.
   bool getInvPermeability(const Vec3& X, Matrix& Kinv) const;
   //! \brief Returns the dispersivity at specified point.
-  double getDispersivity(const Vec3& X) const;
+  Vec3 getDispersivity(const Vec3& X) const;
   //! \brief Returns the fluid viscosity.
   double getViscosity() const;
 

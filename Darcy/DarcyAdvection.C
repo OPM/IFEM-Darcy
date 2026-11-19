@@ -119,8 +119,12 @@ bool DarcyAdvection::evalInt (LocalIntegral& elmInt, const FiniteElement& fe,
       return false;
     }
 
+    if (double D = mat->getDispersivity(X); D > 0.0)
+      Weak::Laplacian(elMat.A.front(), fe, D);
+    else
+      Weak::LaplacianCoeff(elMat.A.front(), mat->getDispersivity(), fe);
+
     Vec3 q(qVec);
-    Weak::Laplacian(elMat.A.front(), fe, mat->getDispersivity(X), false);
     Weak::Advection(elMat.A.front(), fe, q, 1.0, WeakOperators::CONSERVATIVE);
   }
 
@@ -225,13 +229,16 @@ bool DarcyAdvectionNorm::evalInt (LocalIntegral& elmInt,
 {
   ElmNorm& pnorm = static_cast<ElmNorm&>(elmInt);
   const DarcyAdvection& problem = static_cast<const DarcyAdvection&>(myProblem);
-  const double D = problem.mat->getDispersivity(X);
+  const Vec3 D = problem.getDispersivity(X);
 
   // Evaluate the concentration field gradient
   Vector dCh;
   fe.grad(1).multiply(elmInt.vec.front(), dCh, true);
 
-  pnorm[0] += D*dCh*dCh*fe.detJxW;
+  double energy = 0.0;
+  for (size_t i = 0; i < dCh.size() && i < 3; i++)
+    energy += dCh[i]*D[i]*dCh[i];
+  pnorm[0] += energy*fe.detJxW;
 
   return true;
 }

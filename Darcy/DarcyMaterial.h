@@ -15,12 +15,12 @@
 #define _DARCY_MATERIAL_H_
 
 #include "matrix.h"
+#include "Vec3.h"
 #include <memory>
 
 class RealFunc;
 class ScalarFunc;
 class VecFunc;
-class Vec3;
 //! \cond convenience_alias
 using Matrix = utl::matrix<double>;
 //! \endcond
@@ -61,6 +61,8 @@ public:
 
   //! \brief Returns the dispersivity at a given point.
   double getDispersivity(const Vec3& X) const;
+  //! \brief Returns the anisotropic dispersivity.
+  const Vec3& getDispersivity() const { return aniDispersivity; }
 
   //! \brief Returns the fluid density.
   double getDensity(double c) const;
@@ -80,6 +82,7 @@ private:
   std::unique_ptr<ScalarFunc> density;      //!< Fluid density function
 
   double viscosity = 1.0; //!< Fluid viscosity
+  Vec3   aniDispersivity; //!< Anisotropic (but constant) dispersivity
 };
 
 #endif
